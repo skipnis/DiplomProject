@@ -6,17 +6,13 @@ using Wishapp.Web.Users.Entities;
 
 namespace Wishapp.Web.Users.Features.GoogleSignIn;
 
-public record GoogleSignInCommand(string IdToken) : ICommand<GoogleSignInResponse>;
-
-public record GoogleSignInResponse(string AccessToken);
-
 public sealed class GoogleSignInHandler(
     ApplicationDbContext db,
     IGoogleAuthService googleAuthService,
     ITokenProvider tokenProvider)
     : ICommandHandler<GoogleSignInCommand, GoogleSignInResponse>
 {
-    public async Task<Result<GoogleSignInResponse>> Handle(
+    public async Task<Result<GoogleSignInResponse>> HandleAsync(
         GoogleSignInCommand command,
         CancellationToken ct = default)
     {
@@ -25,6 +21,7 @@ public sealed class GoogleSignInHandler(
         if (result.IsFailure) return result.Error;
 
         var identity = await db.AuthIdentities
+            .AsNoTracking()
             .FirstOrDefaultAsync(a =>
                 a.Provider == AuthProvider.Google &&
                 a.ProviderKey == result.Value.Subject, ct);
@@ -45,7 +42,9 @@ public sealed class GoogleSignInHandler(
         }
         else
         {
-            user = await db.Users.FindAsync([identity.UserId], ct) ?? throw new InvalidOperationException();
+            user = await db.Users
+                .AsNoTracking()
+                .FirstOrDefaultAsync(u => u.Id == identity.UserId, ct) ?? throw new InvalidOperationException();
         }
         
         var token = tokenProvider.Create(user);

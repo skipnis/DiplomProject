@@ -1,0 +1,17 @@
+using System.IdentityModel.Tokens.Jwt;
+using System.Security.Claims;
+using Wishapp.Web.Common.Types;
+
+namespace Wishapp.Web.Infrastructure.Extensions;
+
+public static class ClaimsPrincipalExtensions
+{
+    public static Guid? TryGetUserId(this ClaimsPrincipal principal)
+    {
+        var sub = principal.FindFirstValue(ClaimTypes.NameIdentifier) 
+                  ?? principal.FindFirstValue(JwtRegisteredClaimNames.Sub);
+
+        
+        return sub is null ? null : Guid.Parse(sub);
+    }
+}

@@ -56,6 +56,7 @@ app.MapUsersEndpoints()
 if (app.Environment.IsDevelopment())
 {
     app.MapOpenApi();
+    
     app.MapScalarApiReference();
 }
 app.Run();
