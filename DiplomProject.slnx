@@ -1,0 +1,8 @@
+<Solution>
+  <Folder Name="/Solution Items/">
+    <File Path=".env" />
+    <File Path=".env.example" />
+    <File Path="Directory.Packages.props" />
+  </Folder>
+  <Project Path="Wishapp.Web/Wishapp.Web.csproj" />
+</Solution>
