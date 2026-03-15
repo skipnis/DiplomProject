@@ -23,13 +23,13 @@ public static class UsersEndpoints
         var usersEndpoints = app.MapGroup("/users")
             .RequireAuthorization();
         
-        usersEndpoints.MapGet("/me", GetMyProfile);
+        usersEndpoints.MapGet("/me", GetMyProfile).Produces(401);;
         
-        usersEndpoints.MapPut("/me", UpdateProfile);
+        usersEndpoints.MapPut("/me", UpdateProfile).Produces(401);;
         
-        usersEndpoints.MapGet("/{id:guid}", GetUserProfile);
+        usersEndpoints.MapGet("/{id:guid}", GetUserProfile).Produces(401);;
         
-        usersEndpoints.MapGet("/search", SearchUsers);
+        usersEndpoints.MapGet("/search", SearchUsers).Produces(401);;
         
         return app;
     }
@@ -53,7 +53,9 @@ public static class UsersEndpoints
     {
         var userId = user.TryGetUserId();
 
-        if (userId is null)
+        var userIdResult = user.TryGetUserId();
+
+        if (userIdResult.IsFailure)
         {
             return TypedResults.Unauthorized();
         }
@@ -84,16 +86,16 @@ public static class UsersEndpoints
         ICommandHandler<UpdateProfileCommand> handler,
         CancellationToken ct)
     {
-        var userId = user.TryGetUserId();
+        var userIdResult = user.TryGetUserId();
 
-        if (userId is null)
+        if (userIdResult.IsFailure)
         {
             return TypedResults.Unauthorized();
         }
 
         var result = await handler.HandleAsync(
             new UpdateProfileCommand
-            (userId.Value, 
+            (userIdResult.Value, 
                 request.Username,
                 request.Bio, request.BirthDate), ct);
 

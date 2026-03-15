@@ -2,6 +2,8 @@ using System.Text;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
+using Microsoft.OpenApi;
+using Scalar.AspNetCore;
 using Wishapp.Web.Common.Interfaces;
 using Wishapp.Web.Infrastructure.Authentication;
 using Wishapp.Web.Infrastructure.Database;
@@ -31,6 +33,8 @@ public static class DependencyInjection
 
             services.AddHandlers();
 
+            services.AddApiDocumentation();
+            
             return services;
         }
 
@@ -124,6 +128,70 @@ public static class DependencyInjection
                 .WithScopedLifetime());
 
             return services;
+        }
+        
+        private IServiceCollection AddApiDocumentation()
+        {
+            services.AddOpenApi(options =>
+            {
+                options.AddDocumentTransformer((doc, context, ct) =>
+                {
+                    doc.Components ??= new OpenApiComponents();
+                    
+                    doc.Components.SecuritySchemes ??= new Dictionary<string, IOpenApiSecurityScheme>();
+
+                    doc.Components.SecuritySchemes["Bearer"] = new OpenApiSecurityScheme
+                    {
+                        Type = SecuritySchemeType.Http,
+                        Scheme = "bearer",
+                        BearerFormat = "JWT"
+                    };
+
+                    doc.Components.SecuritySchemes["OAuth2"] = new OpenApiSecurityScheme
+                    {
+                        Type = SecuritySchemeType.OAuth2,
+                        Flows = new OpenApiOAuthFlows
+                        {
+                            AuthorizationCode = new OpenApiOAuthFlow
+                            {
+                                AuthorizationUrl = new Uri("https://accounts.google.com/o/oauth2/v2/auth"),
+                                TokenUrl = new Uri("https://oauth2.googleapis.com/token"),
+                                Scopes = new Dictionary<string, string>
+                                {
+                                    ["openid"] = "OpenID",
+                                    ["email"] = "Email",
+                                    ["profile"] = "Profile"
+                                }
+                            }
+                        }
+                    };
+
+                    return Task.CompletedTask;
+                });
+            });
+
+            return services;
+        }
+    }
+
+    extension(WebApplication app)
+    {
+        public WebApplication UseApiDocumentation()
+        {
+            app.MapOpenApi();
+
+            app.MapScalarApiReference(options => options
+                .AddPreferredSecuritySchemes("Bearer", "OAuth2")
+                .AddHttpAuthentication("Bearer", auth => { })
+                .AddAuthorizationCodeFlow("OAuth2", flow =>
+                {
+                    flow.ClientId = app.Configuration["Google:ClientId"]!;
+                    flow.Pkce = Pkce.Sha256;
+                    flow.SelectedScopes = ["openid", "email", "profile"];
+                })
+                .EnablePersistentAuthentication());
+
+            return app;
         }
     }
 }
