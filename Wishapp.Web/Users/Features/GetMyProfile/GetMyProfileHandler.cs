@@ -29,7 +29,7 @@ public sealed class GetMyProfileHandler(
             user.Username,
             user.Email,
             user.AvatarUrl,
-            user.Bio,
+            user.Bio ?? string.Empty,
             user.BirthDate);
     }
 }
