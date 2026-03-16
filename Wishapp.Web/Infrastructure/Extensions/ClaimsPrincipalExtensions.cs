@@ -8,11 +8,11 @@ public static class ClaimsPrincipalExtensions
 {
     public static Result<Guid> TryGetUserId(this ClaimsPrincipal principal)
     {
-        var sub = principal.FindFirstValue(ClaimTypes.NameIdentifier)
-                  ?? principal.FindFirstValue(JwtRegisteredClaimNames.Sub);
+        var userIdClaim = principal.FindFirstValue(ClaimTypes.NameIdentifier)
+                          ?? principal.FindFirstValue(JwtRegisteredClaimNames.Sub);
 
-        return sub is null
+        return userIdClaim is null
             ? Error.Unauthorized("Auth.InvalidToken", "User ID claim not found")
-            : Result.Success(Guid.Parse(sub));
+            : Result.Success(Guid.Parse(userIdClaim));
     }
 }

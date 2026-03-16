@@ -1,13 +1,20 @@
 using System.Text;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
 using Microsoft.OpenApi;
+using Minio;
+using Minio.AspNetCore.HealthChecks;
 using Scalar.AspNetCore;
 using Wishapp.Web.Common.Interfaces;
 using Wishapp.Web.Infrastructure.Authentication;
+using Wishapp.Web.Infrastructure.Authorization.Handlers;
 using Wishapp.Web.Infrastructure.Database;
 using Wishapp.Web.Infrastructure.Exceptions;
+using Wishapp.Web.Infrastructure.Interfaces;
+using Wishapp.Web.Infrastructure.Minio;
+using Wishapp.Web.Infrastructure.Parser;
 using Wishapp.Web.Users.Features.GoogleSignIn;
 
 namespace Wishapp.Web.Infrastructure;
@@ -24,6 +31,8 @@ public static class DependencyInjection
             services.AddExceptionHandling();
 
             services.AddDatabase(connectionString);
+            
+            services.AddMinio(configuration);
 
             services.AddHealthChecks(connectionString);
 
@@ -32,6 +41,8 @@ public static class DependencyInjection
             services.AddAuthorizationInternal();
 
             services.AddHandlers();
+
+            services.AddParsing();
 
             services.AddApiDocumentation();
             
@@ -50,7 +61,8 @@ public static class DependencyInjection
         private IServiceCollection AddHealthChecks(string connectionString)
         {
             services.AddHealthChecks()
-                .AddNpgSql(connectionString);
+                .AddNpgSql(connectionString)
+                .AddMinio(sp => sp.GetRequiredService<IMinioClient>());
 
             return services;
         }
@@ -105,11 +117,30 @@ public static class DependencyInjection
         {
             services.AddAuthorization();
             
+            services.AddScoped<IAuthorizationHandler, WishlistMemberAuthorizationHandler>();
+            
+            services.AddScoped<IAuthorizationHandler, WishlistFriendAuthorizationHandler>();
+            
             return services;
         }
         
-        private IServiceCollection AdAuthorization()
+        private IServiceCollection AddMinio(IConfiguration configuration)
         {
+            services.AddOptions<MinioOptions>()
+                .BindConfiguration(MinioOptions.SectionName)
+                .ValidateDataAnnotations()
+                .ValidateOnStart();
+
+            var minioOptions = configuration.GetSection(MinioOptions.SectionName).Get<MinioOptions>()!;
+
+            services.AddMinio(configureClient => configureClient
+                .WithEndpoint(minioOptions.Endpoint)
+                .WithCredentials(minioOptions.AccessKey, minioOptions.SecretKey)
+                .WithSSL(false)
+                .Build());
+
+            services.AddSingleton<IStorageService, MinioStorageService>();
+
             return services;
         }
 
@@ -126,6 +157,20 @@ public static class DependencyInjection
                 .AddClasses(classes => classes.AssignableTo(typeof(ICommandHandler<,>)))
                 .AsImplementedInterfaces()
                 .WithScopedLifetime());
+
+            return services;
+        }
+        
+        private IServiceCollection AddParsing()
+        {
+            services.AddHttpClient("parser", client =>
+            {
+                client.DefaultRequestHeaders.Add("User-Agent",
+                    "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 Chrome/120.0.0.0 Safari/537.36");
+                client.Timeout = TimeSpan.FromSeconds(5);
+            });
+
+            services.AddScoped<IUrlParser, UrlParser>();
 
             return services;
         }

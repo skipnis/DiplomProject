@@ -28,6 +28,11 @@ public class Friendship
              ((f.RequesterId == userId && f.AddresseeId == targetId) ||
               (f.RequesterId == targetId && f.AddresseeId == userId));
     
+    public static Expression<Func<Friendship, bool>> AcceptedWithAny(Guid userId, List<Guid> candidates) =>
+        f => f.Status == FriendshipStatus.Accepted &&
+             ((f.RequesterId == userId && candidates.Contains(f.AddresseeId)) ||
+              (f.AddresseeId == userId && candidates.Contains(f.RequesterId)));
+    
     public static Expression<Func<Friendship, bool>> Between(Guid userId, Guid targetId) =>
         f => (f.RequesterId == userId && f.AddresseeId == targetId) ||
              (f.RequesterId == targetId && f.AddresseeId == userId);

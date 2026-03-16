@@ -8,11 +8,7 @@
     </PropertyGroup>
 
     <ItemGroup>
-      <Folder Include="Common\" />
-      <Folder Include="Infrastructure\Authorization\" />
-    </ItemGroup>
-
-    <ItemGroup>
+      <PackageReference Include="AngleSharp" />
       <PackageReference Include="AspNetCore.HealthChecks.NpgSql" />
       <PackageReference Include="AspNetCore.HealthChecks.UI.Client" />
       <PackageReference Include="EFCore.NamingConventions" />
@@ -30,6 +26,8 @@
       </PackageReference>
       <PackageReference Include="Microsoft.IdentityModel.JsonWebTokens" />
       <PackageReference Include="Microsoft.IdentityModel.Tokens" />
+      <PackageReference Include="Minio" />
+      <PackageReference Include="Minio.AspNetCore.HealthChecks" />
       <PackageReference Include="Npgsql.EntityFrameworkCore.PostgreSQL" />
       <PackageReference Include="Scalar.AspNetCore" />
       <PackageReference Include="Scrutor" />
