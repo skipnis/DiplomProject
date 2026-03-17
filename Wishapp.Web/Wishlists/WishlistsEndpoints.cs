@@ -11,6 +11,8 @@ public static partial class WishlistsEndpoints
         wishlists.MapGet("/{id:guid}", GetWishlist).AllowAnonymous();
 
         wishlists.MapGet("/", GetMyWishlists);
+        
+        wishlists.MapGet("/users/{userId:guid}", GetUserWishlists).AllowAnonymous();
 
         wishlists.MapPut("/{id:guid}", UpdateWishlist);
 
@@ -43,6 +45,8 @@ public static partial class WishlistsEndpoints
         wishlists.MapGet("/{id:guid}/members", GetMembers);
         
         wishlists.MapPut("/{id:guid}/members/{userId:guid}/role", UpdateMemberRole);
+        
+        wishlists.MapGet("/{id:guid}/qr", GetWishlistQr).AllowAnonymous();
 
         return app;
     }

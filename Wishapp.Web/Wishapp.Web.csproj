@@ -29,6 +29,7 @@
       <PackageReference Include="Minio" />
       <PackageReference Include="Minio.AspNetCore.HealthChecks" />
       <PackageReference Include="Npgsql.EntityFrameworkCore.PostgreSQL" />
+      <PackageReference Include="QRCoder" />
       <PackageReference Include="Scalar.AspNetCore" />
       <PackageReference Include="Scrutor" />
       <PackageReference Include="Serilog.AspNetCore" />

@@ -15,6 +15,7 @@ using Wishapp.Web.Infrastructure.Exceptions;
 using Wishapp.Web.Infrastructure.Interfaces;
 using Wishapp.Web.Infrastructure.Minio;
 using Wishapp.Web.Infrastructure.Parser;
+using Wishapp.Web.Infrastructure.QrCode;
 using Wishapp.Web.Users.Features.GoogleSignIn;
 
 namespace Wishapp.Web.Infrastructure;
@@ -43,6 +44,8 @@ public static class DependencyInjection
             services.AddHandlers();
 
             services.AddParsing();
+
+            services.AddQrCodeGeneration();
 
             services.AddApiDocumentation();
             
@@ -171,6 +174,18 @@ public static class DependencyInjection
             });
 
             services.AddScoped<IUrlParser, UrlParser>();
+
+            return services;
+        }
+        
+        private IServiceCollection AddQrCodeGeneration()
+        {
+            services.AddOptions<QrCodeOptions>()
+                .BindConfiguration(QrCodeOptions.SectionName)
+                .ValidateDataAnnotations()
+                .ValidateOnStart();
+
+            services.AddSingleton<IQrCodeService, QrCodeService>();
 
             return services;
         }

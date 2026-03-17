@@ -26,8 +26,8 @@ public static class UsersEndpoints
         usersEndpoints.MapGet("/me", GetMyProfile).Produces(401);;
         
         usersEndpoints.MapPut("/me", UpdateProfile).Produces(401);;
-        
-        usersEndpoints.MapGet("/{id:guid}", GetUserProfile).Produces(401);;
+
+        usersEndpoints.MapGet("/{id:guid}", GetUserProfile).AllowAnonymous();
         
         usersEndpoints.MapGet("/search", SearchUsers).Produces(401);;
         
@@ -68,8 +68,7 @@ public static class UsersEndpoints
     }
     
     private static async Task<Results<Ok<GetUserProfileResponse>, NotFound<Error>>> GetUserProfile(
-        Guid id,
-        ClaimsPrincipal user,
+        [FromRoute] Guid id,
         IQueryHandler<GetUserProfileQuery, GetUserProfileResponse> handler,
         CancellationToken ct)
     {
