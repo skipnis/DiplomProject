@@ -8,11 +8,13 @@ public static partial class WishlistsEndpoints
 
         wishlists.MapPost("/", CreateWishlist);
 
-        wishlists.MapGet("/{id:guid}", GetWishlist).AllowAnonymous();
+        wishlists.MapGet("/{id:guid}", GetWishlist)
+            .AllowAnonymous();
 
         wishlists.MapGet("/", GetMyWishlists);
         
-        wishlists.MapGet("/users/{userId:guid}", GetUserWishlists).AllowAnonymous();
+        wishlists.MapGet("/users/{userId:guid}", GetUserWishlists)
+            .AllowAnonymous();
 
         wishlists.MapPut("/{id:guid}", UpdateWishlist);
 
@@ -34,7 +36,8 @@ public static partial class WishlistsEndpoints
 
         wishlists.MapPost("/{id:guid}/wishes/{wishId:guid}/copy", CopyWish);
 
-        wishlists.MapPost("/{id:guid}/wishes/{wishId:guid}/image", UploadWishImage).DisableAntiforgery();;
+        wishlists.MapPost("/{id:guid}/wishes/{wishId:guid}/image", UploadWishImage)
+            .DisableAntiforgery();;
         
         wishlists.MapDelete("/{id:guid}/wishes/{wishId:guid}/image", DeleteWishImage);
         
@@ -46,7 +49,11 @@ public static partial class WishlistsEndpoints
         
         wishlists.MapPut("/{id:guid}/members/{userId:guid}/role", UpdateMemberRole);
         
-        wishlists.MapGet("/{id:guid}/qr", GetWishlistQr).AllowAnonymous();
+        wishlists.MapGet("/{id:guid}/qr", GetWishlistQr)
+            .AllowAnonymous();
+        
+        wishlists.MapGet("/{id:guid}/wishes/{wishId:guid}/qr", GetWishQr)
+            .AllowAnonymous();
 
         return app;
     }
