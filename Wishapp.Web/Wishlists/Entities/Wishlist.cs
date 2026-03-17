@@ -228,6 +228,34 @@ public sealed class Wishlist
         return Result.Success(duplicate);
     }
 
+    public Result FulfillWish(Guid wishId)
+    {
+        var wish = _wishes.FirstOrDefault(w => w.Id == wishId);
+
+        if (wish is null)
+        {
+            return Error.NotFound("Wishes.NotFound", "Wish not found");
+        }
+
+        wish.Fulfill();
+
+        return Result.Success();
+    }
+
+    public Result UnfulfillWish(Guid wishId)
+    {
+        var wish = _wishes.FirstOrDefault(w => w.Id == wishId);
+
+        if (wish is null)
+        {
+            return Error.NotFound("Wishes.NotFound", "Wish not found");
+        }
+
+        wish.Unfulfill();
+
+        return Result.Success();
+    }
+
     public Result<Wish> CopyWishFrom(Wish wish)
     {
         var copy = wish.CopyTo(Id);

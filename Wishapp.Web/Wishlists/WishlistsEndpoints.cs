@@ -32,6 +32,10 @@ public static partial class WishlistsEndpoints
 
         wishlists.MapGet("/{id:guid}/wishes", GetWishes);
 
+        wishlists.MapPatch("/{id:guid}/wishes/{wishId:guid}/fulfill", FulfillWish);
+
+        wishlists.MapPatch("/{id:guid}/wishes/{wishId:guid}/unfulfill", UnfulfillWish);
+
         wishlists.MapPost("/{id:guid}/wishes/{wishId:guid}/duplicate", DuplicateWish);
 
         wishlists.MapPost("/{id:guid}/wishes/{wishId:guid}/copy", CopyWish);

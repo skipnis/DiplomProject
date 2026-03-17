@@ -10,8 +10,18 @@ public class UsersApi(ApplicationDbContext dbContext) : IUsersApi
     {
         var exists = await dbContext.Users.AnyAsync(x => x.Id == userId, ct);
 
-        return exists 
-            ? Result.Success() 
+        return exists
+            ? Result.Success()
             : Result.Failure(Error.NotFound("Users.NotFound", "User not found"));
+    }
+
+    public async Task<Dictionary<Guid, string>> GetUsernamesAsync(
+        List<Guid> userIds,
+        CancellationToken ct = default)
+    {
+        return await dbContext.Users
+            .AsNoTracking()
+            .Where(u => userIds.Contains(u.Id))
+            .ToDictionaryAsync(u => u.Id, u => u.Username, ct);
     }
 }

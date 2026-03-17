@@ -14,6 +14,8 @@ public sealed class Wish
     public string? Url { get; private set; }
     public string? ImagePath { get; private set; }
     public DateTimeOffset CreatedAt { get; private set; }
+    public bool IsFulfilled { get; private set; }
+    public DateTimeOffset? FulfilledAt { get; private set; }
 
     private Wish() { }
 
@@ -66,6 +68,18 @@ public sealed class Wish
         ImagePath = null;
     }
 
+    public void Fulfill()
+    {
+        IsFulfilled = true;
+        FulfilledAt = DateTimeOffset.UtcNow;
+    }
+
+    public void Unfulfill()
+    {
+        IsFulfilled = false;
+        FulfilledAt = null;
+    }
+
     public Wish Duplicate(Guid wishlistId)
     {
         return new Wish
@@ -79,6 +93,8 @@ public sealed class Wish
             Priority = Priority,
             Url = Url,
             ImagePath = null,
+            IsFulfilled = false,
+            FulfilledAt = null,
             CreatedAt = DateTimeOffset.UtcNow
         };
     }
@@ -96,6 +112,8 @@ public sealed class Wish
             Priority = Priority,
             Url = Url,
             ImagePath = null,
+            IsFulfilled = false,
+            FulfilledAt = null,
             CreatedAt = DateTimeOffset.UtcNow
         };
     }

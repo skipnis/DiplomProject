@@ -2,6 +2,7 @@
 using System;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 using Wishapp.Web.Infrastructure.Database;
@@ -11,9 +12,11 @@ using Wishapp.Web.Infrastructure.Database;
 namespace Wishapp.Web.Infrastructure.Database.Migrations
 {
     [DbContext(typeof(ApplicationDbContext))]
-    partial class ApplicationDbContextModelSnapshot : ModelSnapshot
+    [Migration("20260317184453_AddWishFullfilment")]
+    partial class AddWishFullfilment
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -64,45 +67,6 @@ namespace Wishapp.Web.Infrastructure.Database.Migrations
                         .HasDatabaseName("ix_friendships_requester_id_addressee_id");
 
                     b.ToTable("friendships", (string)null);
-                });
-
-            modelBuilder.Entity("Wishapp.Web.Reservations.Entities.WishReservation", b =>
-                {
-                    b.Property<Guid>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("uuid")
-                        .HasColumnName("id");
-
-                    b.Property<DateTimeOffset>("CreatedAt")
-                        .HasColumnType("timestamp with time zone")
-                        .HasColumnName("created_at");
-
-                    b.Property<Guid>("ReservedByUserId")
-                        .HasColumnType("uuid")
-                        .HasColumnName("reserved_by_user_id");
-
-                    b.Property<Guid>("WishId")
-                        .HasColumnType("uuid")
-                        .HasColumnName("wish_id");
-
-                    b.Property<Guid>("WishlistId")
-                        .HasColumnType("uuid")
-                        .HasColumnName("wishlist_id");
-
-                    b.HasKey("Id")
-                        .HasName("pk_wish_reservations");
-
-                    b.HasIndex("ReservedByUserId")
-                        .HasDatabaseName("ix_wish_reservations_reserved_by_user_id");
-
-                    b.HasIndex("WishId")
-                        .IsUnique()
-                        .HasDatabaseName("ix_wish_reservations_wish_id");
-
-                    b.HasIndex("WishlistId")
-                        .HasDatabaseName("ix_wish_reservations_wishlist_id");
-
-                    b.ToTable("wish_reservations", (string)null);
                 });
 
             modelBuilder.Entity("Wishapp.Web.Users.Entities.AuthIdentity", b =>

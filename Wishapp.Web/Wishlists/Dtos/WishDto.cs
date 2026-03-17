@@ -11,16 +11,7 @@ public record WishDto(
     WishPriority Priority,
     string? Url,
     string? ImagePath,
-    DateTimeOffset CreatedAt)
-{
-    public static WishDto From(Wish wish) => new(
-        wish.Id,
-        wish.Name,
-        wish.Description,
-        wish.Price,
-        wish.Currency,
-        wish.Priority,
-        wish.Url,
-        wish.ImagePath,
-        wish.CreatedAt);
-}
+    DateTimeOffset CreatedAt,
+    bool IsFulfilled,
+    DateTimeOffset? FulfilledAt,
+    bool IsReserved);
