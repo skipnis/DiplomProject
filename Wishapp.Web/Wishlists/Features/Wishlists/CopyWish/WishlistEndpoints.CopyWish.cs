@@ -44,7 +44,9 @@ public static partial class WishlistsEndpoints
             return TypedResults.Forbid();
         }
 
-        var canViewSource = sourceAccessContext.Visibility switch
+        var isSourceOwner = sourceAccessContext.OwnerId == userIdResult.Value;
+
+        var canViewSource = isSourceOwner || sourceAccessContext.Visibility switch
         {
             WishlistVisibility.Public => true,
             WishlistVisibility.Friends => (await authorizationService
@@ -57,7 +59,7 @@ public static partial class WishlistsEndpoints
                     .AuthorizeAsync(user, sourceAccessContext,
                         new WishlistMemberRequirement(WishlistMemberRole.Viewer)))
                 .Succeeded,
-            WishlistVisibility.Private => sourceAccessContext.OwnerId == userIdResult.Value,
+            WishlistVisibility.Private => false,
             _ => false
         };
 

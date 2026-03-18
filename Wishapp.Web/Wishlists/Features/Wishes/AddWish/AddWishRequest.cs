@@ -7,5 +7,5 @@ public record AddWishRequest(
     string? Description,
     decimal? Price,
     Currency? Currency,
-    WishPriority Priority,
-    string? Url);
+    string? Url,
+    WishPriority Priority = WishPriority.None);

@@ -29,26 +29,7 @@ public static class UrlValidator
 
     public static Result ValidateImageUrl(string url)
     {
-        var baseValidation = ValidatePageUrl(url);
-
-        if (baseValidation.IsFailure)
-        {
-            return baseValidation;
-        }
-
-        if (!Uri.TryCreate(url, UriKind.Absolute, out var uri))
-        {
-            return Error.Validation("Url.Invalid", "Invalid URL format");
-        }
-
-        var extension = Path.GetExtension(uri.AbsolutePath).ToLower();
-
-        if (!AllowedImageExtensions.Contains(extension))
-        {
-            return Error.Validation("Url.InvalidExtension", "Only image files are allowed");
-        }
-
-        return Result.Success();
+        return ValidatePageUrl(url);
     }
 
     private static bool IsPrivateHost(string host)

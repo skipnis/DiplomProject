@@ -16,6 +16,7 @@ public sealed class AddMembersHandler(
         CancellationToken ct = default)
     {
         var wishlist = await db.Wishlists
+            .AsNoTracking()
             .Include(w => w.Members)
             .FirstOrDefaultAsync(w => w.Id == command.WishlistId, ct);
 
@@ -55,6 +56,8 @@ public sealed class AddMembersHandler(
             {
                 return result.Error;
             }
+
+            db.WishlistMembers.Add(result.Value);
         }
 
         await db.SaveChangesAsync(ct);

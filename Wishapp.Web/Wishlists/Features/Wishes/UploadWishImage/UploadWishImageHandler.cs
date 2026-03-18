@@ -94,7 +94,15 @@ public sealed class UploadWishImageHandler(
 
         var client = httpClientFactory.CreateClient("parser");
 
-        using var response = await client.GetAsync(url, HttpCompletionOption.ResponseHeadersRead, ct);
+        using var request = new HttpRequestMessage(HttpMethod.Get, url);
+        request.Headers.Add("Accept", "image/webp,image/*,*/*;q=0.8");
+
+        using var response = await client.SendAsync(request, HttpCompletionOption.ResponseHeadersRead, ct);
+
+        if (!response.IsSuccessStatusCode)
+        {
+            return Error.Validation("Image.FetchFailed", $"Failed to download image: {(int)response.StatusCode}");
+        }
 
         var contentType = response.Content.Headers.ContentType?.MediaType;
 

@@ -92,7 +92,7 @@ public sealed class Wishlist
             : Result.Success();
     }
 
-    public Result AddMember(Guid userId, WishlistMemberRole role)
+    public Result<WishlistMember> AddMember(Guid userId, WishlistMemberRole role)
     {
         if (Visibility == WishlistVisibility.Private)
         {
@@ -109,9 +109,10 @@ public sealed class Wishlist
             return Error.Conflict("Wishlists.MemberExists", "User is already a member");
         }
 
-        _members.Add(WishlistMember.Create(Id, userId, role));
-        
-        return Result.Success();
+        var member = WishlistMember.Create(Id, userId, role);
+        _members.Add(member);
+
+        return Result.Success(member);
     }
 
     public Result RemoveMember(Guid userId)

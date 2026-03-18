@@ -25,6 +25,7 @@ public sealed class GetUserWishlistsHandler(
             .AsNoTracking()
             .Where(w => w.OwnerId == query.TargetUserId)
             .Where(w =>
+                w.OwnerId == query.CurrentUserId ||
                 w.Visibility == WishlistVisibility.Public ||
                 (w.Visibility == WishlistVisibility.Friends && areFriends) ||
                 w.Members.Any(m => m.UserId == query.CurrentUserId))
