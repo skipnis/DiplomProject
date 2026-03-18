@@ -32,7 +32,16 @@ builder.Services
 
 builder.Services.AddOpenApi();
 
+builder.Services.AddCors();
+
 var app = builder.Build();
+
+app.UseCors(corsPolicyBuilder =>
+{
+    corsPolicyBuilder.AllowAnyOrigin();
+    corsPolicyBuilder.AllowAnyMethod();
+    corsPolicyBuilder.AllowAnyHeader();
+});
 
 app.UseExceptionHandler();
 
