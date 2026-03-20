@@ -2,6 +2,7 @@ using HealthChecks.UI.Client;
 using Microsoft.AspNetCore.Diagnostics.HealthChecks;
 using Scalar.AspNetCore;
 using Serilog;
+using Wishapp.Web.Events;
 using Wishapp.Web.Friendships;
 using Wishapp.Web.Infrastructure;
 using Wishapp.Web.Reservations;
@@ -28,7 +29,8 @@ builder.Services
     .AddUsersModule()
     .AddFriendshipsModule()
     .AddWishlistsModule()
-    .AddReservationsModule();
+    .AddReservationsModule()
+    .AddEventsModule();
 
 builder.Services.AddOpenApi();
 
@@ -60,7 +62,8 @@ app.MapHealthChecks("/health",
 app.MapUsersEndpoints()
     .MapFriendshipsEndpoints()
     .MapWishlistsEndpoints()
-    .MapReservationsEndpoints();
+    .MapReservationsEndpoints()
+    .MapEventsEndpoints();
 
 if (app.Environment.IsDevelopment())
 {

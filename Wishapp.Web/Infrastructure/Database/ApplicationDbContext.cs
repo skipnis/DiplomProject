@@ -1,4 +1,5 @@
 using Microsoft.EntityFrameworkCore;
+using Wishapp.Web.Events.Entities;
 using Wishapp.Web.Friendships.Entities;
 using Wishapp.Web.Reservations.Entities;
 using Wishapp.Web.Users.Entities;
@@ -19,7 +20,9 @@ public class ApplicationDbContext(
     public DbSet<Wish> Wishes { get; set; }
 
     public DbSet<WishReservation> WishReservations { get; set; }
-    
+
+    public DbSet<Event> Events { get; set; }
+
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
         modelBuilder.ApplyConfigurationsFromAssembly(typeof(ApplicationDbContext).Assembly);
