@@ -12,6 +12,7 @@ public class ApplicationDbContext(
 {
     public DbSet<User> Users { get; set; }
     public DbSet<AuthIdentity> AuthIdentities { get; set; }
+    public DbSet<UserExternalToken> UserExternalTokens { get; set; }
 
     public DbSet<Friendship> Friendships { get; set; }
 

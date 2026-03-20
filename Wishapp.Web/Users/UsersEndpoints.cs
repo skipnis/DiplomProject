@@ -4,6 +4,8 @@ using Microsoft.AspNetCore.Mvc;
 using Wishapp.Web.Common.Interfaces;
 using Wishapp.Web.Common.Types;
 using Wishapp.Web.Infrastructure.Extensions;
+using Wishapp.Web.Users.Features.ConnectGoogleCalendar;
+using Wishapp.Web.Users.Features.DisconnectGoogleCalendar;
 using Wishapp.Web.Users.Features.GetMyProfile;
 using Wishapp.Web.Users.Features.GetUserProfile;
 using Wishapp.Web.Users.Features.GoogleSignIn;
@@ -30,7 +32,11 @@ public static class UsersEndpoints
         usersEndpoints.MapGet("/{id:guid}", GetUserProfile).AllowAnonymous();
         
         usersEndpoints.MapGet("/search", SearchUsers).Produces(401);;
-        
+
+        usersEndpoints.MapPost("/me/google-calendar", ConnectGoogleCalendar).Produces(401);
+
+        usersEndpoints.MapDelete("/me/google-calendar", DisconnectGoogleCalendar).Produces(401);
+
         return app;
     }
     
@@ -101,6 +107,35 @@ public static class UsersEndpoints
         return result.IsSuccess
             ? TypedResults.NoContent()
             : TypedResults.NotFound(result.Error);
+    }
+
+    private static async Task<Results<NoContent, BadRequest<Error>, UnauthorizedHttpResult>> ConnectGoogleCalendar(
+        [FromBody] ConnectGoogleCalendarRequest request,
+        ClaimsPrincipal user,
+        ICommandHandler<ConnectGoogleCalendarCommand> handler,
+        CancellationToken ct)
+    {
+        var userIdResult = user.TryGetUserId();
+        if (userIdResult.IsFailure) return TypedResults.Unauthorized();
+
+        var result = await handler.HandleAsync(new ConnectGoogleCalendarCommand(userIdResult.Value, request.Code), ct);
+
+        return result.IsSuccess
+            ? TypedResults.NoContent()
+            : TypedResults.BadRequest(result.Error);
+    }
+
+    private static async Task<Results<NoContent, UnauthorizedHttpResult>> DisconnectGoogleCalendar(
+        ClaimsPrincipal user,
+        ICommandHandler<DisconnectGoogleCalendarCommand> handler,
+        CancellationToken ct)
+    {
+        var userIdResult = user.TryGetUserId();
+        if (userIdResult.IsFailure) return TypedResults.Unauthorized();
+
+        await handler.HandleAsync(new DisconnectGoogleCalendarCommand(userIdResult.Value), ct);
+
+        return TypedResults.NoContent();
     }
 
     private static async Task<Ok<UsersSearchResponse>> SearchUsers(

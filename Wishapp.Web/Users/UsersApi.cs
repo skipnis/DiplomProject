@@ -24,4 +24,19 @@ public class UsersApi(ApplicationDbContext dbContext) : IUsersApi
             .Where(u => userIds.Contains(u.Id))
             .ToDictionaryAsync(u => u.Id, u => u.Username, ct);
     }
+
+    public async Task<Result<string>> GetExternalRefreshTokenAsync(
+        Guid userId,
+        string provider,
+        string scope,
+        CancellationToken ct = default)
+    {
+        var token = await dbContext.UserExternalTokens
+            .AsNoTracking()
+            .FirstOrDefaultAsync(t => t.UserId == userId && t.Provider == provider && t.Scope == scope, ct);
+
+        return token is null
+            ? Error.NotFound("Users.ExternalToken.NotFound", $"No {provider} token found for scope '{scope}'")
+            : token.RefreshToken;
+    }
 }

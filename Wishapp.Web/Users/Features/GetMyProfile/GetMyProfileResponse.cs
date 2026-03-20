@@ -6,4 +6,5 @@ public record GetMyProfileResponse(
     string Email,
     string? AvatarUrl,
     string? Bio,
-    DateOnly? BirthDate);
+    DateOnly? BirthDate,
+    bool IsGoogleCalendarConnected);
