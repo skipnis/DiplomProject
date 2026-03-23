@@ -1,7 +1,10 @@
 using HealthChecks.UI.Client;
+using Wishapp.Web.Infrastructure.Database;
 using Microsoft.AspNetCore.Diagnostics.HealthChecks;
 using Scalar.AspNetCore;
 using Serilog;
+using Wishapp.Web.Admin;
+using Wishapp.Web.Catalog;
 using Wishapp.Web.Events;
 using Wishapp.Web.Friendships;
 using Wishapp.Web.Infrastructure;
@@ -28,6 +31,7 @@ builder.Services.AddInfrastructure(builder.Configuration);
 builder.Services
     .AddUsersModule()
     .AddFriendshipsModule()
+    .AddCatalogModule()
     .AddWishlistsModule()
     .AddReservationsModule()
     .AddEventsModule();
@@ -40,9 +44,11 @@ var app = builder.Build();
 
 app.UseCors(corsPolicyBuilder =>
 {
-    corsPolicyBuilder.AllowAnyOrigin();
+    var allowedOrigin = app.Configuration["Cors:AllowedOrigin"] ?? "http://localhost:5173";
+    corsPolicyBuilder.WithOrigins(allowedOrigin);
     corsPolicyBuilder.AllowAnyMethod();
     corsPolicyBuilder.AllowAnyHeader();
+    corsPolicyBuilder.AllowCredentials();
 });
 
 app.UseExceptionHandler();
@@ -63,11 +69,15 @@ app.MapUsersEndpoints()
     .MapFriendshipsEndpoints()
     .MapWishlistsEndpoints()
     .MapReservationsEndpoints()
-    .MapEventsEndpoints();
+    .MapEventsEndpoints()
+    .MapCatalogEndpoints()
+    .MapAdminEndpoints();
 
 if (app.Environment.IsDevelopment())
 {
     app.UseApiDocumentation();
 }
+
+await DatabaseSeeder.SeedAsync(app.Services);
 
 app.Run();

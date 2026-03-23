@@ -1,0 +1,39 @@
+using Microsoft.EntityFrameworkCore;
+using Wishapp.Web.Catalog.Entities;
+using Wishapp.Web.Common.Interfaces;
+using Wishapp.Web.Common.Types;
+using Wishapp.Web.Infrastructure.Database;
+
+namespace Wishapp.Web.Admin.Features.Items.Create;
+
+public sealed class CreateCatalogItemHandler(ApplicationDbContext db)
+    : ICommandHandler<CreateCatalogItemCommand, Guid>
+{
+    public async Task<Result<Guid>> HandleAsync(
+        CreateCatalogItemCommand command,
+        CancellationToken ct = default)
+    {
+        var categoryExists = await db.CatalogCategories
+            .AnyAsync(c => c.Id == command.CategoryId, ct);
+
+        if (!categoryExists)
+        {
+            return Error.NotFound("Catalog.CategoryNotFound", "Category not found");
+        }
+
+        var item = CatalogItem.Create(
+            command.Name,
+            command.Description,
+            command.Price,
+            command.Currency,
+            command.ImagePath,
+            command.Url,
+            command.CategoryId);
+
+        db.CatalogItems.Add(item);
+
+        await db.SaveChangesAsync(ct);
+
+        return item.Id;
+    }
+}

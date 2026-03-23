@@ -2,6 +2,7 @@
 using System;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 using Wishapp.Web.Infrastructure.Database;
@@ -11,9 +12,11 @@ using Wishapp.Web.Infrastructure.Database;
 namespace Wishapp.Web.Infrastructure.Database.Migrations
 {
     [DbContext(typeof(ApplicationDbContext))]
-    partial class ApplicationDbContextModelSnapshot : ModelSnapshot
+    [Migration("20260320203101_AddCatalogAndAdmin")]
+    partial class AddCatalogAndAdmin
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -86,77 +89,6 @@ namespace Wishapp.Web.Infrastructure.Database.Migrations
                         .HasDatabaseName("ix_catalog_categories_order");
 
                     b.ToTable("catalog_categories", (string)null);
-                });
-
-            modelBuilder.Entity("Wishapp.Web.Catalog.Entities.CatalogCollection", b =>
-                {
-                    b.Property<Guid>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("uuid")
-                        .HasColumnName("id");
-
-                    b.Property<string>("CoverImagePath")
-                        .HasMaxLength(500)
-                        .HasColumnType("character varying(500)")
-                        .HasColumnName("cover_image_path");
-
-                    b.Property<DateTimeOffset>("CreatedAt")
-                        .HasColumnType("timestamp with time zone")
-                        .HasColumnName("created_at");
-
-                    b.Property<string>("Description")
-                        .HasMaxLength(500)
-                        .HasColumnType("character varying(500)")
-                        .HasColumnName("description");
-
-                    b.Property<bool>("IsPublished")
-                        .HasColumnType("boolean")
-                        .HasColumnName("is_published");
-
-                    b.Property<string>("Name")
-                        .IsRequired()
-                        .HasMaxLength(150)
-                        .HasColumnType("character varying(150)")
-                        .HasColumnName("name");
-
-                    b.Property<string>("Occasion")
-                        .HasMaxLength(50)
-                        .HasColumnType("character varying(50)")
-                        .HasColumnName("occasion");
-
-                    b.Property<int>("Order")
-                        .HasColumnType("integer")
-                        .HasColumnName("order");
-
-                    b.HasKey("Id")
-                        .HasName("pk_catalog_collections");
-
-                    b.HasIndex("IsPublished")
-                        .HasDatabaseName("ix_catalog_collections_is_published");
-
-                    b.HasIndex("Order")
-                        .HasDatabaseName("ix_catalog_collections_order");
-
-                    b.ToTable("catalog_collections", (string)null);
-                });
-
-            modelBuilder.Entity("Wishapp.Web.Catalog.Entities.CatalogCollectionItem", b =>
-                {
-                    b.Property<Guid>("CollectionId")
-                        .HasColumnType("uuid")
-                        .HasColumnName("collection_id");
-
-                    b.Property<Guid>("CatalogItemId")
-                        .HasColumnType("uuid")
-                        .HasColumnName("catalog_item_id");
-
-                    b.HasKey("CollectionId", "CatalogItemId")
-                        .HasName("pk_catalog_collection_items");
-
-                    b.HasIndex("CatalogItemId")
-                        .HasDatabaseName("ix_catalog_collection_items_catalog_item_id");
-
-                    b.ToTable("catalog_collection_items", (string)null);
                 });
 
             modelBuilder.Entity("Wishapp.Web.Catalog.Entities.CatalogItem", b =>
@@ -487,43 +419,6 @@ namespace Wishapp.Web.Infrastructure.Database.Migrations
                     b.ToTable("user_external_tokens", (string)null);
                 });
 
-            modelBuilder.Entity("Wishapp.Web.Users.Entities.UserRefreshToken", b =>
-                {
-                    b.Property<Guid>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("uuid")
-                        .HasColumnName("id");
-
-                    b.Property<DateTime>("CreatedAt")
-                        .HasColumnType("timestamp with time zone")
-                        .HasColumnName("created_at");
-
-                    b.Property<DateTime>("ExpiresAt")
-                        .HasColumnType("timestamp with time zone")
-                        .HasColumnName("expires_at");
-
-                    b.Property<DateTime?>("RevokedAt")
-                        .HasColumnType("timestamp with time zone")
-                        .HasColumnName("revoked_at");
-
-                    b.Property<string>("TokenHash")
-                        .IsRequired()
-                        .HasColumnType("text")
-                        .HasColumnName("token_hash");
-
-                    b.Property<Guid>("UserId")
-                        .HasColumnType("uuid")
-                        .HasColumnName("user_id");
-
-                    b.HasKey("Id")
-                        .HasName("pk_refresh_tokens");
-
-                    b.HasIndex("UserId", "TokenHash")
-                        .HasDatabaseName("ix_refresh_tokens_user_id_token_hash");
-
-                    b.ToTable("refresh_tokens", (string)null);
-                });
-
             modelBuilder.Entity("Wishapp.Web.Wishlists.Entities.Wish", b =>
                 {
                     b.Property<Guid>("Id")
@@ -687,27 +582,6 @@ namespace Wishapp.Web.Infrastructure.Database.Migrations
                     b.ToTable("wishlist_members", (string)null);
                 });
 
-            modelBuilder.Entity("Wishapp.Web.Catalog.Entities.CatalogCollectionItem", b =>
-                {
-                    b.HasOne("Wishapp.Web.Catalog.Entities.CatalogItem", "CatalogItem")
-                        .WithMany()
-                        .HasForeignKey("CatalogItemId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired()
-                        .HasConstraintName("fk_catalog_collection_items_catalog_items_catalog_item_id");
-
-                    b.HasOne("Wishapp.Web.Catalog.Entities.CatalogCollection", "Collection")
-                        .WithMany("Items")
-                        .HasForeignKey("CollectionId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired()
-                        .HasConstraintName("fk_catalog_collection_items_catalog_collections_collection_id");
-
-                    b.Navigation("CatalogItem");
-
-                    b.Navigation("Collection");
-                });
-
             modelBuilder.Entity("Wishapp.Web.Catalog.Entities.CatalogItem", b =>
                 {
                     b.HasOne("Wishapp.Web.Catalog.Entities.CatalogCategory", "Category")
@@ -748,11 +622,6 @@ namespace Wishapp.Web.Infrastructure.Database.Migrations
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired()
                         .HasConstraintName("fk_wishlist_members_wishlists_wishlist_id");
-                });
-
-            modelBuilder.Entity("Wishapp.Web.Catalog.Entities.CatalogCollection", b =>
-                {
-                    b.Navigation("Items");
                 });
 
             modelBuilder.Entity("Wishapp.Web.Users.Entities.User", b =>

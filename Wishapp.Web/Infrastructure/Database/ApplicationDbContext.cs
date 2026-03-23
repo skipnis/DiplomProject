@@ -1,4 +1,6 @@
 using Microsoft.EntityFrameworkCore;
+using Wishapp.Web.Admin.Entities;
+using Wishapp.Web.Catalog.Entities;
 using Wishapp.Web.Events.Entities;
 using Wishapp.Web.Friendships.Entities;
 using Wishapp.Web.Reservations.Entities;
@@ -13,6 +15,7 @@ public class ApplicationDbContext(
     public DbSet<User> Users { get; set; }
     public DbSet<AuthIdentity> AuthIdentities { get; set; }
     public DbSet<UserExternalToken> UserExternalTokens { get; set; }
+    public DbSet<UserRefreshToken> RefreshTokens { get; set; }
 
     public DbSet<Friendship> Friendships { get; set; }
 
@@ -23,6 +26,12 @@ public class ApplicationDbContext(
     public DbSet<WishReservation> WishReservations { get; set; }
 
     public DbSet<Event> Events { get; set; }
+
+    public DbSet<AdminUser> AdminUsers { get; set; }
+    public DbSet<CatalogCategory> CatalogCategories { get; set; }
+    public DbSet<CatalogItem> CatalogItems { get; set; }
+    public DbSet<CatalogCollection> CatalogCollections { get; set; }
+    public DbSet<CatalogCollectionItem> CatalogCollectionItems { get; set; }
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
