@@ -7,4 +7,5 @@ public record GetMyProfileResponse(
     string? AvatarUrl,
     string? Bio,
     DateOnly? BirthDate,
-    bool IsGoogleCalendarConnected);
+    bool IsGoogleCalendarConnected,
+    bool IsOnboarded);

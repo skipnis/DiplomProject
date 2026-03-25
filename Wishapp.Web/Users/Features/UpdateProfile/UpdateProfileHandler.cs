@@ -21,10 +21,9 @@ public sealed class UpdateProfileHandler(ApplicationDbContext db)
         }
 
         user.Username = command.Username;
-        
         user.Bio = command.Bio;
-        
         user.BirthDate = command.BirthDate;
+        user.IsOnboarded = true;
 
         await db.SaveChangesAsync(ct);
 

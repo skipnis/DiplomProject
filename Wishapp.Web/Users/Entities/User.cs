@@ -9,8 +9,9 @@ public class User
     public string? Bio { get; set; }
     public DateOnly? BirthDate { get; set; }
     public DateTimeOffset CreatedAt { get; set; }
+    public bool IsOnboarded { get; set; }
     public IReadOnlyCollection<AuthIdentity> Identities { get; set; }
-    
+
     public static User Create(string displayName, string email, string? avatarUrl)
     {
         return new User
@@ -19,7 +20,8 @@ public class User
             Username = displayName,
             Email = email,
             AvatarUrl = avatarUrl,
-            CreatedAt = DateTimeOffset.UtcNow
+            CreatedAt = DateTimeOffset.UtcNow,
+            IsOnboarded = false
         };
     }
 }

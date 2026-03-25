@@ -35,6 +35,7 @@ public sealed class GetMyProfileHandler(
             user.AvatarUrl,
             user.Bio ?? string.Empty,
             user.BirthDate,
-            isGoogleCalendarConnected);
+            isGoogleCalendarConnected,
+            user.IsOnboarded);
     }
 }
