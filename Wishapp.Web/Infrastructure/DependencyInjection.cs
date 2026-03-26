@@ -99,7 +99,7 @@ public static class DependencyInjection
                 .AddJwtBearer(options =>
                 {
                     var jwtOptions = configuration.GetSection(JwtOptions.SectionName).Get<JwtOptions>()!;
-            
+
                     options.TokenValidationParameters = new TokenValidationParameters
                     {
                         ValidateIssuer = true,
@@ -111,6 +111,17 @@ public static class DependencyInjection
                         IssuerSigningKey = new SymmetricSecurityKey(
                             Encoding.UTF8.GetBytes(jwtOptions.Secret))
                     };
+
+                    options.Events = new JwtBearerEvents
+                    {
+                        OnMessageReceived = ctx =>
+                        {
+                            if (ctx.Request.Cookies.TryGetValue("access_token", out var token))
+                                ctx.Token = token;
+                            
+                            return Task.CompletedTask;
+                        }
+                    };
                 });
             
             return services;
@@ -118,12 +129,13 @@ public static class DependencyInjection
 
         private IServiceCollection AddAuthorizationInternal()
         {
-            services.AddAuthorization();
-            
+            services.AddAuthorization(options =>
+                options.AddPolicy("Admin", policy => policy.RequireRole("admin")));
+
             services.AddScoped<IAuthorizationHandler, WishlistMemberAuthorizationHandler>();
-            
+
             services.AddScoped<IAuthorizationHandler, WishlistFriendAuthorizationHandler>();
-            
+
             return services;
         }
         

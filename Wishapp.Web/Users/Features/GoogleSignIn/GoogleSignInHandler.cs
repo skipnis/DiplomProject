@@ -1,17 +1,23 @@
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Options;
 using Wishapp.Web.Common.Interfaces;
 using Wishapp.Web.Common.Types;
+using Wishapp.Web.Infrastructure.Authentication;
 using Wishapp.Web.Infrastructure.Database;
 using Wishapp.Web.Users.Entities;
+using Wishapp.Web.Wishlists;
 
 namespace Wishapp.Web.Users.Features.GoogleSignIn;
 
 public sealed class GoogleSignInHandler(
     ApplicationDbContext db,
     IGoogleAuthService googleAuthService,
-    ITokenProvider tokenProvider)
+    ITokenProvider tokenProvider,
+    IWishlistsApi wishlistsApi,
+    IOptions<JwtOptions> jwtOptions)
     : ICommandHandler<GoogleSignInCommand, GoogleSignInResponse>
 {
+    private readonly JwtOptions _jwt = jwtOptions.Value;
     public async Task<Result<GoogleSignInResponse>> HandleAsync(
         GoogleSignInCommand command,
         CancellationToken ct = default)
@@ -35,9 +41,11 @@ public sealed class GoogleSignInHandler(
             var authIdentity = AuthIdentity.Create(user.Id, AuthProvider.Google, result.Value.Subject);
 
             db.Users.Add(user);
-            
+
             db.AuthIdentities.Add(authIdentity);
-            
+
+            await wishlistsApi.CreateSystemWishlistsAsync(user.Id, ct);
+
             await db.SaveChangesAsync(ct);
         }
         else
@@ -47,8 +55,13 @@ public sealed class GoogleSignInHandler(
                 .FirstOrDefaultAsync(u => u.Id == identity.UserId, ct) ?? throw new InvalidOperationException();
         }
         
-        var token = tokenProvider.Create(user);
+        var accessToken = tokenProvider.Create(user);
+        var refreshToken = tokenProvider.CreateRefreshToken();
+        var tokenHash = tokenProvider.HashToken(refreshToken);
 
-        return Result.Success(new GoogleSignInResponse(token));
+        db.RefreshTokens.Add(UserRefreshToken.Create(user.Id, tokenHash, _jwt.RefreshTokenExpirationInDays));
+        await db.SaveChangesAsync(ct);
+
+        return Result.Success(new GoogleSignInResponse(accessToken, refreshToken));
     }
 }
