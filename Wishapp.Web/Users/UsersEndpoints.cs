@@ -1,36 +1,24 @@
-using System.Security.Claims;
-using Microsoft.AspNetCore.Http.HttpResults;
-using Microsoft.AspNetCore.Mvc;
-using Wishapp.Web.Common.Interfaces;
-using Wishapp.Web.Common.Types;
-using Wishapp.Web.Infrastructure.Extensions;
-using Wishapp.Web.Users.Features.ConnectGoogleCalendar;
-using Wishapp.Web.Users.Features.DisconnectGoogleCalendar;
-using Wishapp.Web.Users.Features.GetMyProfile;
-using Wishapp.Web.Users.Features.GetUserProfile;
-using Wishapp.Web.Users.Features.GoogleSignIn;
-using Wishapp.Web.Users.Features.SearchUsers;
-using Wishapp.Web.Users.Features.UpdateProfile;
-
 namespace Wishapp.Web.Users;
 
-public static class UsersEndpoints
+public static partial class UsersEndpoints
 {
     public static IEndpointRouteBuilder MapUsersEndpoints(this IEndpointRouteBuilder app)
     {
         var auth = app.MapGroup("/auth");
-        
+
         auth.MapPost("/google", GoogleSignIn);
+        auth.MapPost("/refresh", RefreshToken);
+        auth.MapPost("/logout", Logout);
 
         var usersEndpoints = app.MapGroup("/users")
             .RequireAuthorization();
-        
+
         usersEndpoints.MapGet("/me", GetMyProfile).Produces(401);;
-        
+
         usersEndpoints.MapPut("/me", UpdateProfile).Produces(401);;
 
         usersEndpoints.MapGet("/{id:guid}", GetUserProfile).AllowAnonymous();
-        
+
         usersEndpoints.MapGet("/search", SearchUsers).Produces(401);;
 
         usersEndpoints.MapPost("/me/google-calendar", ConnectGoogleCalendar).Produces(401);
@@ -39,111 +27,27 @@ public static class UsersEndpoints
 
         return app;
     }
-    
-    private static async Task<Results<Ok<GoogleSignInResponse>, UnauthorizedHttpResult>> GoogleSignIn(
-        GoogleSignInCommand command,
-        ICommandHandler<GoogleSignInCommand, GoogleSignInResponse> handler,
-        CancellationToken ct)
+
+    private static void SetAuthCookies(HttpContext httpContext, string accessToken, string refreshToken)
     {
-        var result = await handler.HandleAsync(command, ct);
+        var isSecure = !httpContext.Request.Host.Host.Equals("localhost", StringComparison.OrdinalIgnoreCase);
 
-        return result.IsSuccess
-            ? TypedResults.Ok(result.Value)
-            : TypedResults.Unauthorized();
-    }
-
-    private static async Task<Results<Ok<GetMyProfileResponse>, UnauthorizedHttpResult>> GetMyProfile(
-        ClaimsPrincipal user,
-        IQueryHandler<GetMyProfileQuery, GetMyProfileResponse> handler,
-        CancellationToken ct)
-    {
-        var userId = user.TryGetUserId();
-
-        var userIdResult = user.TryGetUserId();
-
-        if (userIdResult.IsFailure)
+        var cookieOptions = new CookieOptions
         {
-            return TypedResults.Unauthorized();
-        }
-        
-        var result = await handler.HandleAsync(new GetMyProfileQuery(userId.Value), ct);
+            HttpOnly = true,
+            Secure = isSecure,
+            SameSite = SameSiteMode.Lax,
+            Path = "/"
+        };
 
-        return result.IsSuccess
-            ? TypedResults.Ok(result.Value)
-            : TypedResults.Unauthorized();
-    }
-    
-    private static async Task<Results<Ok<GetUserProfileResponse>, NotFound<Error>>> GetUserProfile(
-        [FromRoute] Guid id,
-        IQueryHandler<GetUserProfileQuery, GetUserProfileResponse> handler,
-        CancellationToken ct)
-    {
-        var result = await handler.HandleAsync(new GetUserProfileQuery(id), ct);
-
-        return result.IsSuccess
-            ? TypedResults.Ok(result.Value)
-            : TypedResults.NotFound(result.Error);
-    }
-    
-    private static async Task<Results<NoContent, NotFound<Error>, UnauthorizedHttpResult>> UpdateProfile(
-        UpdateProfileRequest request,
-        ClaimsPrincipal user,
-        ICommandHandler<UpdateProfileCommand> handler,
-        CancellationToken ct)
-    {
-        var userIdResult = user.TryGetUserId();
-
-        if (userIdResult.IsFailure)
-        {
-            return TypedResults.Unauthorized();
-        }
-
-        var result = await handler.HandleAsync(
-            new UpdateProfileCommand
-            (userIdResult.Value, 
-                request.Username,
-                request.Bio, request.BirthDate), ct);
-
-        return result.IsSuccess
-            ? TypedResults.NoContent()
-            : TypedResults.NotFound(result.Error);
+        httpContext.Response.Cookies.Append("access_token", accessToken, cookieOptions);
+        httpContext.Response.Cookies.Append("refresh_token", refreshToken, cookieOptions);
     }
 
-    private static async Task<Results<NoContent, BadRequest<Error>, UnauthorizedHttpResult>> ConnectGoogleCalendar(
-        [FromBody] ConnectGoogleCalendarRequest request,
-        ClaimsPrincipal user,
-        ICommandHandler<ConnectGoogleCalendarCommand> handler,
-        CancellationToken ct)
+    private static IResult Logout(HttpContext httpContext)
     {
-        var userIdResult = user.TryGetUserId();
-        if (userIdResult.IsFailure) return TypedResults.Unauthorized();
-
-        var result = await handler.HandleAsync(new ConnectGoogleCalendarCommand(userIdResult.Value, request.Code), ct);
-
-        return result.IsSuccess
-            ? TypedResults.NoContent()
-            : TypedResults.BadRequest(result.Error);
-    }
-
-    private static async Task<Results<NoContent, UnauthorizedHttpResult>> DisconnectGoogleCalendar(
-        ClaimsPrincipal user,
-        ICommandHandler<DisconnectGoogleCalendarCommand> handler,
-        CancellationToken ct)
-    {
-        var userIdResult = user.TryGetUserId();
-        if (userIdResult.IsFailure) return TypedResults.Unauthorized();
-
-        await handler.HandleAsync(new DisconnectGoogleCalendarCommand(userIdResult.Value), ct);
-
-        return TypedResults.NoContent();
-    }
-
-    private static async Task<Ok<UsersSearchResponse>> SearchUsers(
-        [FromQuery] string username,
-        IQueryHandler<SearchUsersQuery, UsersSearchResponse> handler,
-        CancellationToken ct)
-    {
-        var result = await handler.HandleAsync(new SearchUsersQuery(username), ct);
-        return TypedResults.Ok(result.Value);
+        httpContext.Response.Cookies.Delete("access_token");
+        httpContext.Response.Cookies.Delete("refresh_token");
+        return Results.Ok();
     }
 }
