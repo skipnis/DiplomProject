@@ -2,10 +2,12 @@ using Microsoft.EntityFrameworkCore;
 using Wishapp.Web.Common.Interfaces;
 using Wishapp.Web.Common.Types;
 using Wishapp.Web.Infrastructure.Database;
+using Wishapp.Web.Infrastructure.Interfaces;
+using Wishapp.Web.Infrastructure.Minio;
 
 namespace Wishapp.Web.Wishlists.Features.Wishlists.CopyWish;
 
-public sealed class CopyWishHandler(ApplicationDbContext db)
+public sealed class CopyWishHandler(ApplicationDbContext db, IStorageService storage)
     : ICommandHandler<CopyWishCommand, CopyWishResponse>
 {
     public async Task<Result<CopyWishResponse>> HandleAsync(
@@ -44,6 +46,15 @@ public sealed class CopyWishHandler(ApplicationDbContext db)
         {
             return result.Error;
         }
+
+        if (wish.ImagePath is not null)
+        {
+            var newImagePath = StoragePaths.WishImage(command.TargetWishlistId, result.Value.Id);
+            await storage.CopyAsync(wish.ImagePath, newImagePath, ct);
+            result.Value.SetImage(newImagePath);
+        }
+
+        db.Entry(result.Value).State = EntityState.Added;
 
         await db.SaveChangesAsync(ct);
 

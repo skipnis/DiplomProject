@@ -38,4 +38,18 @@ public sealed class MinioStorageService(
 
         await client.RemoveObjectAsync(args, ct);
     }
+
+    public async Task CopyAsync(string sourcePath, string destPath, CancellationToken ct = default)
+    {
+        var source = new CopySourceObjectArgs()
+            .WithBucket(_options.BucketName)
+            .WithObject(sourcePath);
+
+        var args = new CopyObjectArgs()
+            .WithBucket(_options.BucketName)
+            .WithObject(destPath)
+            .WithCopyObjectSource(source);
+
+        await client.CopyObjectAsync(args, ct);
+    }
 }
