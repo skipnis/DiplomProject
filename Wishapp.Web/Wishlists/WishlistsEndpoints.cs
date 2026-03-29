@@ -24,6 +24,8 @@ public static partial class WishlistsEndpoints
 
         wishlists.MapPost("/{id:guid}/wishes", AddWish);
 
+        wishlists.MapPost("/{id:guid}/wishes/from-catalog", AddWishFromCatalog);
+
         wishlists.MapPut("/{id:guid}/wishes/{wishId:guid}", UpdateWish);
 
         wishlists.MapDelete("/{id:guid}/wishes/{wishId:guid}", DeleteWish);
