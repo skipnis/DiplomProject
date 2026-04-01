@@ -1,4 +1,5 @@
 using Microsoft.EntityFrameworkCore;
+using Wishapp.Web.Common.Extensions;
 using Wishapp.Web.Common.Interfaces;
 using Wishapp.Web.Common.Types;
 using Wishapp.Web.Events.Dtos;
@@ -7,13 +8,13 @@ using Wishapp.Web.Infrastructure.Database;
 namespace Wishapp.Web.Events.Features.GetMyEvents;
 
 public sealed class GetMyEventsHandler(ApplicationDbContext db)
-    : IQueryHandler<GetMyEventsQuery, IEnumerable<EventDto>>
+    : IQueryHandler<GetMyEventsQuery, PagedResponse<EventDto>>
 {
-    public async Task<Result<IEnumerable<EventDto>>> HandleAsync(
+    public async Task<Result<PagedResponse<EventDto>>> HandleAsync(
         GetMyEventsQuery query,
         CancellationToken ct = default)
     {
-        var events = await db.Events
+        var result = await db.Events
             .AsNoTracking()
             .Where(e => e.OwnerId == query.UserId)
             .OrderBy(e => e.Date)
@@ -25,8 +26,8 @@ public sealed class GetMyEventsHandler(ApplicationDbContext db)
                 e.GoogleCalendarEventId != null,
                 e.LinkedWishlistId,
                 e.CreatedAt))
-            .ToListAsync(ct);
+            .ToPagedResponseAsync(query.Request, ct);
 
-        return Result.Success<IEnumerable<EventDto>>(events);
+        return result;
     }
 }
