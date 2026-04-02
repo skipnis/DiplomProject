@@ -1,4 +1,5 @@
 using Microsoft.EntityFrameworkCore;
+using Wishapp.Web.Common.Extensions;
 using Wishapp.Web.Common.Interfaces;
 using Wishapp.Web.Common.Types;
 using Wishapp.Web.Friendships.Entities;
@@ -7,22 +8,28 @@ using Wishapp.Web.Infrastructure.Database;
 namespace Wishapp.Web.Friendships.Features.GetFriends;
 
 public sealed class GetFriendsHandler(ApplicationDbContext db)
-    : IQueryHandler<GetFriendsQuery, IEnumerable<FriendInfo>>
+    : IQueryHandler<GetFriendsQuery, PagedResponse<FriendInfo>>
 {
-    public async Task<Result<IEnumerable<FriendInfo>>> HandleAsync(
+    public async Task<Result<PagedResponse<FriendInfo>>> HandleAsync(
         GetFriendsQuery query,
         CancellationToken ct = default)
     {
-        var friends = await db.Friendships
+        var result = await db.Friendships
             .Where(f =>
                 (f.RequesterId == query.UserId || f.AddresseeId == query.UserId) &&
                 f.Status == FriendshipStatus.Accepted)
+            .Select(f => new
+            {
+                FriendId = f.RequesterId == query.UserId ? f.AddresseeId : f.RequesterId
+            })
             .Join(db.Users,
-                f => f.RequesterId == query.UserId ? f.AddresseeId : f.RequesterId,
+                x => x.FriendId,
                 u => u.Id,
-                (f, u) => new FriendInfo(u.Id, u.Username, u.AvatarUrl))
-            .ToListAsync(ct);
+                (x, u) => new { u.Id, u.Username, u.AvatarUrl })
+            .OrderBy(x => x.Username)
+            .Select(x => new FriendInfo(x.Id, x.Username, x.AvatarUrl))
+            .ToPagedResponseAsync(query.Request, ct);
 
-        return Result.Success<IEnumerable<FriendInfo>>(friends);
+        return result;
     }
 }
