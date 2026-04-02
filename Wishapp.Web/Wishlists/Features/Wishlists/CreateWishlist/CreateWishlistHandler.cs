@@ -10,7 +10,6 @@ namespace Wishapp.Web.Wishlists.Features.Wishlists.CreateWishlist;
 
 public sealed class CreateWishlistHandler(
     ApplicationDbContext db,
-    IUsersApi usersApi,
     IFriendshipsApi friendshipsApi)
     : ICommandHandler<CreateWishlistCommand, CreateWishlistResponse>
 {
