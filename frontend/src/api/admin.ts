@@ -1,0 +1,195 @@
+import { API_URL } from './client';
+import { ApiError } from '../utils/errors';
+import type {
+  CatalogCategoryDto,
+  CatalogCollectionAdminDto,
+  CatalogItemDto,
+  CreateCatalogCategoryRequest,
+  CreateCatalogItemRequest,
+  CreateCollectionRequest,
+  PagedResponse,
+  ParsedWishData,
+  UpdateCatalogCategoryRequest,
+  UpdateCatalogItemRequest,
+  UpdateCollectionRequest,
+} from '../types';
+
+export function getAdminToken(): string | null {
+  return localStorage.getItem('admin_token');
+}
+
+async function adminRequest<T>(
+  method: string,
+  path: string,
+  body?: unknown,
+): Promise<T> {
+  const token = getAdminToken();
+  const headers: Record<string, string> = {
+    'Content-Type': 'application/json',
+  };
+  if (token) {
+    headers['Authorization'] = `Bearer ${token}`;
+  }
+
+  const res = await fetch(`${API_URL}${path}`, {
+    method,
+    headers,
+    body: body !== undefined ? JSON.stringify(body) : undefined,
+  });
+
+  if (res.status === 401) {
+    localStorage.removeItem('admin_token');
+    window.location.href = '/admin/login';
+    throw new Error('Unauthorized');
+  }
+
+  if (!res.ok) {
+    const text = await res.text();
+    throw new ApiError(res.status, text || `HTTP ${res.status}`);
+  }
+
+  if (res.status === 204) return undefined as T;
+
+  const ct = res.headers.get('content-type');
+  if (ct?.includes('application/json')) {
+    return res.json() as Promise<T>;
+  }
+
+  return undefined as T;
+}
+
+export function adminLogin(username: string, password: string): Promise<{ token: string }> {
+  return adminRequest<{ token: string }>('POST', '/admin/auth/login', { username, password });
+}
+
+export function adminParseUrl(url: string): Promise<ParsedWishData> {
+  return adminRequest<ParsedWishData>('POST', '/wishlists/wishes/parse-url', { url });
+}
+
+export function adminGetCategories(): Promise<CatalogCategoryDto[]> {
+  return adminRequest<CatalogCategoryDto[]>('GET', '/catalog/categories');
+}
+
+export function adminCreateCategory(data: CreateCatalogCategoryRequest): Promise<string> {
+  return adminRequest<string>('POST', '/admin/catalog/categories', data);
+}
+
+export function adminUpdateCategory(id: string, data: UpdateCatalogCategoryRequest): Promise<void> {
+  return adminRequest<void>('PUT', `/admin/catalog/categories/${id}`, data);
+}
+
+export function adminDeleteCategory(id: string): Promise<void> {
+  return adminRequest<void>('DELETE', `/admin/catalog/categories/${id}`);
+}
+
+export function adminGetAllItems(params: {
+  categoryId?: string;
+  search?: string;
+  minPrice?: number;
+  maxPrice?: number;
+  page?: number;
+  pageSize?: number;
+}): Promise<PagedResponse<CatalogItemDto>> {
+  const query = new URLSearchParams();
+  if (params.categoryId) query.set('categoryId', params.categoryId);
+  if (params.search) query.set('search', params.search);
+  if (params.minPrice !== undefined) query.set('minPrice', String(params.minPrice));
+  if (params.maxPrice !== undefined) query.set('maxPrice', String(params.maxPrice));
+  if (params.page) query.set('page', String(params.page));
+  if (params.pageSize) query.set('pageSize', String(params.pageSize));
+  return adminRequest<PagedResponse<CatalogItemDto>>('GET', `/admin/catalog/items?${query.toString()}`);
+}
+
+export function adminCreateItem(data: CreateCatalogItemRequest): Promise<string> {
+  return adminRequest<string>('POST', '/admin/catalog/items', data);
+}
+
+export function adminUpdateItem(id: string, data: UpdateCatalogItemRequest): Promise<void> {
+  return adminRequest<void>('PUT', `/admin/catalog/items/${id}`, data);
+}
+
+export function adminDeleteItem(id: string): Promise<void> {
+  return adminRequest<void>('DELETE', `/admin/catalog/items/${id}`);
+}
+
+export function adminSetItemPublished(id: string, isPublished: boolean): Promise<void> {
+  return adminRequest<void>('PATCH', `/admin/catalog/items/${id}/published`, { isPublished });
+}
+
+export function adminGetAllCollections(): Promise<CatalogCollectionAdminDto[]> {
+  return adminRequest<CatalogCollectionAdminDto[]>('GET', '/admin/catalog/collections');
+}
+
+export function adminCreateCollection(data: CreateCollectionRequest): Promise<string> {
+  return adminRequest<string>('POST', '/admin/catalog/collections', data);
+}
+
+export function adminUpdateCollection(id: string, data: UpdateCollectionRequest): Promise<void> {
+  return adminRequest<void>('PUT', `/admin/catalog/collections/${id}`, data);
+}
+
+export function adminDeleteCollection(id: string): Promise<void> {
+  return adminRequest<void>('DELETE', `/admin/catalog/collections/${id}`);
+}
+
+export function adminAddItemToCollection(collectionId: string, itemId: string): Promise<void> {
+  return adminRequest<void>('POST', `/admin/catalog/collections/${collectionId}/items/${itemId}`);
+}
+
+export function adminRemoveItemFromCollection(collectionId: string, itemId: string): Promise<void> {
+  return adminRequest<void>('DELETE', `/admin/catalog/collections/${collectionId}/items/${itemId}`);
+}
+
+export function adminGetCollectionItems(collectionId: string): Promise<CatalogItemDto[]> {
+  return adminRequest<CatalogItemDto[]>('GET', `/admin/catalog/collections/${collectionId}/items`);
+}
+
+async function adminRequestForm<T>(path: string, data: FormData): Promise<T> {
+  const token = getAdminToken();
+  const headers: Record<string, string> = {};
+  if (token) {
+    headers['Authorization'] = `Bearer ${token}`;
+  }
+
+  const res = await fetch(`${API_URL}${path}`, {
+    method: 'POST',
+    headers,
+    body: data,
+  });
+
+  if (res.status === 401) {
+    localStorage.removeItem('admin_token');
+    window.location.href = '/admin/login';
+    throw new Error('Unauthorized');
+  }
+
+  if (!res.ok) {
+    const text = await res.text();
+    throw new ApiError(res.status, text || `HTTP ${res.status}`);
+  }
+
+  if (res.status === 204) return undefined as T;
+
+  const ct = res.headers.get('content-type');
+  if (ct?.includes('application/json')) {
+    return res.json() as Promise<T>;
+  }
+
+  return undefined as T;
+}
+
+export function adminUploadItemImage(itemId: string, fileOrUrl: File | string): Promise<{ imagePath: string }> {
+  const fd = new FormData();
+  if (typeof fileOrUrl === 'string') {
+    fd.append('externalImageUrl', fileOrUrl);
+  } else {
+    fd.append('file', fileOrUrl);
+  }
+  return adminRequestForm<{ imagePath: string }>(`/admin/catalog/items/${itemId}/image`, fd);
+}
+
+export function adminUploadCollectionImage(collectionId: string, file: File): Promise<{ coverImagePath: string }> {
+  const fd = new FormData();
+  fd.append('file', file);
+  return adminRequestForm<{ coverImagePath: string }>(`/admin/catalog/collections/${collectionId}/image`, fd);
+}
