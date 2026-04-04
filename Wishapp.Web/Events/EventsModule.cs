@@ -8,7 +8,8 @@ public static class EventsModule
     {
         services.AddScoped<IEventsApi, EventsApi>();
         
-        services.AddHttpClient<IGoogleCalendarService, GoogleCalendarService>();
+        services.AddHttpClient<IGoogleCalendarService, GoogleCalendarService>()
+            .AddStandardResilienceHandler();
         
         return services;
     }
