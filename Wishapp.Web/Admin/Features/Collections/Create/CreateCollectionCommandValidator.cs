@@ -17,5 +17,8 @@ public sealed class CreateCollectionCommandValidator : AbstractValidator<CreateC
         RuleFor(x => x.Occasion)
             .MaximumLength(50)
             .When(x => x.Occasion is not null);
+
+        RuleFor(x => x.Order)
+            .GreaterThanOrEqualTo(0);
     }
 }
