@@ -12,22 +12,27 @@ public class CatalogItemConfig : IEntityTypeConfiguration<CatalogItem>
 
         builder.Property(i => i.Name)
             .HasMaxLength(200)
+            .HasColumnType("text")
             .IsRequired();
 
         builder.Property(i => i.Description)
-            .HasMaxLength(2000);
+            .HasMaxLength(2000)
+            .HasColumnType("text");
 
         builder.Property(i => i.Price)
             .HasPrecision(18, 2);
 
         builder.Property(i => i.Currency)
-            .HasConversion<string>();
+            .HasConversion<string>()
+            .HasColumnType("text");
 
         builder.Property(i => i.Url)
-            .HasMaxLength(2048);
+            .HasMaxLength(2048)
+            .HasColumnType("text");
 
         builder.Property(i => i.ImagePath)
-            .HasMaxLength(500);
+            .HasMaxLength(500)
+            .HasColumnType("text");
 
         builder.HasOne(i => i.Category)
             .WithMany()

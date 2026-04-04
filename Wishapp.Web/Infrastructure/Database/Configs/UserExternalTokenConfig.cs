@@ -10,9 +10,20 @@ public class UserExternalTokenConfig : IEntityTypeConfiguration<UserExternalToke
     {
         builder.HasKey(t => t.Id);
 
-        builder.Property(t => t.Provider).HasMaxLength(50).IsRequired();
-        builder.Property(t => t.Scope).HasMaxLength(100).IsRequired();
-        builder.Property(t => t.RefreshToken).IsRequired();
+        builder.Property(t => t.Provider)
+            .HasMaxLength(50)
+            .HasColumnType("text")
+            .IsRequired();
+
+        builder.Property(t => t.Scope)
+            .HasMaxLength(100)
+            .HasColumnType("text")
+            .IsRequired();
+
+        builder.Property(t => t.RefreshToken)
+            .HasMaxLength(2048)
+            .HasColumnType("text")
+            .IsRequired();
 
         builder.HasIndex(t => new { t.UserId, t.Provider, t.Scope }).IsUnique();
     }

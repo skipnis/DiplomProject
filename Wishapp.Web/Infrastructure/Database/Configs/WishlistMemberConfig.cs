@@ -11,10 +11,15 @@ public class WishlistMemberConfig : IEntityTypeConfiguration<WishlistMember>
         builder.HasKey(m => m.Id);
 
         builder.Property(m => m.Role)
-            .HasConversion<string>();
+            .HasConversion<string>()
+            .HasColumnType("text");
+
+        builder.Property(m => m.CustomRoleName)
+            .HasMaxLength(50)
+            .HasColumnType("text");
 
         builder.HasIndex(m => new { m.WishlistId, m.UserId }).IsUnique();
-        
+
         builder.HasIndex(m => m.UserId);
     }
 }

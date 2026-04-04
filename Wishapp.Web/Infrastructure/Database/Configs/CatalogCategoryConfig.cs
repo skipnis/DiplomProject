@@ -12,6 +12,7 @@ public class CatalogCategoryConfig : IEntityTypeConfiguration<CatalogCategory>
 
         builder.Property(c => c.Name)
             .HasMaxLength(100)
+            .HasColumnType("text")
             .IsRequired();
 
         builder.HasIndex(c => c.Name)

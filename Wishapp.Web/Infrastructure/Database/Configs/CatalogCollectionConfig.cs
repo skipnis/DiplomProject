@@ -12,16 +12,20 @@ public class CatalogCollectionConfig : IEntityTypeConfiguration<CatalogCollectio
 
         builder.Property(c => c.Name)
             .HasMaxLength(150)
+            .HasColumnType("text")
             .IsRequired();
 
         builder.Property(c => c.Description)
-            .HasMaxLength(500);
+            .HasMaxLength(500)
+            .HasColumnType("text");
 
         builder.Property(c => c.Occasion)
-            .HasMaxLength(50);
+            .HasMaxLength(50)
+            .HasColumnType("text");
 
         builder.Property(c => c.CoverImagePath)
-            .HasMaxLength(500);
+            .HasMaxLength(500)
+            .HasColumnType("text");
 
         builder.HasIndex(c => c.Order);
         builder.HasIndex(c => c.IsPublished);
@@ -32,4 +36,3 @@ public class CatalogCollectionConfig : IEntityTypeConfiguration<CatalogCollectio
             .OnDelete(DeleteBehavior.Cascade);
     }
 }
-

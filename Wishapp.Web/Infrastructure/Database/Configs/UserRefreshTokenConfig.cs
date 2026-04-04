@@ -10,7 +10,10 @@ public class UserRefreshTokenConfig : IEntityTypeConfiguration<UserRefreshToken>
     {
         builder.HasKey(t => t.Id);
 
-        builder.Property(t => t.TokenHash).IsRequired();
+        builder.Property(t => t.TokenHash)
+            .HasMaxLength(256)
+            .HasColumnType("text")
+            .IsRequired();
 
         builder.HasIndex(t => new { t.UserId, t.TokenHash });
     }

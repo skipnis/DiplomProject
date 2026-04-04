@@ -12,6 +12,11 @@ public class AdminUserConfig : IEntityTypeConfiguration<AdminUser>
 
         builder.Property(a => a.Username)
             .HasMaxLength(50)
+            .HasColumnType("text")
+            .IsRequired();
+
+        builder.Property(a => a.PasswordHash)
+            .HasColumnType("text")
             .IsRequired();
 
         builder.HasIndex(a => a.Username)

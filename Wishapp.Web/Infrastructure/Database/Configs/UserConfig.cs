@@ -9,7 +9,25 @@ public class UserConfig : IEntityTypeConfiguration<User>
     public void Configure(EntityTypeBuilder<User> builder)
     {
         builder.HasKey(u => u.Id);
-        
+
+        builder.Property(u => u.Email)
+            .HasMaxLength(254)
+            .HasColumnType("text")
+            .IsRequired();
+
+        builder.Property(u => u.Username)
+            .HasMaxLength(50)
+            .HasColumnType("text")
+            .IsRequired();
+
+        builder.Property(u => u.AvatarUrl)
+            .HasMaxLength(500)
+            .HasColumnType("text");
+
+        builder.Property(u => u.Bio)
+            .HasMaxLength(500)
+            .HasColumnType("text");
+
         builder.HasIndex(u => u.Email).IsUnique();
 
         builder.HasMany(u => u.Identities)

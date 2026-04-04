@@ -10,8 +10,22 @@ public class WishlistConfig : IEntityTypeConfiguration<Wishlist>
     {
         builder.HasKey(w => w.Id);
 
+        builder.Property(w => w.Name)
+            .HasMaxLength(100)
+            .HasColumnType("text")
+            .IsRequired();
+
+        builder.Property(w => w.Description)
+            .HasMaxLength(500)
+            .HasColumnType("text");
+
+        builder.Property(w => w.Emoji)
+            .HasMaxLength(10)
+            .HasColumnType("text");
+
         builder.Property(w => w.Visibility)
-            .HasConversion<string>();
+            .HasConversion<string>()
+            .HasColumnType("text");
 
         builder.HasMany(w => w.Members)
             .WithOne()
@@ -24,9 +38,9 @@ public class WishlistConfig : IEntityTypeConfiguration<Wishlist>
             .OnDelete(DeleteBehavior.Cascade);
 
         builder.HasIndex(w => w.OwnerId);
-        
+
         builder.HasIndex(w => w.Visibility);
-        
+
         builder.HasIndex(w => w.CreatedAt);
     }
 }

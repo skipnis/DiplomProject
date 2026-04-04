@@ -12,22 +12,28 @@ public class WishConfig : IEntityTypeConfiguration<Wish>
 
         builder.Property(w => w.Name)
             .HasMaxLength(200)
+            .HasColumnType("text")
             .IsRequired();
 
         builder.Property(w => w.Description)
-            .HasMaxLength(1000);
+            .HasMaxLength(1000)
+            .HasColumnType("text");
 
         builder.Property(w => w.Url)
-            .HasMaxLength(2048);
+            .HasMaxLength(2048)
+            .HasColumnType("text");
 
         builder.Property(w => w.ImagePath)
-            .HasMaxLength(500);
+            .HasMaxLength(500)
+            .HasColumnType("text");
 
         builder.Property(w => w.Currency)
-            .HasConversion<string>();
+            .HasConversion<string>()
+            .HasColumnType("text");
 
         builder.Property(w => w.Priority)
-            .HasConversion<string>();
+            .HasConversion<string>()
+            .HasColumnType("text");
 
         builder.Property(w => w.Price)
             .HasPrecision(18, 2);
