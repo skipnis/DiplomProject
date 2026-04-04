@@ -13,5 +13,8 @@ public sealed class CreateEventRequestValidator : AbstractValidator<CreateEventR
         RuleFor(x => x.Description)
             .MaximumLength(2000)
             .When(x => x.Description is not null);
+
+        RuleFor(x => x.Date)
+            .GreaterThanOrEqualTo(DateOnly.FromDateTime(DateTime.UtcNow));
     }
 }

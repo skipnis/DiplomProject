@@ -26,5 +26,7 @@ public class EventConfig : IEntityTypeConfiguration<Event>
         builder.HasIndex(e => e.OwnerId);
 
         builder.HasIndex(e => new { e.OwnerId, e.Date });
+
+        builder.ToTable(t => t.HasCheckConstraint("CK_events_title_not_empty", "trim(title) <> ''"));
     }
 }

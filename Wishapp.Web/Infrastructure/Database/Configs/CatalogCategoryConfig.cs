@@ -19,5 +19,11 @@ public class CatalogCategoryConfig : IEntityTypeConfiguration<CatalogCategory>
             .IsUnique();
 
         builder.HasIndex(c => c.Order);
+
+        builder.ToTable(t =>
+        {
+            t.HasCheckConstraint("CK_catalog_categories_name_not_empty", "trim(name) <> ''");
+            t.HasCheckConstraint("CK_catalog_categories_order_non_negative", "\"order\" >= 0");
+        });
     }
 }

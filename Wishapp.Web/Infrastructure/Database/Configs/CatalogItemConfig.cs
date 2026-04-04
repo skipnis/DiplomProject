@@ -42,5 +42,11 @@ public class CatalogItemConfig : IEntityTypeConfiguration<CatalogItem>
         builder.HasIndex(i => i.CategoryId);
         builder.HasIndex(i => i.IsPublished);
         builder.HasIndex(i => i.CreatedAt);
+
+        builder.ToTable(t =>
+        {
+            t.HasCheckConstraint("CK_catalog_items_name_not_empty", "trim(name) <> ''");
+            t.HasCheckConstraint("CK_catalog_items_price_positive", "price > 0");
+        });
     }
 }

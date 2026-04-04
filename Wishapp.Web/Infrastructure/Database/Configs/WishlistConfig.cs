@@ -42,5 +42,7 @@ public class WishlistConfig : IEntityTypeConfiguration<Wishlist>
         builder.HasIndex(w => w.Visibility);
 
         builder.HasIndex(w => w.CreatedAt);
+
+        builder.ToTable(t => t.HasCheckConstraint("CK_wishlists_name_not_empty", "trim(name) <> ''"));
     }
 }

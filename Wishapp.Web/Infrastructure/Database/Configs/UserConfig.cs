@@ -33,5 +33,11 @@ public class UserConfig : IEntityTypeConfiguration<User>
         builder.HasMany(u => u.Identities)
             .WithOne()
             .HasForeignKey(a => a.UserId);
+
+        builder.ToTable(t =>
+        {
+            t.HasCheckConstraint("CK_users_email_not_empty", "trim(email) <> ''");
+            t.HasCheckConstraint("CK_users_username_not_empty", "trim(username) <> ''");
+        });
     }
 }
