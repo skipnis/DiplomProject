@@ -3,6 +3,7 @@ import { useParams, useNavigate } from 'react-router-dom';
 import { addWish, parseWishUrl, uploadWishImage } from '../api/wishes';
 import { useToast } from '../components/Toast';
 import { parseError } from '../utils/errors';
+import { wishSchema, parseZodErrors, type FormErrors } from '../lib/schemas';
 import type { WishPriority, Currency } from '../types';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -10,6 +11,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { Label } from '@/components/ui/label';
 import { Card, CardContent } from '@/components/ui/card';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { FieldError } from '@/components/ui/field-error';
 
 export default function NewWishPage() {
   const { id: wishlistId } = useParams<{ id: string }>();
@@ -28,7 +30,12 @@ export default function NewWishPage() {
   const [dragOver, setDragOver] = useState(false);
   const [parsing, setParsing] = useState(false);
   const [saving, setSaving] = useState(false);
+  const [errors, setErrors] = useState<FormErrors>({});
   const fileInputRef = useRef<HTMLInputElement>(null);
+
+  const clearError = (field: string) => {
+    if (errors[field]) setErrors((prev) => ({ ...prev, [field]: '' }));
+  };
 
   const handleParseUrl = async () => {
     if (!url.trim()) return;
@@ -61,6 +68,9 @@ export default function NewWishPage() {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!wishlistId) return;
+    const result = wishSchema.safeParse({ name, description: description || undefined, url: url || undefined, price: price || undefined });
+    if (!result.success) { setErrors(parseZodErrors(result.error)); return; }
+    setErrors({});
     setSaving(true);
     try {
       const res = await addWish(wishlistId, { name, description: description || null, price: price ? Number(price) : null, currency: price ? currency : null, priority, url: url || null });
@@ -84,11 +94,19 @@ export default function NewWishPage() {
             <div className="flex flex-col gap-1.5">
               <Label htmlFor="url">Ссылка на товар</Label>
               <div className="flex gap-2">
-                <Input id="url" type="url" value={url} onChange={(e) => setUrl(e.target.value)} placeholder="https://..." />
+                <Input
+                  id="url"
+                  type="url"
+                  value={url}
+                  onChange={(e) => { setUrl(e.target.value); clearError('url'); }}
+                  placeholder="https://..."
+                  aria-invalid={!!errors.url}
+                />
                 <Button type="button" variant="secondary" onClick={handleParseUrl} disabled={parsing || !url.trim()}>
                   {parsing ? '...' : 'Загрузить'}
                 </Button>
               </div>
+              <FieldError message={errors.url} />
             </div>
 
             <div className="flex flex-col gap-1.5">
@@ -108,7 +126,7 @@ export default function NewWishPage() {
                 ) : (
                   <>
                     <p className="text-sm">📸 Перетащи или нажми для загрузки</p>
-                    <p className="text-xs text-muted-foreground mt-1">PNG, JPG, WebP</p>
+                    <p className="text-xs text-muted-foreground mt-1">PNG, JPG, WebP · до 10 МБ</p>
                   </>
                 )}
               </div>
@@ -117,18 +135,43 @@ export default function NewWishPage() {
 
             <div className="flex flex-col gap-1.5">
               <Label htmlFor="name">Название *</Label>
-              <Input id="name" value={name} onChange={(e) => setName(e.target.value)} required placeholder="Что хочешь?" />
+              <Input
+                id="name"
+                value={name}
+                onChange={(e) => { setName(e.target.value); clearError('name'); }}
+                placeholder="Что хочешь?"
+                aria-invalid={!!errors.name}
+              />
+              <FieldError message={errors.name} />
             </div>
 
             <div className="flex flex-col gap-1.5">
               <Label htmlFor="description">Описание</Label>
-              <Textarea id="description" value={description} onChange={(e) => setDescription(e.target.value)} placeholder="Подробнее о желании..." rows={3} />
+              <Textarea
+                id="description"
+                value={description}
+                onChange={(e) => { setDescription(e.target.value); clearError('description'); }}
+                placeholder="Подробнее о желании..."
+                rows={3}
+                aria-invalid={!!errors.description}
+              />
+              <FieldError message={errors.description} />
             </div>
 
             <div className="grid grid-cols-2 gap-3">
               <div className="flex flex-col gap-1.5">
                 <Label htmlFor="price">Цена</Label>
-                <Input id="price" type="number" value={price} onChange={(e) => setPrice(e.target.value)} placeholder="0" min="0" step="0.01" />
+                <Input
+                  id="price"
+                  type="number"
+                  value={price}
+                  onChange={(e) => { setPrice(e.target.value); clearError('price'); }}
+                  placeholder="0"
+                  min="0"
+                  step="0.01"
+                  aria-invalid={!!errors.price}
+                />
+                <FieldError message={errors.price} />
               </div>
               <div className="flex flex-col gap-1.5">
                 <Label>Валюта</Label>

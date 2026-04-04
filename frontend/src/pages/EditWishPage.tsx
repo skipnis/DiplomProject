@@ -4,6 +4,7 @@ import { getWish, updateWish, uploadWishImage, deleteWishImage } from '../api/wi
 import { getImageUrl } from '../api/client';
 import { useToast } from '../components/Toast';
 import { parseError } from '../utils/errors';
+import { wishSchema, parseZodErrors, type FormErrors } from '../lib/schemas';
 import type { WishPriority, Currency } from '../types';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -11,6 +12,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { Label } from '@/components/ui/label';
 import { Card, CardContent } from '@/components/ui/card';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { FieldError } from '@/components/ui/field-error';
 
 export default function EditWishPage() {
   const { id: wishlistId, wishId } = useParams<{ id: string; wishId: string }>();
@@ -30,6 +32,7 @@ export default function EditWishPage() {
   const [removeImage, setRemoveImage] = useState(false);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
+  const [errors, setErrors] = useState<FormErrors>({});
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
@@ -49,6 +52,10 @@ export default function EditWishPage() {
       .finally(() => setLoading(false));
   }, [wishlistId, wishId]);
 
+  const clearError = (field: string) => {
+    if (errors[field]) setErrors((prev) => ({ ...prev, [field]: '' }));
+  };
+
   const handleFileChange = useCallback((file: File) => {
     setImageFile(file);
     setRemoveImage(false);
@@ -67,6 +74,9 @@ export default function EditWishPage() {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!wishlistId || !wishId) return;
+    const result = wishSchema.safeParse({ name, description: description || undefined, url: url || undefined, price: price || undefined });
+    if (!result.success) { setErrors(parseZodErrors(result.error)); return; }
+    setErrors({});
     setSaving(true);
     try {
       await updateWish(wishlistId, wishId, { name, description: description || null, price: price ? Number(price) : null, currency: price ? currency : null, priority, url: url || null });
@@ -107,7 +117,7 @@ export default function EditWishPage() {
                 ) : (
                   <>
                     <p className="text-sm">📸 Перетащи или нажми для загрузки</p>
-                    <p className="text-xs text-muted-foreground mt-1">PNG, JPG, WebP</p>
+                    <p className="text-xs text-muted-foreground mt-1">PNG, JPG, WebP · до 10 МБ</p>
                   </>
                 )}
               </div>
@@ -121,23 +131,54 @@ export default function EditWishPage() {
 
             <div className="flex flex-col gap-1.5">
               <Label htmlFor="name">Название *</Label>
-              <Input id="name" value={name} onChange={(e) => setName(e.target.value)} required />
+              <Input
+                id="name"
+                value={name}
+                onChange={(e) => { setName(e.target.value); clearError('name'); }}
+                aria-invalid={!!errors.name}
+              />
+              <FieldError message={errors.name} />
             </div>
 
             <div className="flex flex-col gap-1.5">
               <Label htmlFor="description">Описание</Label>
-              <Textarea id="description" value={description} onChange={(e) => setDescription(e.target.value)} rows={3} />
+              <Textarea
+                id="description"
+                value={description}
+                onChange={(e) => { setDescription(e.target.value); clearError('description'); }}
+                rows={3}
+                aria-invalid={!!errors.description}
+              />
+              <FieldError message={errors.description} />
             </div>
 
             <div className="flex flex-col gap-1.5">
               <Label htmlFor="url">Ссылка</Label>
-              <Input id="url" type="url" value={url} onChange={(e) => setUrl(e.target.value)} placeholder="https://..." />
+              <Input
+                id="url"
+                type="url"
+                value={url}
+                onChange={(e) => { setUrl(e.target.value); clearError('url'); }}
+                placeholder="https://..."
+                aria-invalid={!!errors.url}
+              />
+              <FieldError message={errors.url} />
             </div>
 
             <div className="grid grid-cols-2 gap-3">
               <div className="flex flex-col gap-1.5">
                 <Label htmlFor="price">Цена</Label>
-                <Input id="price" type="number" value={price} onChange={(e) => setPrice(e.target.value)} placeholder="0" min="0" step="0.01" />
+                <Input
+                  id="price"
+                  type="number"
+                  value={price}
+                  onChange={(e) => { setPrice(e.target.value); clearError('price'); }}
+                  placeholder="0"
+                  min="0"
+                  step="0.01"
+                  aria-invalid={!!errors.price}
+                />
+                <FieldError message={errors.price} />
               </div>
               <div className="flex flex-col gap-1.5">
                 <Label>Валюта</Label>

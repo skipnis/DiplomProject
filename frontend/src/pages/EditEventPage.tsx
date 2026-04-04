@@ -3,11 +3,13 @@ import { useNavigate, useParams } from 'react-router-dom';
 import { getEvent, updateEvent } from '../api/events';
 import { useToast } from '../components/Toast';
 import { parseError } from '../utils/errors';
+import { eventSchema, parseZodErrors, type FormErrors } from '../lib/schemas';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { Label } from '@/components/ui/label';
 import { Card, CardContent } from '@/components/ui/card';
+import { FieldError } from '@/components/ui/field-error';
 
 export default function EditEventPage() {
   const { id } = useParams<{ id: string }>();
@@ -19,6 +21,7 @@ export default function EditEventPage() {
   const [date, setDate] = useState('');
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
+  const [errors, setErrors] = useState<FormErrors>({});
 
   useEffect(() => {
     if (!id) return;
@@ -28,9 +31,16 @@ export default function EditEventPage() {
       .finally(() => setLoading(false));
   }, [id]);
 
+  const clearError = (field: string) => {
+    if (errors[field]) setErrors((prev) => ({ ...prev, [field]: '' }));
+  };
+
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
     if (!id) return;
+    const result = eventSchema.safeParse({ title, description: description || undefined, date });
+    if (!result.success) { setErrors(parseZodErrors(result.error)); return; }
+    setErrors({});
     setSaving(true);
     try {
       await updateEvent(id, { title: title.trim(), description: description.trim() || null, date });
@@ -55,15 +65,37 @@ export default function EditEventPage() {
           <form onSubmit={handleSubmit} className="flex flex-col gap-4">
             <div className="flex flex-col gap-1.5">
               <Label htmlFor="title">Название *</Label>
-              <Input id="title" value={title} onChange={(e) => setTitle(e.target.value)} maxLength={200} required />
+              <Input
+                id="title"
+                value={title}
+                onChange={(e) => { setTitle(e.target.value); clearError('title'); }}
+                maxLength={200}
+                aria-invalid={!!errors.title}
+              />
+              <FieldError message={errors.title} />
             </div>
             <div className="flex flex-col gap-1.5">
               <Label htmlFor="date">Дата *</Label>
-              <Input id="date" type="date" value={date} onChange={(e) => setDate(e.target.value)} required />
+              <Input
+                id="date"
+                type="date"
+                value={date}
+                onChange={(e) => { setDate(e.target.value); clearError('date'); }}
+                aria-invalid={!!errors.date}
+              />
+              <FieldError message={errors.date} />
             </div>
             <div className="flex flex-col gap-1.5">
               <Label htmlFor="description">Описание</Label>
-              <Textarea id="description" value={description} onChange={(e) => setDescription(e.target.value)} rows={3} maxLength={2000} />
+              <Textarea
+                id="description"
+                value={description}
+                onChange={(e) => { setDescription(e.target.value); clearError('description'); }}
+                rows={3}
+                maxLength={2000}
+                aria-invalid={!!errors.description}
+              />
+              <FieldError message={errors.description} />
             </div>
             <div className="flex gap-2 justify-end mt-1">
               <Button type="button" variant="ghost" onClick={() => navigate(`/events/${id}`)}>Отмена</Button>

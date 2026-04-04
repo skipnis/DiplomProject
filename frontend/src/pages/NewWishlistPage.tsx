@@ -7,6 +7,7 @@ import { searchUsers } from '../api/users';
 import { getImageUrl } from '../api/client';
 import { useToast } from '../components/Toast';
 import { parseError } from '../utils/errors';
+import { wishlistSchema, eventSchema, parseZodErrors, type FormErrors } from '../lib/schemas';
 import type { WishlistVisibility, WishlistMemberInvite, WishlistMemberRole, UserSearchResult } from '../types';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -15,6 +16,7 @@ import { Label } from '@/components/ui/label';
 import { Card, CardContent } from '@/components/ui/card';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
+import { FieldError } from '@/components/ui/field-error';
 
 const EMOJIS = ['🎁', '🎂', '🎮', '👗', '📚', '🏠', '✈️', '💄', '🎵', '🍕', '⚽', '🌸', '💻', '📷', '🎨'];
 
@@ -34,6 +36,11 @@ export default function NewWishlistPage() {
   const [eventTitle, setEventTitle] = useState('');
   const [eventDate, setEventDate] = useState('');
   const [eventDescription, setEventDescription] = useState('');
+  const [errors, setErrors] = useState<FormErrors>({});
+
+  const clearError = (field: string) => {
+    if (errors[field]) setErrors((prev) => ({ ...prev, [field]: '' }));
+  };
 
   const handleSearchUsers = async () => {
     if (!userQuery.trim()) return;
@@ -56,6 +63,20 @@ export default function NewWishlistPage() {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    const wlResult = wishlistSchema.safeParse({ name, description: description || undefined });
+    const evResult = createEventEnabled
+      ? eventSchema.safeParse({ title: eventTitle, description: eventDescription || undefined, date: eventDate })
+      : null;
+
+    const combined: FormErrors = {};
+    if (!wlResult.success) Object.assign(combined, parseZodErrors(wlResult.error));
+    if (evResult && !evResult.success) {
+      const evErrors = parseZodErrors(evResult.error);
+      for (const [k, v] of Object.entries(evErrors)) combined[`event_${k}`] = v;
+    }
+    if (Object.keys(combined).length > 0) { setErrors(combined); return; }
+    setErrors({});
+
     setSaving(true);
     try {
       const wishlist = await createWishlist({ name, description: description || null, emoji, visibility, members: members.length > 0 ? members : undefined });
@@ -98,12 +119,27 @@ export default function NewWishlistPage() {
 
             <div className="flex flex-col gap-1.5">
               <Label htmlFor="name">Название *</Label>
-              <Input id="name" value={name} onChange={(e) => setName(e.target.value)} required placeholder="Мой вишлист" />
+              <Input
+                id="name"
+                value={name}
+                onChange={(e) => { setName(e.target.value); clearError('name'); }}
+                placeholder="Мой вишлист"
+                aria-invalid={!!errors.name}
+              />
+              <FieldError message={errors.name} />
             </div>
 
             <div className="flex flex-col gap-1.5">
               <Label htmlFor="description">Описание</Label>
-              <Textarea id="description" value={description} onChange={(e) => setDescription(e.target.value)} placeholder="Описание вишлиста..." rows={2} />
+              <Textarea
+                id="description"
+                value={description}
+                onChange={(e) => { setDescription(e.target.value); clearError('description'); }}
+                placeholder="Описание вишлиста..."
+                rows={2}
+                aria-invalid={!!errors.description}
+              />
+              <FieldError message={errors.description} />
             </div>
 
             <div className="flex flex-col gap-1.5">
@@ -164,15 +200,38 @@ export default function NewWishlistPage() {
                 <CardContent className="pt-4 flex flex-col gap-3">
                   <div className="flex flex-col gap-1.5">
                     <Label htmlFor="eventTitle">Название события *</Label>
-                    <Input id="eventTitle" value={eventTitle} onChange={(e) => setEventTitle(e.target.value)} placeholder="День рождения Ани" maxLength={200} required={createEventEnabled} />
+                    <Input
+                      id="eventTitle"
+                      value={eventTitle}
+                      onChange={(e) => { setEventTitle(e.target.value); clearError('event_title'); }}
+                      placeholder="День рождения Ани"
+                      maxLength={200}
+                      aria-invalid={!!errors.event_title}
+                    />
+                    <FieldError message={errors.event_title} />
                   </div>
                   <div className="flex flex-col gap-1.5">
                     <Label htmlFor="eventDate">Дата *</Label>
-                    <Input id="eventDate" type="date" value={eventDate} onChange={(e) => setEventDate(e.target.value)} required={createEventEnabled} />
+                    <Input
+                      id="eventDate"
+                      type="date"
+                      value={eventDate}
+                      onChange={(e) => { setEventDate(e.target.value); clearError('event_date'); }}
+                      aria-invalid={!!errors.event_date}
+                    />
+                    <FieldError message={errors.event_date} />
                   </div>
                   <div className="flex flex-col gap-1.5">
                     <Label htmlFor="eventDescription">Описание события</Label>
-                    <Textarea id="eventDescription" value={eventDescription} onChange={(e) => setEventDescription(e.target.value)} rows={2} maxLength={2000} />
+                    <Textarea
+                      id="eventDescription"
+                      value={eventDescription}
+                      onChange={(e) => { setEventDescription(e.target.value); clearError('event_description'); }}
+                      rows={2}
+                      maxLength={2000}
+                      aria-invalid={!!errors.event_description}
+                    />
+                    <FieldError message={errors.event_description} />
                   </div>
                   {user?.isGoogleCalendarConnected && (
                     <p className="text-xs text-muted-foreground">Событие будет автоматически добавлено в Google Calendar.</p>

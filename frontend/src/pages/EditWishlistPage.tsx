@@ -7,6 +7,7 @@ import { getImageUrl } from '../api/client';
 import { useAuth } from '../context/AuthContext';
 import { useToast } from '../components/Toast';
 import { parseError } from '../utils/errors';
+import { wishlistSchema, parseZodErrors, type FormErrors } from '../lib/schemas';
 import { ROLE_LABELS } from '../types';
 import type { WishlistVisibility, WishlistMemberDto, WishlistMemberRole, UserProfile, FriendInfo } from '../types';
 import { Button } from '@/components/ui/button';
@@ -17,6 +18,7 @@ import { Card, CardContent } from '@/components/ui/card';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Badge } from '@/components/ui/badge';
+import { FieldError } from '@/components/ui/field-error';
 
 const EMOJIS = ['🎁', '🎂', '🎮', '👗', '📚', '🏠', '✈️', '💄', '🎵', '🍕', '⚽', '🌸', '💻', '📷', '🎨'];
 
@@ -36,6 +38,7 @@ export default function EditWishlistPage() {
   const [friendFilter, setFriendFilter] = useState('');
   const [saving, setSaving] = useState(false);
   const [loading, setLoading] = useState(true);
+  const [errors, setErrors] = useState<FormErrors>({});
 
   useEffect(() => {
     if (!id) return;
@@ -56,6 +59,10 @@ export default function EditWishlistPage() {
       .catch((e) => toast.error(parseError(e)))
       .finally(() => setLoading(false));
   }, [id]);
+
+  const clearError = (field: string) => {
+    if (errors[field]) setErrors((prev) => ({ ...prev, [field]: '' }));
+  };
 
   const handleAddMember = async (friend: FriendInfo) => {
     if (!id) return;
@@ -81,6 +88,9 @@ export default function EditWishlistPage() {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!id) return;
+    const result = wishlistSchema.safeParse({ name, description: description || undefined });
+    if (!result.success) { setErrors(parseZodErrors(result.error)); return; }
+    setErrors({});
     setSaving(true);
     try { await updateWishlist(id, { name, description: description || null, emoji, visibility }); navigate(`/wishlists/${id}`); }
     catch (e) { toast.error(parseError(e)); }
@@ -110,11 +120,24 @@ export default function EditWishlistPage() {
             </div>
             <div className="flex flex-col gap-1.5">
               <Label htmlFor="name">Название *</Label>
-              <Input id="name" value={name} onChange={(e) => setName(e.target.value)} required />
+              <Input
+                id="name"
+                value={name}
+                onChange={(e) => { setName(e.target.value); clearError('name'); }}
+                aria-invalid={!!errors.name}
+              />
+              <FieldError message={errors.name} />
             </div>
             <div className="flex flex-col gap-1.5">
               <Label htmlFor="description">Описание</Label>
-              <Textarea id="description" value={description} onChange={(e) => setDescription(e.target.value)} rows={2} />
+              <Textarea
+                id="description"
+                value={description}
+                onChange={(e) => { setDescription(e.target.value); clearError('description'); }}
+                rows={2}
+                aria-invalid={!!errors.description}
+              />
+              <FieldError message={errors.description} />
             </div>
             <div className="flex flex-col gap-1.5">
               <Label>Видимость</Label>

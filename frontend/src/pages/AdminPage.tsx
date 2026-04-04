@@ -8,6 +8,7 @@ import {
 } from '../api/admin';
 import { useToast } from '../components/Toast';
 import { parseError } from '../utils/errors';
+import { catalogItemSchema, catalogCategorySchema, catalogCollectionSchema, parseZodErrors, type FormErrors } from '../lib/schemas';
 import { OCCASION_LABELS } from '../types';
 import type { CatalogCategoryDto, CatalogCollectionAdminDto, CatalogItemDto, PagedResponse } from '../types';
 import { getImageUrl } from '../api/client';
@@ -19,16 +20,18 @@ import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { FieldError } from '@/components/ui/field-error';
 
 type ItemFormValues = { name: string; description: string; price: string; currency: string; imagePath: string; url: string; categoryId: string; isPublished: boolean };
-type CollectionFormValues = { name: string; description: string; occasion: string; coverImagePath: string; order: number; isPublished: boolean };
+type CollectionFormValues = { name: string; description: string; occasion: string; coverImagePath: string; order: string; isPublished: boolean };
 
-function ItemForm({ form, setForm, categories, itemImageFile, setItemImageFile, externalImageUrl, setExternalImageUrl, onSubmit, submitLabel, onCancel, onParseUrl, parsing }: {
+function ItemForm({ form, setForm, categories, itemImageFile, setItemImageFile, externalImageUrl, setExternalImageUrl, onSubmit, submitLabel, onCancel, onParseUrl, parsing, errors, clearError }: {
   form: ItemFormValues; setForm: (f: ItemFormValues) => void; categories: CatalogCategoryDto[];
   itemImageFile: File | null; setItemImageFile: (f: File | null) => void;
   externalImageUrl: string | null; setExternalImageUrl: (u: string | null) => void;
   onSubmit: (e: React.FormEvent) => void; submitLabel: string; onCancel: () => void;
   onParseUrl: () => void; parsing: boolean;
+  errors: FormErrors; clearError: (field: string) => void;
 }) {
   const imagePreview = itemImageFile ? URL.createObjectURL(itemImageFile) : externalImageUrl ?? (form.imagePath ? getImageUrl(form.imagePath) : null);
   return (
@@ -38,25 +41,43 @@ function ItemForm({ form, setForm, categories, itemImageFile, setItemImageFile, 
           <div className="flex flex-col gap-1.5">
             <Label>Ссылка на товар</Label>
             <div className="flex gap-2">
-              <Input value={form.url} onChange={(e) => setForm({ ...form, url: e.target.value })} placeholder="https://..." />
+              <Input
+                value={form.url}
+                onChange={(e) => { setForm({ ...form, url: e.target.value }); clearError('url'); }}
+                placeholder="https://..."
+                aria-invalid={!!errors.url}
+              />
               <Button type="button" variant="secondary" onClick={onParseUrl} disabled={parsing || !form.url.trim()}>{parsing ? '...' : 'Загрузить'}</Button>
             </div>
+            <FieldError message={errors.url} />
           </div>
           <div className="grid grid-cols-2 gap-4">
             <div className="flex flex-col gap-1.5">
-              <Label>Название</Label>
-              <Input value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} required />
+              <Label>Название *</Label>
+              <Input
+                value={form.name}
+                onChange={(e) => { setForm({ ...form, name: e.target.value }); clearError('name'); }}
+                aria-invalid={!!errors.name}
+              />
+              <FieldError message={errors.name} />
             </div>
             <div className="flex flex-col gap-1.5">
-              <Label>Категория</Label>
-              <Select value={form.categoryId} onValueChange={(v) => setForm({ ...form, categoryId: v ?? '' })}>
-                <SelectTrigger><SelectValue placeholder="Выберите..." /></SelectTrigger>
+              <Label>Категория *</Label>
+              <Select value={form.categoryId} onValueChange={(v) => { setForm({ ...form, categoryId: v ?? '' }); clearError('categoryId'); }}>
+                <SelectTrigger aria-invalid={!!errors.categoryId}><SelectValue placeholder="Выберите..." /></SelectTrigger>
                 <SelectContent>{categories.map((c) => <SelectItem key={c.id} value={c.id}>{c.name}</SelectItem>)}</SelectContent>
               </Select>
+              <FieldError message={errors.categoryId} />
             </div>
             <div className="flex flex-col gap-1.5">
               <Label>Цена</Label>
-              <Input type="number" value={form.price} onChange={(e) => setForm({ ...form, price: e.target.value })} />
+              <Input
+                type="number"
+                value={form.price}
+                onChange={(e) => { setForm({ ...form, price: e.target.value }); clearError('price'); }}
+                aria-invalid={!!errors.price}
+              />
+              <FieldError message={errors.price} />
             </div>
             <div className="flex flex-col gap-1.5">
               <Label>Валюта</Label>
@@ -69,7 +90,13 @@ function ItemForm({ form, setForm, categories, itemImageFile, setItemImageFile, 
             </div>
             <div className="flex flex-col gap-1.5 col-span-2">
               <Label>Описание</Label>
-              <Textarea value={form.description} onChange={(e) => setForm({ ...form, description: e.target.value })} rows={3} />
+              <Textarea
+                value={form.description}
+                onChange={(e) => { setForm({ ...form, description: e.target.value }); clearError('description'); }}
+                rows={3}
+                aria-invalid={!!errors.description}
+              />
+              <FieldError message={errors.description} />
             </div>
           </div>
           <div className="flex gap-2">
@@ -82,10 +109,11 @@ function ItemForm({ form, setForm, categories, itemImageFile, setItemImageFile, 
   );
 }
 
-function CollectionForm({ form, setForm, occasions, collectionImageFile, setCollectionImageFile, isEdit, onSubmit, submitLabel, onCancel }: {
+function CollectionForm({ form, setForm, occasions, collectionImageFile, setCollectionImageFile, isEdit, onSubmit, submitLabel, onCancel, errors, clearError }: {
   form: CollectionFormValues; setForm: (f: CollectionFormValues) => void; occasions: [string, string][];
   collectionImageFile: File | null; setCollectionImageFile: (f: File | null) => void;
   isEdit?: boolean; onSubmit: (e: React.FormEvent) => void; submitLabel: string; onCancel: () => void;
+  errors: FormErrors; clearError: (field: string) => void;
 }) {
   return (
     <Card className="mb-6">
@@ -93,8 +121,13 @@ function CollectionForm({ form, setForm, occasions, collectionImageFile, setColl
         <form onSubmit={onSubmit} className="flex flex-col gap-4">
           <div className="grid grid-cols-2 gap-4">
             <div className="flex flex-col gap-1.5">
-              <Label>Название</Label>
-              <Input value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} required />
+              <Label>Название *</Label>
+              <Input
+                value={form.name}
+                onChange={(e) => { setForm({ ...form, name: e.target.value }); clearError('name'); }}
+                aria-invalid={!!errors.name}
+              />
+              <FieldError message={errors.name} />
             </div>
             <div className="flex flex-col gap-1.5">
               <Label>Повод</Label>
@@ -107,8 +140,14 @@ function CollectionForm({ form, setForm, occasions, collectionImageFile, setColl
               </Select>
             </div>
             <div className="flex flex-col gap-1.5">
-              <Label>Порядок</Label>
-              <Input type="number" value={form.order} onChange={(e) => setForm({ ...form, order: Number(e.target.value) })} />
+              <Label>Порядок *</Label>
+              <Input
+                type="number"
+                value={form.order}
+                onChange={(e) => { setForm({ ...form, order: e.target.value }); clearError('order'); }}
+                aria-invalid={!!errors.order}
+              />
+              <FieldError message={errors.order} />
             </div>
             <div className="flex flex-col gap-1.5">
               <Label>Обложка</Label>
@@ -117,7 +156,13 @@ function CollectionForm({ form, setForm, occasions, collectionImageFile, setColl
             </div>
             <div className="flex flex-col gap-1.5 col-span-2">
               <Label>Описание</Label>
-              <Textarea value={form.description} onChange={(e) => setForm({ ...form, description: e.target.value })} rows={2} />
+              <Textarea
+                value={form.description}
+                onChange={(e) => { setForm({ ...form, description: e.target.value }); clearError('description'); }}
+                rows={2}
+                aria-invalid={!!errors.description}
+              />
+              <FieldError message={errors.description} />
             </div>
             {isEdit && (
               <div className="flex items-center gap-2 col-span-2">
@@ -162,31 +207,45 @@ function CategoriesTab() {
   const [categories, setCategories] = useState<CatalogCategoryDto[]>([]);
   const [loading, setLoading] = useState(true);
   const [newName, setNewName] = useState('');
-  const [newOrder, setNewOrder] = useState(0);
+  const [newOrder, setNewOrder] = useState('0');
+  const [newErrors, setNewErrors] = useState<FormErrors>({});
   const [editId, setEditId] = useState<string | null>(null);
   const [editName, setEditName] = useState('');
-  const [editOrder, setEditOrder] = useState(0);
+  const [editOrder, setEditOrder] = useState('0');
+  const [editErrors, setEditErrors] = useState<FormErrors>({});
 
   const load = () => { setLoading(true); adminGetCategories().then(setCategories).catch((e) => toast.error(parseError(e))).finally(() => setLoading(false)); };
   useEffect(() => { load(); }, []);
 
   const handleCreate = async (e: React.FormEvent) => {
     e.preventDefault();
-    try { await adminCreateCategory({ name: newName, order: newOrder }); setNewName(''); setNewOrder(0); load(); } catch (e) { toast.error(parseError(e)); }
+    const result = catalogCategorySchema.safeParse({ name: newName, order: newOrder });
+    if (!result.success) { setNewErrors(parseZodErrors(result.error)); return; }
+    setNewErrors({});
+    try { await adminCreateCategory({ name: newName, order: Number(newOrder) }); setNewName(''); setNewOrder('0'); load(); } catch (e) { toast.error(parseError(e)); }
+  };
+
+  const handleUpdate = async (id: string) => {
+    const result = catalogCategorySchema.safeParse({ name: editName, order: editOrder });
+    if (!result.success) { setEditErrors(parseZodErrors(result.error)); return; }
+    setEditErrors({});
+    try { await adminUpdateCategory(id, { name: editName, order: Number(editOrder) }); setEditId(null); load(); } catch (e) { toast.error(parseError(e)); }
   };
 
   return (
     <div>
-      <form onSubmit={handleCreate} className="flex gap-3 mb-6 items-end">
+      <form onSubmit={handleCreate} className="flex gap-3 mb-6 items-start">
         <div className="flex flex-col gap-1.5 flex-1">
-          <Label>Название</Label>
-          <Input value={newName} onChange={(e) => setNewName(e.target.value)} required />
+          <Label>Название *</Label>
+          <Input value={newName} onChange={(e) => { setNewName(e.target.value); if (newErrors.name) setNewErrors((p) => ({ ...p, name: '' })); }} aria-invalid={!!newErrors.name} />
+          <FieldError message={newErrors.name} />
         </div>
         <div className="flex flex-col gap-1.5 w-24">
-          <Label>Порядок</Label>
-          <Input type="number" value={newOrder} onChange={(e) => setNewOrder(Number(e.target.value))} />
+          <Label>Порядок *</Label>
+          <Input type="number" value={newOrder} onChange={(e) => { setNewOrder(e.target.value); if (newErrors.order) setNewErrors((p) => ({ ...p, order: '' })); }} aria-invalid={!!newErrors.order} />
+          <FieldError message={newErrors.order} />
         </div>
-        <Button type="submit">Создать</Button>
+        <Button type="submit" className="mt-6">Создать</Button>
       </form>
       {loading ? <div className="text-muted-foreground text-sm">Загрузка...</div> : (
         <Card>
@@ -196,17 +255,31 @@ function CategoriesTab() {
               <tbody>
                 {categories.map((c) => (
                   <tr key={c.id} className="border-b last:border-0">
-                    <td className="p-3">{editId === c.id ? <Input value={editName} onChange={(e) => setEditName(e.target.value)} className="h-7" /> : c.name}</td>
-                    <td className="p-3">{editId === c.id ? <Input type="number" value={editOrder} onChange={(e) => setEditOrder(Number(e.target.value))} className="h-7 w-20" /> : c.order}</td>
+                    <td className="p-3">
+                      {editId === c.id ? (
+                        <>
+                          <Input value={editName} onChange={(e) => { setEditName(e.target.value); if (editErrors.name) setEditErrors((p) => ({ ...p, name: '' })); }} className="h-7" aria-invalid={!!editErrors.name} />
+                          <FieldError message={editErrors.name} />
+                        </>
+                      ) : c.name}
+                    </td>
+                    <td className="p-3">
+                      {editId === c.id ? (
+                        <>
+                          <Input type="number" value={editOrder} onChange={(e) => { setEditOrder(e.target.value); if (editErrors.order) setEditErrors((p) => ({ ...p, order: '' })); }} className="h-7 w-20" aria-invalid={!!editErrors.order} />
+                          <FieldError message={editErrors.order} />
+                        </>
+                      ) : c.order}
+                    </td>
                     <td className="p-3 text-right">
                       {editId === c.id ? (
                         <div className="flex gap-2 justify-end">
-                          <Button size="sm" onClick={async () => { try { await adminUpdateCategory(c.id, { name: editName, order: editOrder }); setEditId(null); load(); } catch (e) { toast.error(parseError(e)); } }}>Сохранить</Button>
-                          <Button size="sm" variant="ghost" onClick={() => setEditId(null)}>Отмена</Button>
+                          <Button size="sm" onClick={() => handleUpdate(c.id)}>Сохранить</Button>
+                          <Button size="sm" variant="ghost" onClick={() => { setEditId(null); setEditErrors({}); }}>Отмена</Button>
                         </div>
                       ) : (
                         <div className="flex gap-2 justify-end">
-                          <Button size="sm" variant="ghost" onClick={() => { setEditId(c.id); setEditName(c.name); setEditOrder(c.order); }}>Изменить</Button>
+                          <Button size="sm" variant="ghost" onClick={() => { setEditId(c.id); setEditName(c.name); setEditOrder(String(c.order)); setEditErrors({}); }}>Изменить</Button>
                           <Button size="sm" variant="ghost" className="text-destructive" onClick={async () => { if (!confirm('Удалить?')) return; try { await adminDeleteCategory(c.id); load(); } catch (e) { toast.error(parseError(e)); } }}>Удалить</Button>
                         </div>
                       )}
@@ -234,12 +307,15 @@ function ItemsTab() {
   const [itemImageFile, setItemImageFile] = useState<File | null>(null);
   const [externalImageUrl, setExternalImageUrl] = useState<string | null>(null);
   const [parsing, setParsing] = useState(false);
+  const [errors, setErrors] = useState<FormErrors>({});
+
+  const clearError = (field: string) => { if (errors[field]) setErrors((p) => ({ ...p, [field]: '' })); };
 
   useEffect(() => { adminGetCategories().then(setCategories).catch(() => {}); }, []);
   const load = (p: number) => { setLoading(true); adminGetAllItems({ page: p }).then(setData).catch(() => {}).finally(() => setLoading(false)); };
   useEffect(() => { load(page); }, [page]);
 
-  const resetForm = () => { setForm({ name: '', description: '', price: '', currency: '0', imagePath: '', url: '', categoryId: '', isPublished: false }); setItemImageFile(null); setExternalImageUrl(null); };
+  const resetForm = () => { setForm({ name: '', description: '', price: '', currency: '0', imagePath: '', url: '', categoryId: '', isPublished: false }); setItemImageFile(null); setExternalImageUrl(null); setErrors({}); };
 
   const handleParseUrl = async () => {
     if (!form.url.trim()) return;
@@ -254,8 +330,16 @@ function ItemsTab() {
     finally { setParsing(false); }
   };
 
+  const validate = () => {
+    const result = catalogItemSchema.safeParse({ name: form.name, description: form.description || undefined, url: form.url || undefined, price: form.price || undefined, categoryId: form.categoryId });
+    if (!result.success) { setErrors(parseZodErrors(result.error)); return false; }
+    setErrors({});
+    return true;
+  };
+
   const handleCreate = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (!validate()) return;
     try {
       const newId = await adminCreateItem({ name: form.name, description: form.description || null, price: form.price ? Number(form.price) : null, currency: form.currency ? (Number(form.currency) as never) : null, imagePath: null, url: form.url || null, categoryId: form.categoryId });
       if (itemImageFile) await adminUploadItemImage(newId, itemImageFile);
@@ -266,7 +350,7 @@ function ItemsTab() {
 
   const handleUpdate = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!editItem) return;
+    if (!editItem || !validate()) return;
     try {
       await adminUpdateItem(editItem.id, { name: form.name, description: form.description || null, price: form.price ? Number(form.price) : null, currency: form.currency ? (Number(form.currency) as never) : null, imagePath: form.imagePath || null, url: form.url || null, categoryId: form.categoryId, isPublished: form.isPublished });
       if (itemImageFile) await adminUploadItemImage(editItem.id, itemImageFile);
@@ -280,8 +364,8 @@ function ItemsTab() {
   return (
     <div>
       {!showCreate && !editItem && <Button className="mb-4" onClick={() => { setShowCreate(true); resetForm(); }}>Добавить товар</Button>}
-      {showCreate && <ItemForm form={form} setForm={setForm} categories={categories} itemImageFile={itemImageFile} setItemImageFile={setItemImageFile} externalImageUrl={externalImageUrl} setExternalImageUrl={setExternalImageUrl} onSubmit={handleCreate} submitLabel="Создать" onCancel={handleCancel} onParseUrl={handleParseUrl} parsing={parsing} />}
-      {editItem && <ItemForm form={form} setForm={setForm} categories={categories} itemImageFile={itemImageFile} setItemImageFile={setItemImageFile} externalImageUrl={externalImageUrl} setExternalImageUrl={setExternalImageUrl} onSubmit={handleUpdate} submitLabel="Сохранить" onCancel={handleCancel} onParseUrl={handleParseUrl} parsing={parsing} />}
+      {showCreate && <ItemForm form={form} setForm={setForm} categories={categories} itemImageFile={itemImageFile} setItemImageFile={setItemImageFile} externalImageUrl={externalImageUrl} setExternalImageUrl={setExternalImageUrl} onSubmit={handleCreate} submitLabel="Создать" onCancel={handleCancel} onParseUrl={handleParseUrl} parsing={parsing} errors={errors} clearError={clearError} />}
+      {editItem && <ItemForm form={form} setForm={setForm} categories={categories} itemImageFile={itemImageFile} setItemImageFile={setItemImageFile} externalImageUrl={externalImageUrl} setExternalImageUrl={setExternalImageUrl} onSubmit={handleUpdate} submitLabel="Сохранить" onCancel={handleCancel} onParseUrl={handleParseUrl} parsing={parsing} errors={errors} clearError={clearError} />}
 
       {loading ? <div className="text-muted-foreground text-sm">Загрузка...</div> : !data || data.items.length === 0 ? <div className="text-muted-foreground text-sm">Нет товаров</div> : (
         <>
@@ -298,7 +382,7 @@ function ItemsTab() {
                     <td className="p-3 text-right">
                       <div className="flex gap-1 justify-end">
                         <Button size="sm" variant="ghost" onClick={async () => { try { await adminSetItemPublished(item.id, !item.isPublished); load(page); } catch (e) { toast.error(parseError(e)); } }}>{item.isPublished ? 'Снять' : 'Опубликовать'}</Button>
-                        <Button size="sm" variant="ghost" onClick={() => { setEditItem(item); setShowCreate(false); setForm({ name: item.name, description: item.description ?? '', price: item.price !== null ? String(item.price) : '', currency: '0', imagePath: item.imagePath ?? '', url: item.url ?? '', categoryId: item.categoryId, isPublished: item.isPublished }); }}>Изменить</Button>
+                        <Button size="sm" variant="ghost" onClick={() => { setEditItem(item); setShowCreate(false); setForm({ name: item.name, description: item.description ?? '', price: item.price !== null ? String(item.price) : '', currency: '0', imagePath: item.imagePath ?? '', url: item.url ?? '', categoryId: item.categoryId, isPublished: item.isPublished }); setErrors({}); }}>Изменить</Button>
                         <Button size="sm" variant="ghost" className="text-destructive" onClick={async () => { if (!confirm('Удалить товар?')) return; try { await adminDeleteItem(item.id); load(page); } catch (e) { toast.error(parseError(e)); } }}>Удалить</Button>
                       </div>
                     </td>
@@ -327,20 +411,30 @@ function CollectionsTab() {
   const [editCollection, setEditCollection] = useState<CatalogCollectionAdminDto | null>(null);
   const [selectedCollection, setSelectedCollection] = useState<CatalogCollectionAdminDto | null>(null);
   const [addItemId, setAddItemId] = useState('');
-  const [form, setForm] = useState<CollectionFormValues>({ name: '', description: '', occasion: '', coverImagePath: '', order: 0, isPublished: false });
+  const [form, setForm] = useState<CollectionFormValues>({ name: '', description: '', occasion: '', coverImagePath: '', order: '0', isPublished: false });
   const [collectionImageFile, setCollectionImageFile] = useState<File | null>(null);
+  const [errors, setErrors] = useState<FormErrors>({});
+  const clearError = (field: string) => { if (errors[field]) setErrors((p) => ({ ...p, [field]: '' })); };
   const OCCASIONS = Object.entries(OCCASION_LABELS) as [string, string][];
 
   const load = () => { setLoading(true); adminGetAllCollections().then(setCollections).catch(() => {}).finally(() => setLoading(false)); };
   useEffect(() => { load(); adminGetAllItems({ pageSize: 200 }).then((r) => setAllItems(r.items)).catch(() => {}); }, []);
 
-  const resetForm = () => { setForm({ name: '', description: '', occasion: '', coverImagePath: '', order: 0, isPublished: false }); setCollectionImageFile(null); };
+  const resetForm = () => { setForm({ name: '', description: '', occasion: '', coverImagePath: '', order: '0', isPublished: false }); setCollectionImageFile(null); setErrors({}); };
   const handleCancel = () => { setShowCreate(false); setEditCollection(null); resetForm(); };
+
+  const validate = () => {
+    const result = catalogCollectionSchema.safeParse({ name: form.name, description: form.description || undefined, order: form.order });
+    if (!result.success) { setErrors(parseZodErrors(result.error)); return false; }
+    setErrors({});
+    return true;
+  };
 
   const handleCreate = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (!validate()) return;
     try {
-      const newId = await adminCreateCollection({ name: form.name, description: form.description || null, occasion: form.occasion || null, coverImagePath: null, order: form.order });
+      const newId = await adminCreateCollection({ name: form.name, description: form.description || null, occasion: form.occasion || null, coverImagePath: null, order: Number(form.order) });
       if (collectionImageFile) await adminUploadCollectionImage(newId, collectionImageFile);
       resetForm(); setShowCreate(false); load(); toast.success('Подборка создана');
     } catch (e) { toast.error(parseError(e)); }
@@ -348,9 +442,9 @@ function CollectionsTab() {
 
   const handleUpdate = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!editCollection) return;
+    if (!editCollection || !validate()) return;
     try {
-      await adminUpdateCollection(editCollection.id, { name: form.name, description: form.description || null, occasion: form.occasion || null, coverImagePath: form.coverImagePath || null, order: form.order, isPublished: form.isPublished });
+      await adminUpdateCollection(editCollection.id, { name: form.name, description: form.description || null, occasion: form.occasion || null, coverImagePath: form.coverImagePath || null, order: Number(form.order), isPublished: form.isPublished });
       if (collectionImageFile) await adminUploadCollectionImage(editCollection.id, collectionImageFile);
       setEditCollection(null); resetForm(); load(); toast.success('Подборка обновлена');
     } catch (e) { toast.error(parseError(e)); }
@@ -359,8 +453,8 @@ function CollectionsTab() {
   return (
     <div>
       {!showCreate && !editCollection && <Button className="mb-4" onClick={() => { setShowCreate(true); resetForm(); }}>Создать подборку</Button>}
-      {showCreate && <CollectionForm form={form} setForm={setForm} occasions={OCCASIONS} collectionImageFile={collectionImageFile} setCollectionImageFile={setCollectionImageFile} onSubmit={handleCreate} submitLabel="Создать" onCancel={handleCancel} />}
-      {editCollection && <CollectionForm form={form} setForm={setForm} occasions={OCCASIONS} collectionImageFile={collectionImageFile} setCollectionImageFile={setCollectionImageFile} isEdit onSubmit={handleUpdate} submitLabel="Сохранить" onCancel={handleCancel} />}
+      {showCreate && <CollectionForm form={form} setForm={setForm} occasions={OCCASIONS} collectionImageFile={collectionImageFile} setCollectionImageFile={setCollectionImageFile} onSubmit={handleCreate} submitLabel="Создать" onCancel={handleCancel} errors={errors} clearError={clearError} />}
+      {editCollection && <CollectionForm form={form} setForm={setForm} occasions={OCCASIONS} collectionImageFile={collectionImageFile} setCollectionImageFile={setCollectionImageFile} isEdit onSubmit={handleUpdate} submitLabel="Сохранить" onCancel={handleCancel} errors={errors} clearError={clearError} />}
 
       {loading ? <div className="text-muted-foreground text-sm">Загрузка...</div> : collections.length === 0 ? <div className="text-muted-foreground text-sm">Нет подборок</div> : (
         <Card><CardContent className="p-0">
@@ -377,7 +471,7 @@ function CollectionsTab() {
                     <td className="p-3 text-right">
                       <div className="flex gap-1 justify-end">
                         <Button size="sm" variant="ghost" onClick={() => setSelectedCollection(selectedCollection?.id === c.id ? null : c)}>{selectedCollection?.id === c.id ? 'Свернуть' : 'Товары'}</Button>
-                        <Button size="sm" variant="ghost" onClick={() => { setEditCollection(c); setShowCreate(false); setForm({ name: c.name, description: c.description ?? '', occasion: c.occasion ?? '', coverImagePath: c.coverImagePath ?? '', order: c.order, isPublished: c.isPublished }); }}>Изменить</Button>
+                        <Button size="sm" variant="ghost" onClick={() => { setEditCollection(c); setShowCreate(false); setForm({ name: c.name, description: c.description ?? '', occasion: c.occasion ?? '', coverImagePath: c.coverImagePath ?? '', order: String(c.order), isPublished: c.isPublished }); setErrors({}); }}>Изменить</Button>
                         <Button size="sm" variant="ghost" className="text-destructive" onClick={async () => { if (!confirm('Удалить подборку?')) return; try { await adminDeleteCollection(c.id); if (selectedCollection?.id === c.id) setSelectedCollection(null); load(); } catch (e) { toast.error(parseError(e)); } }}>Удалить</Button>
                       </div>
                     </td>
