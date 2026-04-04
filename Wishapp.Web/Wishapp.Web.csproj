@@ -13,6 +13,7 @@
       <PackageReference Include="AspNetCore.HealthChecks.UI.Client" />
       <PackageReference Include="BCrypt.Net-Next" />
       <PackageReference Include="EFCore.NamingConventions" />
+      <PackageReference Include="FluentValidation" />
       <PackageReference Include="Google.Apis.Auth" />
       <PackageReference Include="Microsoft.AspNetCore.Authentication.JwtBearer" />
       <PackageReference Include="Microsoft.AspNetCore.OpenApi" />

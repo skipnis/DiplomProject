@@ -1,3 +1,9 @@
+using Wishapp.Web.Infrastructure.Validation;
+using Wishapp.Web.Wishlists.Features.Wishes.AddWish;
+using Wishapp.Web.Wishlists.Features.Wishes.UpdateWish;
+using Wishapp.Web.Wishlists.Features.Wishlists.CreateWishlist;
+using Wishapp.Web.Wishlists.Features.Wishlists.UpdateWishlist;
+
 namespace Wishapp.Web.Wishlists;
 
 public static partial class WishlistsEndpoints
@@ -6,27 +12,31 @@ public static partial class WishlistsEndpoints
     {
         var wishlists = app.MapGroup("/wishlists").RequireAuthorization();
 
-        wishlists.MapPost("/", CreateWishlist);
+        wishlists.MapPost("/", CreateWishlist)
+            .AddEndpointFilter<ValidationFilter<CreateWishlistRequest>>();
 
         wishlists.MapGet("/{id:guid}", GetWishlist)
             .AllowAnonymous();
 
         wishlists.MapGet("/", GetMyWishlists);
-        
+
         wishlists.MapGet("/users/{userId:guid}", GetUserWishlists)
             .AllowAnonymous();
 
-        wishlists.MapPut("/{id:guid}", UpdateWishlist);
+        wishlists.MapPut("/{id:guid}", UpdateWishlist)
+            .AddEndpointFilter<ValidationFilter<UpdateWishlistRequest>>();
 
         wishlists.MapDelete("/{id:guid}", DeleteWishlist);
 
         wishlists.MapPost("/wishes/parse-url", ParseWishUrl);
 
-        wishlists.MapPost("/{id:guid}/wishes", AddWish);
+        wishlists.MapPost("/{id:guid}/wishes", AddWish)
+            .AddEndpointFilter<ValidationFilter<AddWishRequest>>();
 
         wishlists.MapPost("/{id:guid}/wishes/from-catalog", AddWishFromCatalog);
 
-        wishlists.MapPut("/{id:guid}/wishes/{wishId:guid}", UpdateWish);
+        wishlists.MapPut("/{id:guid}/wishes/{wishId:guid}", UpdateWish)
+            .AddEndpointFilter<ValidationFilter<UpdateWishRequest>>();
 
         wishlists.MapDelete("/{id:guid}/wishes/{wishId:guid}", DeleteWish);
 

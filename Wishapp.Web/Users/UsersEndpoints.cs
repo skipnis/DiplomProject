@@ -1,3 +1,6 @@
+using Wishapp.Web.Infrastructure.Validation;
+using Wishapp.Web.Users.Features.UpdateProfile;
+
 namespace Wishapp.Web.Users;
 
 public static partial class UsersEndpoints
@@ -15,7 +18,8 @@ public static partial class UsersEndpoints
 
         usersEndpoints.MapGet("/me", GetMyProfile).Produces(401);;
 
-        usersEndpoints.MapPut("/me", UpdateProfile).Produces(401);;
+        usersEndpoints.MapPut("/me", UpdateProfile).Produces(401)
+            .AddEndpointFilter<ValidationFilter<UpdateProfileRequest>>();
 
         usersEndpoints.MapGet("/{id:guid}", GetUserProfile).AllowAnonymous();
 
