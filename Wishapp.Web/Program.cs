@@ -3,6 +3,7 @@ using Wishapp.Web.Infrastructure.Database;
 using Microsoft.AspNetCore.Diagnostics.HealthChecks;
 using Scalar.AspNetCore;
 using Serilog;
+using Wishapp.Web;
 using Wishapp.Web.Admin;
 using Wishapp.Web.Catalog;
 using Wishapp.Web.Events;
@@ -71,7 +72,8 @@ app.MapUsersEndpoints()
     .MapReservationsEndpoints()
     .MapEventsEndpoints()
     .MapCatalogEndpoints()
-    .MapAdminEndpoints();
+    .MapAdminEndpoints()
+    .MapShareEndpoints();
 
 if (app.Environment.IsDevelopment())
 {

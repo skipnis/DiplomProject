@@ -1,9 +1,11 @@
 import { useEffect, useState } from 'react';
 import { useParams, Link, useNavigate } from 'react-router-dom';
-import { getWish, deleteWish, fulfillWish, unfulfillWish, duplicateWish, copyWish } from '../api/wishes';
+import { getWish, deleteWish, fulfillWish, unfulfillWish, duplicateWish, copyWish, regenerateWishShareToken } from '../api/wishes';
 import { reserveWish, cancelReservation, getMyReservations } from '../api/reservations';
 import { getWishlist, getMyWishlists } from '../api/wishlists';
 import { getImageUrl, API_URL } from '../api/client';
+
+const FRONTEND_URL = import.meta.env.VITE_FRONTEND_URL || 'http://localhost:5173';
 import { useAuth } from '../context/AuthContext';
 import { useToast } from '../components/Toast';
 import { parseError } from '../utils/errors';
@@ -63,6 +65,7 @@ export default function WishPage() {
   const [wishlist, setWishlist] = useState<WishlistDto | null>(null);
   const [isMineReserved, setIsMineReserved] = useState(false);
   const [loading, setLoading] = useState(true);
+  const [shareLoading, setShareLoading] = useState(false);
   const [showQr, setShowQr] = useState(false);
   const [showCopy, setShowCopy] = useState(false);
   const [copyWishlists, setCopyWishlists] = useState<WishlistSummaryDto[]>([]);
@@ -126,6 +129,26 @@ export default function WishPage() {
     catch (e) { toast.error(parseError(e)); }
   };
 
+  const handleRegenerateShareToken = async () => {
+    if (!wishlistId || !wishId) return;
+    setShareLoading(true);
+    try {
+      const { token } = await regenerateWishShareToken(wishlistId, wishId);
+      setWish((p) => p ? { ...p, shareToken: token } : p);
+      toast.success('Ссылка обновлена');
+    } catch (e) {
+      toast.error(parseError(e));
+    } finally {
+      setShareLoading(false);
+    }
+  };
+
+  const copyShareLink = () => {
+    if (!wish?.shareToken) return;
+    navigator.clipboard.writeText(`${FRONTEND_URL}/share/${wish.shareToken}`);
+    toast.success('Ссылка скопирована');
+  };
+
   if (loading) return <div className="flex items-center justify-center min-h-[200px] text-muted-foreground">Загрузка...</div>;
   if (!wish) return <div className="text-center py-12 text-muted-foreground">Желание не найдено</div>;
 
@@ -136,7 +159,7 @@ export default function WishPage() {
       <div className="flex items-center justify-between mb-7 gap-3 flex-wrap">
         <Link to={`/wishlists/${wishlistId}`} className={buttonVariants({ variant: 'ghost', size: 'sm' })}>← Назад</Link>
         <div className="flex flex-wrap gap-2">
-          {wishlist?.visibility === 0 && <Button variant="ghost" size="sm" onClick={() => setShowQr(true)}>📷 QR</Button>}
+          <Button variant="ghost" size="sm" onClick={() => setShowQr(true)}>📷 QR</Button>
           {canEdit && <Button variant="ghost" size="sm" onClick={handleDuplicate}>Дублировать</Button>}
           {me && <Button variant="ghost" size="sm" onClick={handleOpenCopy}>Копировать</Button>}
           {canEdit && <Link to={`/wishlists/${wishlistId}/wishes/${wishId}/edit`} className={buttonVariants({ variant: 'secondary', size: 'sm' })}>Изменить</Link>}
@@ -192,6 +215,26 @@ export default function WishPage() {
               </Button>
             )}
           </div>
+
+          {isOwner && wish.shareToken && (
+            <>
+              <Separator className="my-4" />
+              <div>
+                <div className="text-xs text-muted-foreground mb-2">Поделиться желанием</div>
+                <div className="flex items-center gap-2 flex-wrap">
+                  <input
+                    readOnly
+                    value={`${FRONTEND_URL}/share/${wish.shareToken}`}
+                    className="flex-1 min-w-0 text-xs bg-muted rounded px-2 py-1.5 border text-muted-foreground"
+                  />
+                  <Button size="sm" variant="secondary" onClick={copyShareLink}>Копировать</Button>
+                  <Button size="sm" variant="ghost" onClick={handleRegenerateShareToken} disabled={shareLoading}>
+                    {shareLoading ? '...' : 'Обновить ссылку'}
+                  </Button>
+                </div>
+              </div>
+            </>
+          )}
         </CardContent>
       </Card>
 

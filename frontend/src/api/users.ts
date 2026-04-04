@@ -28,3 +28,7 @@ export function connectGoogleCalendar(code: string): Promise<void> {
 export function disconnectGoogleCalendar(): Promise<void> {
   return apiDelete<void>('/users/me/google-calendar');
 }
+
+export function deleteMyAccount(): Promise<void> {
+  return apiDelete<void>('/users/me');
+}

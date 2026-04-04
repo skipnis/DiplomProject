@@ -38,6 +38,7 @@ public sealed class GetWishHandler(ApplicationDbContext db, IReservationsApi res
             wish.CreatedAt,
             wish.IsFulfilled,
             wish.FulfilledAt,
-            reservedIds.Contains(wish.Id));
+            reservedIds.Contains(wish.Id),
+            query.IsOwner ? wish.ShareToken : null);
     }
 }

@@ -1,9 +1,11 @@
+using Wishapp.Web.Common.Types;
 using Wishapp.Web.Wishlists.Entities;
 
-namespace Wishapp.Web.Wishlists.Dtos;
+namespace Wishapp.Web.Wishlists.Features.Wishes.GetSharedWish;
 
-public record WishDto(
+public record SharedWishResponse(
     Guid Id,
+    Guid WishlistId,
     string Name,
     string? Description,
     decimal? Price,
@@ -11,8 +13,7 @@ public record WishDto(
     WishPriority Priority,
     string? Url,
     string? ImagePath,
-    DateTimeOffset CreatedAt,
     bool IsFulfilled,
-    DateTimeOffset? FulfilledAt,
     bool IsReserved,
-    Guid? ShareToken);
+    WishlistVisibility WishlistVisibility,
+    string OwnerUsername);

@@ -1,5 +1,6 @@
 using Wishapp.Web.Infrastructure.Validation;
 using Wishapp.Web.Users.Features.ConnectGoogleCalendar;
+using Wishapp.Web.Users.Features.DeleteMyAccount;
 using Wishapp.Web.Users.Features.UpdateProfile;
 
 namespace Wishapp.Web.Users;
@@ -30,6 +31,8 @@ public static partial class UsersEndpoints
             .AddEndpointFilter<ValidationFilter<ConnectGoogleCalendarRequest>>();
 
         usersEndpoints.MapDelete("/me/google-calendar", DisconnectGoogleCalendar).Produces(401);
+
+        usersEndpoints.MapDelete("/me", DeleteMyAccount).Produces(401);
 
         return app;
     }

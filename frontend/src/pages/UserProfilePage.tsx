@@ -7,7 +7,7 @@ import { getImageUrl } from '../api/client';
 import { useAuth } from '../context/AuthContext';
 import { useToast } from '../components/Toast';
 import { parseError } from '../utils/errors';
-import { VISIBILITY_ICONS } from '../types';
+import { VISIBILITY_LABELS } from '../types';
 import type { UserProfile, WishlistSummaryDto } from '../types';
 import { Button, buttonVariants } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
@@ -112,7 +112,7 @@ export default function UserProfilePage() {
               <div className="font-bold text-sm">{w.name}</div>
               <div className="flex gap-3 mt-2 text-xs text-muted-foreground">
                 <span>{w.wishCount} желаний</span>
-                <span>{VISIBILITY_ICONS[w.visibility]}</span>
+                <span>{VISIBILITY_LABELS[w.visibility]}</span>
               </div>
             </Link>
           ))}

@@ -82,3 +82,7 @@ export function duplicateWish(wishlistId: string, wishId: string): Promise<{ wis
 export function copyWish(wishlistId: string, wishId: string, targetWishlistId: string): Promise<{ wishId: string }> {
   return apiPost<{ wishId: string }>(`/wishlists/${wishlistId}/wishes/${wishId}/copy`, { targetWishlistId });
 }
+
+export function regenerateWishShareToken(wishlistId: string, wishId: string): Promise<{ token: string }> {
+  return apiPost<{ token: string }>(`/wishlists/${wishlistId}/wishes/${wishId}/share/regenerate`, {});
+}

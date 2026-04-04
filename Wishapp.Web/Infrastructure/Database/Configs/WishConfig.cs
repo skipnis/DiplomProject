@@ -40,6 +40,7 @@ public class WishConfig : IEntityTypeConfiguration<Wish>
 
         builder.HasIndex(w => w.WishlistId);
         builder.HasIndex(w => w.CreatedAt);
+        builder.HasIndex(w => w.ShareToken).IsUnique();
 
         builder.ToTable(t =>
         {

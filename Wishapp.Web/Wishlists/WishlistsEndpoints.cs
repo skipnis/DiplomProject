@@ -3,6 +3,7 @@ using Wishapp.Web.Wishlists.Features.Members;
 using Wishapp.Web.Wishlists.Features.Members.UpdateMemberRole;
 using Wishapp.Web.Wishlists.Features.Wishes.AddWish;
 using Wishapp.Web.Wishlists.Features.Wishes.ParseWithUrl;
+using Wishapp.Web.Wishlists.Features.Wishes.RegenerateWishShareToken;
 using Wishapp.Web.Wishlists.Features.Wishes.UpdateWish;
 using Wishapp.Web.Wishlists.Features.Wishes.UploadWishImage;
 using Wishapp.Web.Wishlists.Features.Wishlists.CopyWish;
@@ -80,6 +81,8 @@ public static partial class WishlistsEndpoints
         
         wishlists.MapGet("/{id:guid}/wishes/{wishId:guid}/qr", GetWishQr)
             .AllowAnonymous();
+
+        wishlists.MapPost("/{id:guid}/wishes/{wishId:guid}/share/regenerate", RegenerateWishShareToken);
 
         return app;
     }

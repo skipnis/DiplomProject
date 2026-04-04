@@ -30,11 +30,6 @@ public sealed class GetWishQrHandler(
             return Error.NotFound("Wishlists.NotFound", "Wishlist not found");
         }
 
-        if (wishlist.Visibility != WishlistVisibility.Public)
-        {
-            return Error.Failure("Wishlists.NotPublic", "QR code is only available for wishes in public wishlists");
-        }
-
         var wish = wishlist.Wishes.FirstOrDefault();
 
         if (wish is null)
@@ -42,7 +37,7 @@ public sealed class GetWishQrHandler(
             return Error.NotFound("Wishes.NotFound", "Wish not found");
         }
 
-        var url = $"{_options.FrontendUrl}/wishlists/{query.WishlistId}/wishes/{query.WishId}";
+        var url = $"{_options.FrontendUrl}/share/{wish.ShareToken}";
 
         var qrBytes = qrCodeService.Generate(url);
 

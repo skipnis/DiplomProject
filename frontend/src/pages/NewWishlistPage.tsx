@@ -9,6 +9,7 @@ import { useToast } from '../components/Toast';
 import { parseError } from '../utils/errors';
 import { wishlistSchema, eventSchema, parseZodErrors, type FormErrors } from '../lib/schemas';
 import { parseApiFieldErrors } from '../utils/errors';
+import { VISIBILITY_LABELS } from '../types';
 import type { WishlistVisibility, WishlistMemberInvite, WishlistMemberRole, UserSearchResult } from '../types';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -148,7 +149,7 @@ export default function NewWishlistPage() {
             <div className="flex flex-col gap-1.5">
               <Label>Видимость</Label>
               <Select value={String(visibility)} onValueChange={(v) => setVisibility(Number(v) as WishlistVisibility)}>
-                <SelectTrigger><SelectValue /></SelectTrigger>
+                <SelectTrigger><SelectValue>{VISIBILITY_LABELS[visibility]}</SelectValue></SelectTrigger>
                 <SelectContent>
                   <SelectItem value="0">🌍 Публичный</SelectItem>
                   <SelectItem value="1">👥 Для друзей</SelectItem>

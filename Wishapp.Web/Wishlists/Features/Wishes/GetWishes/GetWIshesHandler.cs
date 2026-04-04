@@ -37,7 +37,8 @@ public sealed class GetWishesHandler(ApplicationDbContext db, IReservationsApi r
             w.CreatedAt,
             w.IsFulfilled,
             w.FulfilledAt,
-            reservedIds.Contains(w.Id)))
+            reservedIds.Contains(w.Id),
+            null))
             .ToList();
 
         return new PagedResponse<WishDto>(items, wishes.Page, wishes.PageSize, wishes.TotalCount);

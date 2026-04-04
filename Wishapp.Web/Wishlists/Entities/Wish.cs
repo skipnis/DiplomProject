@@ -16,6 +16,7 @@ public sealed class Wish
     public DateTimeOffset CreatedAt { get; private set; }
     public bool IsFulfilled { get; private set; }
     public DateTimeOffset? FulfilledAt { get; private set; }
+    public Guid ShareToken { get; private set; }
 
     private Wish() { }
 
@@ -38,7 +39,8 @@ public sealed class Wish
             Currency = currency,
             Priority = priority,
             Url = url,
-            CreatedAt = DateTimeOffset.UtcNow
+            CreatedAt = DateTimeOffset.UtcNow,
+            ShareToken = Guid.NewGuid()
         };
     }
 
@@ -80,6 +82,11 @@ public sealed class Wish
         FulfilledAt = null;
     }
 
+    public void RegenerateShareToken()
+    {
+        ShareToken = Guid.NewGuid();
+    }
+
     public Wish Duplicate(Guid wishlistId)
     {
         return new Wish
@@ -95,7 +102,8 @@ public sealed class Wish
             ImagePath = null,
             IsFulfilled = false,
             FulfilledAt = null,
-            CreatedAt = DateTimeOffset.UtcNow
+            CreatedAt = DateTimeOffset.UtcNow,
+            ShareToken = Guid.NewGuid()
         };
     }
 
@@ -114,7 +122,8 @@ public sealed class Wish
             ImagePath = null,
             IsFulfilled = false,
             FulfilledAt = null,
-            CreatedAt = DateTimeOffset.UtcNow
+            CreatedAt = DateTimeOffset.UtcNow,
+            ShareToken = Guid.NewGuid()
         };
     }
 }

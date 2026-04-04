@@ -99,6 +99,23 @@ export interface WishDto {
   isFulfilled: boolean;
   fulfilledAt: string | null;
   isReserved: boolean;
+  shareToken: string | null;
+}
+
+export interface SharedWishResponse {
+  id: string;
+  wishlistId: string;
+  name: string;
+  description: string | null;
+  price: number | null;
+  currency: Currency | null;
+  priority: WishPriority;
+  url: string | null;
+  imagePath: string | null;
+  isFulfilled: boolean;
+  isReserved: boolean;
+  wishlistVisibility: WishlistVisibility;
+  ownerUsername: string;
 }
 
 export interface ParsedWishData {

@@ -1,26 +1,39 @@
 import { useEffect, useState } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import { useGoogleLogin } from '@react-oauth/google';
 import { useAuth } from '../context/AuthContext';
 import { getMyWishlists } from '../api/wishlists';
-import { connectGoogleCalendar, disconnectGoogleCalendar } from '../api/users';
+import { connectGoogleCalendar, disconnectGoogleCalendar, deleteMyAccount } from '../api/users';
 import { syncAllEvents } from '../api/events';
 import { getImageUrl } from '../api/client';
 import { useToast } from '../components/Toast';
 import { parseError } from '../utils/errors';
-import { VISIBILITY_ICONS } from '../types';
+import { VISIBILITY_LABELS } from '../types';
 import type { WishlistSummaryDto } from '../types';
 import { Button, buttonVariants } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from '@/components/ui/alert-dialog';
 
 export default function ProfilePage() {
-  const { user, refreshUser } = useAuth();
+  const { user, refreshUser, logout } = useAuth();
+  const navigate = useNavigate();
   const toast = useToast();
   const [wishlists, setWishlists] = useState<WishlistSummaryDto[]>([]);
   const [loading, setLoading] = useState(true);
   const [calendarLoading, setCalendarLoading] = useState(false);
+  const [deleteLoading, setDeleteLoading] = useState(false);
 
   useEffect(() => {
     getMyWishlists().then(setWishlists).finally(() => setLoading(false));
@@ -44,6 +57,18 @@ export default function ProfilePage() {
     },
     onError: () => toast.error('Не удалось подключить Google Calendar'),
   });
+
+  async function handleDeleteAccount() {
+    setDeleteLoading(true);
+    try {
+      await deleteMyAccount();
+      await logout();
+      navigate('/');
+    } catch (e) {
+      toast.error(parseError(e));
+      setDeleteLoading(false);
+    }
+  }
 
   async function handleDisconnectCalendar() {
     setCalendarLoading(true);
@@ -135,12 +160,34 @@ export default function ProfilePage() {
               <div className="font-bold text-sm">{w.name}</div>
               <div className="flex gap-3 mt-auto pt-2 text-xs text-muted-foreground">
                 <span>{w.wishCount} желаний</span>
-                <span>{VISIBILITY_ICONS[w.visibility]}</span>
+                <span>{VISIBILITY_LABELS[w.visibility]}</span>
               </div>
             </Link>
           ))}
         </div>
       )}
+
+      <div className="mt-10 border-t pt-6">
+        <AlertDialog>
+          <AlertDialogTrigger asChild>
+            <Button variant="destructive" size="sm" disabled={deleteLoading}>Удалить аккаунт</Button>
+          </AlertDialogTrigger>
+          <AlertDialogContent>
+            <AlertDialogHeader>
+              <AlertDialogTitle>Удалить аккаунт?</AlertDialogTitle>
+              <AlertDialogDescription>
+                Это действие необратимо. Все ваши вишлисты, желания и данные будут удалены навсегда.
+              </AlertDialogDescription>
+            </AlertDialogHeader>
+            <AlertDialogFooter>
+              <AlertDialogCancel>Отмена</AlertDialogCancel>
+              <AlertDialogAction onClick={handleDeleteAccount} className="bg-destructive text-destructive-foreground hover:bg-destructive/90">
+                Удалить
+              </AlertDialogAction>
+            </AlertDialogFooter>
+          </AlertDialogContent>
+        </AlertDialog>
+      </div>
     </div>
   );
 }
