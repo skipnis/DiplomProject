@@ -1,8 +1,11 @@
 using Wishapp.Web.Infrastructure.Validation;
 using Wishapp.Web.Wishlists.Features.Members;
+using Wishapp.Web.Wishlists.Features.Members.UpdateMemberRole;
 using Wishapp.Web.Wishlists.Features.Wishes.AddWish;
 using Wishapp.Web.Wishlists.Features.Wishes.ParseWithUrl;
 using Wishapp.Web.Wishlists.Features.Wishes.UpdateWish;
+using Wishapp.Web.Wishlists.Features.Wishes.UploadWishImage;
+using Wishapp.Web.Wishlists.Features.Wishlists.CopyWish;
 using Wishapp.Web.Wishlists.Features.Wishlists.CreateWishlist;
 using Wishapp.Web.Wishlists.Features.Wishlists.UpdateWishlist;
 
@@ -53,10 +56,12 @@ public static partial class WishlistsEndpoints
 
         wishlists.MapPost("/{id:guid}/wishes/{wishId:guid}/duplicate", DuplicateWish);
 
-        wishlists.MapPost("/{id:guid}/wishes/{wishId:guid}/copy", CopyWish);
+        wishlists.MapPost("/{id:guid}/wishes/{wishId:guid}/copy", CopyWish)
+            .AddEndpointFilter<ValidationFilter<CopyWishRequest>>();
 
         wishlists.MapPost("/{id:guid}/wishes/{wishId:guid}/image", UploadWishImage)
-            .DisableAntiforgery();;
+            .DisableAntiforgery()
+            .AddEndpointFilter<ValidationFilter<UploadWishImageRequest>>();
         
         wishlists.MapDelete("/{id:guid}/wishes/{wishId:guid}/image", DeleteWishImage);
         
@@ -67,7 +72,8 @@ public static partial class WishlistsEndpoints
         
         wishlists.MapGet("/{id:guid}/members", GetMembers);
         
-        wishlists.MapPut("/{id:guid}/members/{userId:guid}/role", UpdateMemberRole);
+        wishlists.MapPut("/{id:guid}/members/{userId:guid}/role", UpdateMemberRole)
+            .AddEndpointFilter<ValidationFilter<UpdateMemberRoleRequest>>();
         
         wishlists.MapGet("/{id:guid}/qr", GetWishlistQr)
             .AllowAnonymous();

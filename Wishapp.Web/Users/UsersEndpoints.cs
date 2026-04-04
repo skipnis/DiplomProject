@@ -1,4 +1,5 @@
 using Wishapp.Web.Infrastructure.Validation;
+using Wishapp.Web.Users.Features.ConnectGoogleCalendar;
 using Wishapp.Web.Users.Features.UpdateProfile;
 
 namespace Wishapp.Web.Users;
@@ -25,7 +26,8 @@ public static partial class UsersEndpoints
 
         usersEndpoints.MapGet("/search", SearchUsers).Produces(401);;
 
-        usersEndpoints.MapPost("/me/google-calendar", ConnectGoogleCalendar).Produces(401);
+        usersEndpoints.MapPost("/me/google-calendar", ConnectGoogleCalendar).Produces(401)
+            .AddEndpointFilter<ValidationFilter<ConnectGoogleCalendarRequest>>();
 
         usersEndpoints.MapDelete("/me/google-calendar", DisconnectGoogleCalendar).Produces(401);
 

@@ -1,3 +1,6 @@
+using Wishapp.Web.Infrastructure.Validation;
+using Wishapp.Web.Reservations.Features.ReserveWish;
+
 namespace Wishapp.Web.Reservations;
 
 public static partial class ReservationsEndpoints
@@ -6,7 +9,8 @@ public static partial class ReservationsEndpoints
     {
         var reservations = app.MapGroup("/reservations").RequireAuthorization();
 
-        reservations.MapPost("/{wishId:guid}", ReserveWish);
+        reservations.MapPost("/{wishId:guid}", ReserveWish)
+            .AddEndpointFilter<ValidationFilter<ReserveWishRequest>>();
 
         reservations.MapDelete("/{wishId:guid}", CancelReservation);
 

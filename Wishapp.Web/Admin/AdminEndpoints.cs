@@ -4,6 +4,7 @@ using Wishapp.Web.Admin.Features.Collections.Create;
 using Wishapp.Web.Admin.Features.Collections.Update;
 using Wishapp.Web.Admin.Features.Items.Create;
 using Wishapp.Web.Admin.Features.Items.Update;
+using Wishapp.Web.Admin.Features.Items.UploadImage;
 using Wishapp.Web.Infrastructure.Validation;
 
 namespace Wishapp.Web.Admin;
@@ -30,7 +31,8 @@ public static partial class AdminEndpoints
         secured.MapPut("/items/{id:guid}", UpdateItem)
             .AddEndpointFilter<ValidationFilter<UpdateCatalogItemRequest>>();
         secured.MapDelete("/items/{id:guid}", DeleteItem);
-        secured.MapPost("/items/{id:guid}/image", UploadCatalogItemImage).DisableAntiforgery();
+        secured.MapPost("/items/{id:guid}/image", UploadCatalogItemImage).DisableAntiforgery()
+            .AddEndpointFilter<ValidationFilter<UploadCatalogItemImageRequest>>();
         secured.MapPatch("/items/{id:guid}/published", SetCatalogItemPublished);
 
         secured.MapGet("/collections", GetAllCollections);

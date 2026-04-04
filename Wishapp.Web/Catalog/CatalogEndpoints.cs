@@ -1,3 +1,6 @@
+using Wishapp.Web.Catalog.Dtos;
+using Wishapp.Web.Infrastructure.Validation;
+
 namespace Wishapp.Web.Catalog;
 
 public static partial class CatalogEndpoints
@@ -7,7 +10,8 @@ public static partial class CatalogEndpoints
         var catalog = app.MapGroup("/catalog");
 
         catalog.MapGet("/categories", GetCategories);
-        catalog.MapGet("/items", GetCatalogItems);
+        catalog.MapGet("/items", GetCatalogItems)
+            .AddEndpointFilter<ValidationFilter<CatalogItemsRequest>>();
         catalog.MapGet("/items/{id:guid}", GetCatalogItem);
         catalog.MapGet("/collections", GetCollections);
         catalog.MapGet("/collections/{id:guid}", GetCollection);

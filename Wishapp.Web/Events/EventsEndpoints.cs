@@ -1,4 +1,5 @@
 using Wishapp.Web.Events.Features.CreateEvent;
+using Wishapp.Web.Events.Features.LinkWishlist;
 using Wishapp.Web.Events.Features.UpdateEvent;
 using Wishapp.Web.Infrastructure.Validation;
 
@@ -17,7 +18,8 @@ public static partial class EventsEndpoints
         events.MapPut("/{id:guid}", UpdateEvent).Produces(401)
             .AddEndpointFilter<ValidationFilter<UpdateEventRequest>>();
         events.MapDelete("/{id:guid}", DeleteEvent).Produces(401);
-        events.MapPut("/{id:guid}/wishlist", LinkWishlist).Produces(401);
+        events.MapPut("/{id:guid}/wishlist", LinkWishlist).Produces(401)
+            .AddEndpointFilter<ValidationFilter<LinkWishlistRequest>>();
         events.MapPost("/google-calendar/sync-all", SyncAllEvents).Produces(401);
         events.MapPost("/{id:guid}/google-calendar/sync", SyncToGoogleCalendar).Produces(401);
         events.MapDelete("/{id:guid}/google-calendar/sync", UnsyncFromGoogleCalendar).Produces(401);
