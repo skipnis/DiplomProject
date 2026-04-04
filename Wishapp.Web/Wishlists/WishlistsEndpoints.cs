@@ -1,5 +1,7 @@
 using Wishapp.Web.Infrastructure.Validation;
+using Wishapp.Web.Wishlists.Features.Members;
 using Wishapp.Web.Wishlists.Features.Wishes.AddWish;
+using Wishapp.Web.Wishlists.Features.Wishes.ParseWithUrl;
 using Wishapp.Web.Wishlists.Features.Wishes.UpdateWish;
 using Wishapp.Web.Wishlists.Features.Wishlists.CreateWishlist;
 using Wishapp.Web.Wishlists.Features.Wishlists.UpdateWishlist;
@@ -28,7 +30,8 @@ public static partial class WishlistsEndpoints
 
         wishlists.MapDelete("/{id:guid}", DeleteWishlist);
 
-        wishlists.MapPost("/wishes/parse-url", ParseWishUrl);
+        wishlists.MapPost("/wishes/parse-url", ParseWishUrl)
+            .AddEndpointFilter<ValidationFilter<ParseWishUrlRequest>>();
 
         wishlists.MapPost("/{id:guid}/wishes", AddWish)
             .AddEndpointFilter<ValidationFilter<AddWishRequest>>();
@@ -57,7 +60,8 @@ public static partial class WishlistsEndpoints
         
         wishlists.MapDelete("/{id:guid}/wishes/{wishId:guid}/image", DeleteWishImage);
         
-        wishlists.MapPost("/{id:guid}/members", AddMembers);
+        wishlists.MapPost("/{id:guid}/members", AddMembers)
+            .AddEndpointFilter<ValidationFilter<AddMembersRequest>>();
         
         wishlists.MapDelete("/{id:guid}/members/{userId:guid}", RemoveMember);
         

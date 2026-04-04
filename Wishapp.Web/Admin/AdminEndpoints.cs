@@ -1,3 +1,11 @@
+using Wishapp.Web.Admin.Features.Categories.Create;
+using Wishapp.Web.Admin.Features.Categories.Update;
+using Wishapp.Web.Admin.Features.Collections.Create;
+using Wishapp.Web.Admin.Features.Collections.Update;
+using Wishapp.Web.Admin.Features.Items.Create;
+using Wishapp.Web.Admin.Features.Items.Update;
+using Wishapp.Web.Infrastructure.Validation;
+
 namespace Wishapp.Web.Admin;
 
 public static partial class AdminEndpoints
@@ -10,20 +18,26 @@ public static partial class AdminEndpoints
 
         var secured = admin.MapGroup("/catalog").RequireAuthorization("Admin");
 
-        secured.MapPost("/categories", CreateCategory);
-        secured.MapPut("/categories/{id:guid}", UpdateCategory);
+        secured.MapPost("/categories", CreateCategory)
+            .AddEndpointFilter<ValidationFilter<CreateCategoryCommand>>();
+        secured.MapPut("/categories/{id:guid}", UpdateCategory)
+            .AddEndpointFilter<ValidationFilter<UpdateCategoryRequest>>();
         secured.MapDelete("/categories/{id:guid}", DeleteCategory);
 
         secured.MapGet("/items", GetAllItems);
-        secured.MapPost("/items", CreateItem);
-        secured.MapPut("/items/{id:guid}", UpdateItem);
+        secured.MapPost("/items", CreateItem)
+            .AddEndpointFilter<ValidationFilter<CreateCatalogItemCommand>>();
+        secured.MapPut("/items/{id:guid}", UpdateItem)
+            .AddEndpointFilter<ValidationFilter<UpdateCatalogItemRequest>>();
         secured.MapDelete("/items/{id:guid}", DeleteItem);
         secured.MapPost("/items/{id:guid}/image", UploadCatalogItemImage).DisableAntiforgery();
         secured.MapPatch("/items/{id:guid}/published", SetCatalogItemPublished);
 
         secured.MapGet("/collections", GetAllCollections);
-        secured.MapPost("/collections", CreateCollection);
-        secured.MapPut("/collections/{id:guid}", UpdateCollection);
+        secured.MapPost("/collections", CreateCollection)
+            .AddEndpointFilter<ValidationFilter<CreateCollectionCommand>>();
+        secured.MapPut("/collections/{id:guid}", UpdateCollection)
+            .AddEndpointFilter<ValidationFilter<UpdateCollectionRequest>>();
         secured.MapDelete("/collections/{id:guid}", DeleteCollection);
         secured.MapPost("/collections/{id:guid}/image", UploadCollectionCover).DisableAntiforgery();
         secured.MapGet("/collections/{id:guid}/items", GetCollectionItems);
