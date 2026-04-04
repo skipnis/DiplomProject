@@ -8,6 +8,7 @@ import { getImageUrl } from '../api/client';
 import { useToast } from '../components/Toast';
 import { parseError } from '../utils/errors';
 import { wishlistSchema, eventSchema, parseZodErrors, type FormErrors } from '../lib/schemas';
+import { parseApiFieldErrors } from '../utils/errors';
 import type { WishlistVisibility, WishlistMemberInvite, WishlistMemberRole, UserSearchResult } from '../types';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -87,7 +88,9 @@ export default function NewWishlistPage() {
       }
       navigate(`/wishlists/${wishlist.id}`);
     } catch (e) {
-      toast.error(parseError(e));
+      const fieldErrors = parseApiFieldErrors(e);
+      if (fieldErrors) setErrors((prev) => ({ ...prev, ...fieldErrors }));
+      else toast.error(parseError(e));
     } finally {
       setSaving(false);
     }

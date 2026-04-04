@@ -4,6 +4,7 @@ import { addWish, parseWishUrl, uploadWishImage } from '../api/wishes';
 import { useToast } from '../components/Toast';
 import { parseError } from '../utils/errors';
 import { wishSchema, parseZodErrors, type FormErrors } from '../lib/schemas';
+import { parseApiFieldErrors } from '../utils/errors';
 import type { WishPriority, Currency } from '../types';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -79,8 +80,11 @@ export default function NewWishPage() {
         else if (externalImageUrl) await uploadWishImage(wishlistId, res.wishId, externalImageUrl);
       } catch { toast.error('Желание добавлено, но изображение не удалось загрузить'); }
       navigate(`/wishlists/${wishlistId}`);
-    } catch (e) { toast.error(parseError(e)); }
-    finally { setSaving(false); }
+    } catch (e) {
+      const fieldErrors = parseApiFieldErrors(e);
+      if (fieldErrors) setErrors((prev) => ({ ...prev, ...fieldErrors }));
+      else toast.error(parseError(e));
+    } finally { setSaving(false); }
   };
 
   return (

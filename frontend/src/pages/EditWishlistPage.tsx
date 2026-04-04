@@ -8,6 +8,7 @@ import { useAuth } from '../context/AuthContext';
 import { useToast } from '../components/Toast';
 import { parseError } from '../utils/errors';
 import { wishlistSchema, parseZodErrors, type FormErrors } from '../lib/schemas';
+import { parseApiFieldErrors } from '../utils/errors';
 import { ROLE_LABELS } from '../types';
 import type { WishlistVisibility, WishlistMemberDto, WishlistMemberRole, UserProfile, FriendInfo } from '../types';
 import { Button } from '@/components/ui/button';
@@ -93,8 +94,11 @@ export default function EditWishlistPage() {
     setErrors({});
     setSaving(true);
     try { await updateWishlist(id, { name, description: description || null, emoji, visibility }); navigate(`/wishlists/${id}`); }
-    catch (e) { toast.error(parseError(e)); }
-    finally { setSaving(false); }
+    catch (e) {
+      const fieldErrors = parseApiFieldErrors(e);
+      if (fieldErrors) setErrors((prev) => ({ ...prev, ...fieldErrors }));
+      else toast.error(parseError(e));
+    } finally { setSaving(false); }
   };
 
   if (loading) return <div className="flex items-center justify-center min-h-[200px] text-muted-foreground">Загрузка...</div>;

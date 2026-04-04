@@ -10,6 +10,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Dialog, DialogContent, DialogTitle } from '@/components/ui/dialog';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { FieldError } from '@/components/ui/field-error';
 
 export default function CatalogPage() {
   const toast = useToast();
@@ -29,7 +30,12 @@ export default function CatalogPage() {
   const [selectedWishlistId, setSelectedWishlistId] = useState('');
   const [adding, setAdding] = useState(false);
 
+  const priceError = minPrice != null && maxPrice != null && maxPrice < minPrice
+    ? 'Максимальная цена не может быть меньше минимальной'
+    : undefined;
+
   const load = (p: number) => {
+    if (priceError) return;
     setLoading(true);
     getCatalogItems({ categoryId: selectedCategory, search, minPrice, maxPrice, page: p })
       .then(setData)
@@ -91,8 +97,9 @@ export default function CatalogPage() {
           <div>
             <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wide mb-2">Цена</p>
             <div className="flex flex-col gap-2">
-              <Input type="number" placeholder="От" value={minPrice ?? ''} onChange={(e) => setMinPrice(e.target.value ? Number(e.target.value) : undefined)} />
-              <Input type="number" placeholder="До" value={maxPrice ?? ''} onChange={(e) => setMaxPrice(e.target.value ? Number(e.target.value) : undefined)} />
+              <Input type="number" placeholder="От" value={minPrice ?? ''} onChange={(e) => setMinPrice(e.target.value ? Number(e.target.value) : undefined)} aria-invalid={!!priceError} />
+              <Input type="number" placeholder="До" value={maxPrice ?? ''} onChange={(e) => setMaxPrice(e.target.value ? Number(e.target.value) : undefined)} aria-invalid={!!priceError} />
+              <FieldError message={priceError} />
             </div>
           </div>
         </aside>

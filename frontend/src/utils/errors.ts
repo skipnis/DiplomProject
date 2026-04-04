@@ -32,6 +32,22 @@ const STATUS_MESSAGES: Record<number, string> = {
   503: 'Сервер временно недоступен',
 };
 
+export function parseApiFieldErrors(error: unknown): Record<string, string> | null {
+  if (!(error instanceof ApiError) || error.status !== 422) return null;
+  try {
+    const body = JSON.parse(error.message);
+    if (!body.errors) return null;
+    const errs: Record<string, string> = {};
+    for (const [key, msgs] of Object.entries(body.errors as Record<string, string[]>)) {
+      const camelKey = key.charAt(0).toLowerCase() + key.slice(1);
+      if (Array.isArray(msgs) && msgs[0]) errs[camelKey] = msgs[0];
+    }
+    return Object.keys(errs).length > 0 ? errs : null;
+  } catch {
+    return null;
+  }
+}
+
 export function parseError(error: unknown): string {
   if (!(error instanceof Error)) return 'Произошла ошибка';
 

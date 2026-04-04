@@ -5,6 +5,7 @@ import { getImageUrl } from '../api/client';
 import { useToast } from '../components/Toast';
 import { parseError } from '../utils/errors';
 import { wishSchema, parseZodErrors, type FormErrors } from '../lib/schemas';
+import { parseApiFieldErrors } from '../utils/errors';
 import type { WishPriority, Currency } from '../types';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -86,8 +87,11 @@ export default function EditWishPage() {
         catch { toast.error('Желание сохранено, но изображение не удалось загрузить'); }
       }
       navigate(`/wishlists/${wishlistId}/wishes/${wishId}`);
-    } catch (e) { toast.error(parseError(e)); }
-    finally { setSaving(false); }
+    } catch (e) {
+      const fieldErrors = parseApiFieldErrors(e);
+      if (fieldErrors) setErrors((prev) => ({ ...prev, ...fieldErrors }));
+      else toast.error(parseError(e));
+    } finally { setSaving(false); }
   };
 
   if (loading) return <div className="flex items-center justify-center min-h-[200px] text-muted-foreground">Загрузка...</div>;

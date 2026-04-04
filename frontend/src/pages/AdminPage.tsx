@@ -9,6 +9,7 @@ import {
 import { useToast } from '../components/Toast';
 import { parseError } from '../utils/errors';
 import { catalogItemSchema, catalogCategorySchema, catalogCollectionSchema, parseZodErrors, type FormErrors } from '../lib/schemas';
+import { parseApiFieldErrors } from '../utils/errors';
 import { OCCASION_LABELS } from '../types';
 import type { CatalogCategoryDto, CatalogCollectionAdminDto, CatalogItemDto, PagedResponse } from '../types';
 import { getImageUrl } from '../api/client';
@@ -222,14 +223,16 @@ function CategoriesTab() {
     const result = catalogCategorySchema.safeParse({ name: newName, order: newOrder });
     if (!result.success) { setNewErrors(parseZodErrors(result.error)); return; }
     setNewErrors({});
-    try { await adminCreateCategory({ name: newName, order: Number(newOrder) }); setNewName(''); setNewOrder('0'); load(); } catch (e) { toast.error(parseError(e)); }
+    try { await adminCreateCategory({ name: newName, order: Number(newOrder) }); setNewName(''); setNewOrder('0'); load(); }
+    catch (e) { const fe = parseApiFieldErrors(e); if (fe) setNewErrors((p) => ({ ...p, ...fe })); else toast.error(parseError(e)); }
   };
 
   const handleUpdate = async (id: string) => {
     const result = catalogCategorySchema.safeParse({ name: editName, order: editOrder });
     if (!result.success) { setEditErrors(parseZodErrors(result.error)); return; }
     setEditErrors({});
-    try { await adminUpdateCategory(id, { name: editName, order: Number(editOrder) }); setEditId(null); load(); } catch (e) { toast.error(parseError(e)); }
+    try { await adminUpdateCategory(id, { name: editName, order: Number(editOrder) }); setEditId(null); load(); }
+    catch (e) { const fe = parseApiFieldErrors(e); if (fe) setEditErrors((p) => ({ ...p, ...fe })); else toast.error(parseError(e)); }
   };
 
   return (
@@ -345,7 +348,7 @@ function ItemsTab() {
       if (itemImageFile) await adminUploadItemImage(newId, itemImageFile);
       else if (externalImageUrl) await adminUploadItemImage(newId, externalImageUrl);
       resetForm(); setShowCreate(false); load(page);
-    } catch (e) { toast.error(parseError(e)); }
+    } catch (e) { const fe = parseApiFieldErrors(e); if (fe) setErrors((p) => ({ ...p, ...fe })); else toast.error(parseError(e)); }
   };
 
   const handleUpdate = async (e: React.FormEvent) => {
@@ -356,7 +359,7 @@ function ItemsTab() {
       if (itemImageFile) await adminUploadItemImage(editItem.id, itemImageFile);
       else if (externalImageUrl) await adminUploadItemImage(editItem.id, externalImageUrl);
       setEditItem(null); resetForm(); load(page);
-    } catch (e) { toast.error(parseError(e)); }
+    } catch (e) { const fe = parseApiFieldErrors(e); if (fe) setErrors((p) => ({ ...p, ...fe })); else toast.error(parseError(e)); }
   };
 
   const handleCancel = () => { setShowCreate(false); setEditItem(null); resetForm(); };
@@ -437,7 +440,7 @@ function CollectionsTab() {
       const newId = await adminCreateCollection({ name: form.name, description: form.description || null, occasion: form.occasion || null, coverImagePath: null, order: Number(form.order) });
       if (collectionImageFile) await adminUploadCollectionImage(newId, collectionImageFile);
       resetForm(); setShowCreate(false); load(); toast.success('Подборка создана');
-    } catch (e) { toast.error(parseError(e)); }
+    } catch (e) { const fe = parseApiFieldErrors(e); if (fe) setErrors((p) => ({ ...p, ...fe })); else toast.error(parseError(e)); }
   };
 
   const handleUpdate = async (e: React.FormEvent) => {
@@ -447,7 +450,7 @@ function CollectionsTab() {
       await adminUpdateCollection(editCollection.id, { name: form.name, description: form.description || null, occasion: form.occasion || null, coverImagePath: form.coverImagePath || null, order: Number(form.order), isPublished: form.isPublished });
       if (collectionImageFile) await adminUploadCollectionImage(editCollection.id, collectionImageFile);
       setEditCollection(null); resetForm(); load(); toast.success('Подборка обновлена');
-    } catch (e) { toast.error(parseError(e)); }
+    } catch (e) { const fe = parseApiFieldErrors(e); if (fe) setErrors((p) => ({ ...p, ...fe })); else toast.error(parseError(e)); }
   };
 
   return (

@@ -4,6 +4,7 @@ import { getEvent, updateEvent } from '../api/events';
 import { useToast } from '../components/Toast';
 import { parseError } from '../utils/errors';
 import { eventSchema, parseZodErrors, type FormErrors } from '../lib/schemas';
+import { parseApiFieldErrors } from '../utils/errors';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
@@ -46,7 +47,9 @@ export default function EditEventPage() {
       await updateEvent(id, { title: title.trim(), description: description.trim() || null, date });
       navigate(`/events/${id}`);
     } catch (e) {
-      toast.error(parseError(e));
+      const fieldErrors = parseApiFieldErrors(e);
+      if (fieldErrors) setErrors((prev) => ({ ...prev, ...fieldErrors }));
+      else toast.error(parseError(e));
     } finally {
       setSaving(false);
     }

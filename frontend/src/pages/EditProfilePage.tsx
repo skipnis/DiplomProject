@@ -5,6 +5,7 @@ import { updateMyProfile } from '../api/users';
 import { useToast } from '../components/Toast';
 import { parseError } from '../utils/errors';
 import { profileSchema, parseZodErrors, type FormErrors } from '../lib/schemas';
+import { parseApiFieldErrors, ApiError } from '../utils/errors';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
@@ -47,7 +48,13 @@ export default function EditProfilePage() {
       toast.success('Профиль сохранён');
       navigate('/profile');
     } catch (e) {
-      toast.error(parseError(e));
+      if (e instanceof ApiError && e.status === 409) {
+        setErrors((prev) => ({ ...prev, username: 'Это имя пользователя уже занято' }));
+      } else {
+        const fieldErrors = parseApiFieldErrors(e);
+        if (fieldErrors) setErrors((prev) => ({ ...prev, ...fieldErrors }));
+        else toast.error(parseError(e));
+      }
     } finally {
       setSaving(false);
     }
