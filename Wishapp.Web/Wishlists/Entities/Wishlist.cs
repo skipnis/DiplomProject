@@ -17,6 +17,7 @@ public sealed class Wishlist
     public string? Emoji { get; private set; }
     public WishlistVisibility Visibility { get; private set; }
     public bool IsSystem { get; private set; }
+    public bool IsSurpriseModeEnabled { get; private set; }
     public DateTimeOffset CreatedAt { get; private set; }
 
     private Wishlist() { }
@@ -26,7 +27,8 @@ public sealed class Wishlist
         string name,
         string? description,
         string? emoji,
-        WishlistVisibility visibility)
+        WishlistVisibility visibility,
+        bool isSurpriseModeEnabled = false)
     {
         var wishlist = new Wishlist
         {
@@ -37,6 +39,7 @@ public sealed class Wishlist
             Emoji = emoji,
             Visibility = visibility,
             IsSystem = false,
+            IsSurpriseModeEnabled = isSurpriseModeEnabled,
             CreatedAt = DateTimeOffset.UtcNow
         };
 

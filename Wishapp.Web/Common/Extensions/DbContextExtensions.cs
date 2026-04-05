@@ -18,7 +18,9 @@ public static class DbContextExtensions
                     w.Id,
                     w.OwnerId,
                     w.Visibility,
-                    w.Members.Select(m => new WishlistMemberInfo(m.UserId, m.Role)).ToList()))
+                    w.Members.Select(m => new WishlistMemberInfo(m.UserId, m.Role)).ToList(),
+                    false,
+                    w.IsSurpriseModeEnabled))
                 .FirstOrDefaultAsync(ct);
         }
         
@@ -34,7 +36,9 @@ public static class DbContextExtensions
                     w.Id,
                     w.OwnerId,
                     w.Visibility,
-                    w.Members.Select(m => new WishlistMemberInfo(m.UserId, m.Role)).ToList()))
+                    w.Members.Select(m => new WishlistMemberInfo(m.UserId, m.Role)).ToList(),
+                    false,
+                    w.IsSurpriseModeEnabled))
                 .ToListAsync(ct);
 
             return (

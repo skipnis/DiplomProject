@@ -28,6 +28,7 @@ export function createWishlist(data: {
   description: string | null;
   emoji: string | null;
   visibility: WishlistVisibility;
+  isSurpriseModeEnabled?: boolean;
   members?: WishlistMemberInvite[];
 }): Promise<{ id: string; name: string }> {
   return apiPost<{ id: string; name: string }>('/wishlists/', data);

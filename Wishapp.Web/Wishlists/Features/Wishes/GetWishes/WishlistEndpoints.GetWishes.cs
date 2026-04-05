@@ -61,7 +61,7 @@ public static partial class WishlistsEndpoints
             return TypedResults.Forbid();
         }
 
-        var result = await handler.HandleAsync(new GetWishesQuery(id, request), ct);
+        var result = await handler.HandleAsync(new GetWishesQuery(id, request, isOwner && accessContext.IsSurpriseModeEnabled), ct);
 
         return TypedResults.Ok(result.Value);
     }

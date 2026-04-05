@@ -33,6 +33,7 @@ export default function NewWishlistPage() {
   const [members, setMembers] = useState<WishlistMemberInvite[]>([]);
   const [userQuery, setUserQuery] = useState('');
   const [userResults, setUserResults] = useState<UserSearchResult[]>([]);
+  const [surpriseMode, setSurpriseMode] = useState(false);
   const [saving, setSaving] = useState(false);
   const [createEventEnabled, setCreateEventEnabled] = useState(false);
   const [eventTitle, setEventTitle] = useState('');
@@ -81,7 +82,7 @@ export default function NewWishlistPage() {
 
     setSaving(true);
     try {
-      const wishlist = await createWishlist({ name, description: description || null, emoji, visibility, members: members.length > 0 ? members : undefined });
+      const wishlist = await createWishlist({ name, description: description || null, emoji, visibility, isSurpriseModeEnabled: surpriseMode, members: members.length > 0 ? members : undefined });
       if (createEventEnabled && eventTitle.trim() && eventDate) {
         const event = await createEvent({ title: eventTitle.trim(), description: eventDescription.trim() || null, date: eventDate });
         await linkWishlist(event.id, wishlist.id);
@@ -193,6 +194,14 @@ export default function NewWishlistPage() {
                 )}
               </div>
             )}
+
+            <div className="flex flex-col gap-1">
+              <label className="flex items-center gap-2 cursor-pointer">
+                <input type="checkbox" checked={surpriseMode} onChange={(e) => setSurpriseMode(e.target.checked)} />
+                <span className="text-sm font-medium">🎁 Режим сюрприза — не показывать кто что забронировал</span>
+              </label>
+              <p className="text-xs text-muted-foreground pl-6">Задаётся только при создании и не может быть изменён</p>
+            </div>
 
             <label className="flex items-center gap-2 cursor-pointer">
               <input type="checkbox" checked={createEventEnabled} onChange={(e) => { setCreateEventEnabled(e.target.checked); if (e.target.checked && !eventTitle) setEventTitle(name); }} />

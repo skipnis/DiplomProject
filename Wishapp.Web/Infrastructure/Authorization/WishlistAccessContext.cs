@@ -7,4 +7,5 @@ public record WishlistAccessContext(
     Guid OwnerId,
     WishlistVisibility Visibility,
     IReadOnlyCollection<WishlistMemberInfo> Members,
-    bool AreFriends = false);
+    bool AreFriends = false,
+    bool IsSurpriseModeEnabled = false);

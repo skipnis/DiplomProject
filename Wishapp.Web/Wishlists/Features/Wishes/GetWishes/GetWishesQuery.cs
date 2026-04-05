@@ -4,5 +4,5 @@ using Wishapp.Web.Wishlists.Dtos;
 
 namespace Wishapp.Web.Wishlists.Features.Wishes.GetWishes;
 
-public record GetWishesQuery(Guid WishlistId, PagedRequest Request) 
+public record GetWishesQuery(Guid WishlistId, PagedRequest Request, bool HideReservations = false)
     : IQuery<PagedResponse<WishDto>>;

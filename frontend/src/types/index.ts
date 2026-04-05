@@ -71,6 +71,7 @@ export interface WishlistDto {
   emoji: string | null;
   visibility: WishlistVisibility;
   isSystem: boolean;
+  isSurpriseModeEnabled: boolean;
   createdAt: string;
   members: WishlistMemberDto[];
 }

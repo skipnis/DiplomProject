@@ -8,4 +8,5 @@ public record CreateWishlistRequest(
     string? Description,
     string? Emoji,
     WishlistVisibility Visibility,
+    bool IsSurpriseModeEnabled = false,
     List<WishlistMemberInvite>? Members = null);

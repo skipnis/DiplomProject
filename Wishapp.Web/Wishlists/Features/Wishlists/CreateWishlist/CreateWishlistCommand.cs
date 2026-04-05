@@ -10,4 +10,5 @@ public record CreateWishlistCommand(
     string? Description,
     string? Emoji,
     WishlistVisibility Visibility,
+    bool IsSurpriseModeEnabled,
     List<WishlistMemberInvite>? Members) : ICommand<CreateWishlistResponse>;

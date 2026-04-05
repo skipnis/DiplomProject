@@ -151,6 +151,7 @@ export default function WishlistPage() {
               <div className="flex flex-wrap gap-1 mt-2">
                 <Badge variant="secondary">{VISIBILITY_LABELS[wishlist.visibility]}</Badge>
                 {wishlist.isSystem && <Badge variant="secondary">⚙️ Системный</Badge>}
+                {isOwner && wishlist.isSurpriseModeEnabled && <Badge variant="secondary">🎁 Сюрприз</Badge>}
               </div>
             </div>
             <div className="flex flex-wrap gap-2">

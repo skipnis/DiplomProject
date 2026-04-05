@@ -22,8 +22,12 @@ public sealed class GetWishesHandler(ApplicationDbContext db, IReservationsApi r
             .ToPagedResponseAsync(query.Request, ct);
 
         var wishIds = wishes.Items.Select(w => w.Id).ToList();
-        
-        var reservedIds = await reservationsApi.GetReservedWishIdsAsync(wishIds, ct);
+
+        HashSet<Guid> reservedIds = [];
+        if (!query.HideReservations)
+        {
+            reservedIds = (await reservationsApi.GetReservedWishIdsAsync(wishIds, ct)).ToHashSet();
+        }
 
         var items = wishes.Items.Select(w => new WishDto(
             w.Id,

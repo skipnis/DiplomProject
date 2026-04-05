@@ -9,6 +9,7 @@ public record WishlistDto(
     string? Emoji,
     WishlistVisibility Visibility,
     bool IsSystem,
+    bool IsSurpriseModeEnabled,
     DateTimeOffset CreatedAt,
     List<WishlistMemberDto> Members)
 {
@@ -19,6 +20,7 @@ public record WishlistDto(
         wishlist.Emoji,
         wishlist.Visibility,
         wishlist.IsSystem,
+        wishlist.IsSurpriseModeEnabled,
         wishlist.CreatedAt,
         wishlist.Members.Select(WishlistMemberDto.From).ToList());
 }

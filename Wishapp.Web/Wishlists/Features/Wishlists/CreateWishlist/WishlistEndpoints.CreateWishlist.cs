@@ -29,6 +29,7 @@ public static partial class WishlistsEndpoints
                 request.Description,
                 request.Emoji,
                 request.Visibility,
+                request.IsSurpriseModeEnabled,
                 request.Members), ct);
 
         if (!result.IsSuccess)
