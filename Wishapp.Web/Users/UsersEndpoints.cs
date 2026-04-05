@@ -2,6 +2,8 @@ using Wishapp.Web.Infrastructure.Validation;
 using Wishapp.Web.Users.Features.ConnectGoogleCalendar;
 using Wishapp.Web.Users.Features.DeleteMyAccount;
 using Wishapp.Web.Users.Features.UpdateProfile;
+using Wishapp.Web.Users.Features.SendOtp;
+using Wishapp.Web.Users.Features.VerifyOtp;
 
 namespace Wishapp.Web.Users;
 
@@ -12,6 +14,10 @@ public static partial class UsersEndpoints
         var auth = app.MapGroup("/auth");
 
         auth.MapPost("/google", GoogleSignIn);
+        auth.MapPost("/email/send-otp", SendOtp)
+            .AddEndpointFilter<ValidationFilter<SendOtpCommand>>();
+        auth.MapPost("/email/verify-otp", VerifyOtp)
+            .AddEndpointFilter<ValidationFilter<VerifyOtpCommand>>();
         auth.MapPost("/refresh", RefreshToken);
         auth.MapPost("/logout", Logout);
 

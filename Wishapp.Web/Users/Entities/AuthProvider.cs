@@ -2,5 +2,6 @@ namespace Wishapp.Web.Users.Entities;
 
 public enum AuthProvider
 {
-    Google
+    Google,
+    Email
 }

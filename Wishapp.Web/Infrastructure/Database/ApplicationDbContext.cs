@@ -16,6 +16,7 @@ public class ApplicationDbContext(
     public DbSet<AuthIdentity> AuthIdentities { get; set; }
     public DbSet<UserExternalToken> UserExternalTokens { get; set; }
     public DbSet<UserRefreshToken> RefreshTokens { get; set; }
+    public DbSet<EmailOtp> EmailOtps { get; set; }
 
     public DbSet<Friendship> Friendships { get; set; }
 

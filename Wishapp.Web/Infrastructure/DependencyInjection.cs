@@ -16,6 +16,7 @@ using Wishapp.Web.Infrastructure.Exceptions;
 using Wishapp.Web.Infrastructure.Interfaces;
 using Wishapp.Web.Infrastructure.Minio;
 using Wishapp.Web.Infrastructure.Parser;
+using Wishapp.Web.Infrastructure.Email;
 using Wishapp.Web.Infrastructure.QrCode;
 using Wishapp.Web.Users.Features.GoogleSignIn;
 
@@ -41,6 +42,8 @@ public static class DependencyInjection
             services.AddAuthenticationInternal(configuration);
 
             services.AddAuthorizationInternal();
+
+            services.AddEmail(configuration);
 
             services.AddHandlers();
 
@@ -193,6 +196,18 @@ public static class DependencyInjection
             return services;
         }
         
+        private IServiceCollection AddEmail(IConfiguration configuration)
+        {
+            services.AddOptions<SmtpOptions>()
+                .BindConfiguration(SmtpOptions.SectionName)
+                .ValidateDataAnnotations()
+                .ValidateOnStart();
+
+            services.AddScoped<IEmailSender, SmtpEmailSender>();
+
+            return services;
+        }
+
         private IServiceCollection AddQrCodeGeneration()
         {
             services.AddOptions<QrCodeOptions>()
