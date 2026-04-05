@@ -170,7 +170,10 @@ public sealed class UrlParser(IHttpClientFactory httpClientFactory, ILogger<UrlP
         var count = 0;
         foreach (var c in span)
         {
-            if (char.IsAsciiDigit(c) || c == '.' || c == ',') count++;
+            if (char.IsAsciiDigit(c) || c == '.' || c == ',')
+            {
+                count++;
+            }
         }
 
         if (count == 0)
@@ -185,7 +188,10 @@ public sealed class UrlParser(IHttpClientFactory httpClientFactory, ILogger<UrlP
 
         foreach (var c in span)
         {
-            if (char.IsAsciiDigit(c)) filtered[wi++] = c;
+            if (char.IsAsciiDigit(c))
+            {
+                filtered[wi++] = c;
+            }
             else switch (c)
             {
                 case '.':
@@ -204,14 +210,20 @@ public sealed class UrlParser(IHttpClientFactory httpClientFactory, ILogger<UrlP
         {
             foreach (var c in filtered[..wi])
             {
-                if (c != ',') normBuf[ni++] = c;
+                if (c != ',')
+                {
+                    normBuf[ni++] = c;
+                }
             }
         }
         else if (lastCommaPos > lastDotPos)
         {
             foreach (var c in filtered[..wi])
             {
-                if (c == '.') continue;
+                if (c == '.')
+                {
+                    continue;
+                }
                 normBuf[ni++] = c == ',' ? '.' : c;
             }
         }

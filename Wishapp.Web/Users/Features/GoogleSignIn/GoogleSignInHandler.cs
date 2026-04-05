@@ -24,7 +24,10 @@ public sealed class GoogleSignInHandler(
     {
         var result = await googleAuthService.ValidateTokenAsync(command.IdToken, ct);
         
-        if (result.IsFailure) return result.Error;
+        if (result.IsFailure)
+        {
+            return result.Error;
+        }
 
         var identity = await db.AuthIdentities
             .AsNoTracking()

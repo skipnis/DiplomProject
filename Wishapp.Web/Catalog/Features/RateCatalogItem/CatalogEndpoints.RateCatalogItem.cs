@@ -18,7 +18,10 @@ public static partial class CatalogEndpoints
         CancellationToken ct)
     {
         var userIdResult = user.TryGetUserId();
-        if (userIdResult.IsFailure) return TypedResults.Unauthorized();
+        if (userIdResult.IsFailure)
+        {
+            return TypedResults.Unauthorized();
+        }
 
         var result = await handler.HandleAsync(new RateCatalogItemCommand(userIdResult.Value, id, request.Value), ct);
 
@@ -32,7 +35,10 @@ public static partial class CatalogEndpoints
         CancellationToken ct)
     {
         var userIdResult = user.TryGetUserId();
-        if (userIdResult.IsFailure) return TypedResults.Unauthorized();
+        if (userIdResult.IsFailure)
+        {
+            return TypedResults.Unauthorized();
+        }
 
         await handler.HandleAsync(new UnrateCatalogItemCommand(userIdResult.Value, id), ct);
 

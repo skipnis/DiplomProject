@@ -14,7 +14,10 @@ public static partial class UsersEndpoints
     {
         var result = await handler.HandleAsync(command, ct);
 
-        if (result.IsFailure) return TypedResults.Unauthorized();
+        if (result.IsFailure)
+        {
+            return TypedResults.Unauthorized();
+        }
 
         SetAuthCookies(httpContext, result.Value.AccessToken, result.Value.RefreshToken);
 

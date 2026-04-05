@@ -16,7 +16,10 @@ public static partial class EventsEndpoints
     {
         var userIdResult = user.TryGetUserId();
 
-        if (userIdResult.IsFailure) return TypedResults.Unauthorized();
+        if (userIdResult.IsFailure)
+        {
+            return TypedResults.Unauthorized();
+        }
 
         var result = await handler.HandleAsync(new SyncAllEventsCommand(userIdResult.Value), ct);
 

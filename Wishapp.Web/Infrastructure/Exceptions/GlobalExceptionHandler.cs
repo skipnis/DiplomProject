@@ -11,7 +11,10 @@ public sealed class GlobalExceptionHandler(
         Exception exception,
         CancellationToken cancellationToken)
     {
-        if (exception is OperationCanceledException) return true;
+        if (exception is OperationCanceledException)
+        {
+            return true;
+        }
 
         logger.LogError(exception, "Unhandled exception: {ExceptionMessage}", exception.Message);
 

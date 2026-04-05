@@ -15,7 +15,10 @@ public static partial class UsersEndpoints
         CancellationToken ct)
     {
         var userIdResult = user.TryGetUserId();
-        if (userIdResult.IsFailure) return TypedResults.Unauthorized();
+        if (userIdResult.IsFailure)
+        {
+            return TypedResults.Unauthorized();
+        }
 
         await handler.HandleAsync(new DeleteMyAccountCommand(userIdResult.Value), ct);
 

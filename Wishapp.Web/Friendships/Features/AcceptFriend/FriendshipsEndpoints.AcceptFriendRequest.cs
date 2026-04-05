@@ -16,7 +16,10 @@ public static partial class FriendshipsEndpoints
         CancellationToken ct)
     {
         var userIdResult = user.TryGetUserId();
-        if (userIdResult.IsFailure) return TypedResults.Unauthorized();
+        if (userIdResult.IsFailure)
+        {
+            return TypedResults.Unauthorized();
+        }
 
         var result = await handler.HandleAsync(new AcceptFriendCommand(userIdResult.Value, userId), ct);
 

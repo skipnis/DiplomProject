@@ -12,11 +12,16 @@ public static partial class UsersEndpoints
         CancellationToken ct)
     {
         if (!httpContext.Request.Cookies.TryGetValue("refresh_token", out var refreshToken))
+        {
             return TypedResults.Unauthorized();
+        }
 
         var result = await handler.HandleAsync(new RefreshTokenCommand(refreshToken), ct);
 
-        if (result.IsFailure) return TypedResults.Unauthorized();
+        if (result.IsFailure)
+        {
+            return TypedResults.Unauthorized();
+        }
 
         SetAuthCookies(httpContext, result.Value.AccessToken, result.Value.RefreshToken);
 

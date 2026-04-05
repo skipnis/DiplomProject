@@ -15,11 +15,15 @@ public static class DatabaseSeeder
         var password = config["Admin:Password"];
 
         if (string.IsNullOrWhiteSpace(username) || string.IsNullOrWhiteSpace(password))
+        {
             return;
+        }
 
         var exists = await db.AdminUsers.AnyAsync(a => a.Username == username);
         if (exists)
+        {
             return;
+        }
 
         var hash = BCrypt.Net.BCrypt.HashPassword(password);
         var admin = AdminUser.Create(username, hash);

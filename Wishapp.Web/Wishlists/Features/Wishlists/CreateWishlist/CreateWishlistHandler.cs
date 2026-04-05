@@ -22,7 +22,8 @@ public sealed class CreateWishlistHandler(
             command.Name,
             command.Description,
             command.Emoji,
-            command.Visibility);
+            command.Visibility,
+            command.IsSurpriseModeEnabled);
 
         if (command.Members is { Count: > 0 })
         {
@@ -53,7 +54,10 @@ public sealed class CreateWishlistHandler(
             {
                 var result = wishlist.AddMember(invitedMember.UserId, invitedMember.Role);
                 
-                if (result.IsFailure) return result.Error;
+                if (result.IsFailure)
+                {
+                    return result.Error;
+                }
             }
         }
 

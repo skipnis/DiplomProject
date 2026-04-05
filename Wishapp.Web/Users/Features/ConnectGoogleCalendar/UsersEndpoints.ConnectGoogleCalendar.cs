@@ -17,7 +17,10 @@ public static partial class UsersEndpoints
         CancellationToken ct)
     {
         var userIdResult = user.TryGetUserId();
-        if (userIdResult.IsFailure) return TypedResults.Unauthorized();
+        if (userIdResult.IsFailure)
+        {
+            return TypedResults.Unauthorized();
+        }
 
         var result = await handler.HandleAsync(new ConnectGoogleCalendarCommand(userIdResult.Value, request.Code), ct);
 

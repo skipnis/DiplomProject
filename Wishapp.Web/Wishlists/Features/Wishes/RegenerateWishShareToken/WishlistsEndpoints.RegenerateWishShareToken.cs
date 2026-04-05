@@ -21,17 +21,24 @@ public static partial class WishlistsEndpoints
         CancellationToken ct)
     {
         var userIdResult = user.TryGetUserId();
-        if (userIdResult.IsFailure) return TypedResults.Unauthorized();
+        if (userIdResult.IsFailure)
+        {
+            return TypedResults.Unauthorized();
+        }
 
         var accessContext = await db.GetAccessContextAsync(id, ct);
 
         if (accessContext is null || accessContext.OwnerId != userIdResult.Value)
+        {
             return TypedResults.Forbid();
+        }
 
         var result = await handler.HandleAsync(new RegenerateWishShareTokenCommand(id, wishId), ct);
 
         if (!result.IsSuccess)
+        {
             return TypedResults.NotFound(result.Error);
+        }
 
         return TypedResults.Ok(new RegenerateWishShareTokenResponse(result.Value));
     }
