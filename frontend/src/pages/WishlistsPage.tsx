@@ -6,12 +6,6 @@ import { parseError } from '../utils/errors';
 import { VISIBILITY_LABELS } from '../types';
 import type { WishlistSummaryDto } from '../types';
 import { Button, buttonVariants } from '@/components/ui/button';
-import { Separator } from '@/components/ui/separator';
-
-const SYSTEM_NAMES: Record<string, string> = {
-  Hidden: '👁️ Скрытый',
-  Blacklist: '🚫 Чёрный список',
-};
 
 export default function WishlistsPage() {
   const navigate = useNavigate();
@@ -38,7 +32,6 @@ export default function WishlistsPage() {
   };
 
   const regular = wishlists.filter((w) => !w.isSystem);
-  const system = wishlists.filter((w) => w.isSystem);
 
   if (loading) return <div className="flex items-center justify-center min-h-[200px] text-muted-foreground">Загрузка...</div>;
 
@@ -52,7 +45,7 @@ export default function WishlistsPage() {
         <Link to="/wishlists/new" className={buttonVariants()}>+ Создать</Link>
       </div>
 
-      {regular.length === 0 ? (
+      {wishlists.length === 0 ? (
         <div className="text-center py-16">
           <div className="text-5xl mb-4">🎁</div>
           <p className="font-semibold mb-1">Нет вишлистов</p>
@@ -61,42 +54,28 @@ export default function WishlistsPage() {
         </div>
       ) : (
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-          {regular.map((w) => (
+          {wishlists.map((w) => (
             <div
               key={w.id}
               className="relative rounded-xl border bg-card p-5 cursor-pointer hover:shadow-md hover:-translate-y-0.5 transition-all"
               onClick={() => navigate(`/wishlists/${w.id}`)}
             >
-              <div className="text-3xl mb-2">{w.emoji || '📋'}</div>
+              <div className="text-3xl mb-2">{w.emoji || (w.isSystem ? '⚙️' : '📋')}</div>
               <div className="font-bold text-sm">{w.name}</div>
               {w.description && <div className="text-xs text-muted-foreground truncate mt-0.5">{w.description}</div>}
               <div className="flex gap-3 mt-2 text-xs text-muted-foreground">
                 <span>{w.wishCount} желаний</span>
-                <span>{VISIBILITY_LABELS[w.visibility]}</span>
+                {!w.isSystem && <span>{VISIBILITY_LABELS[w.visibility]}</span>}
               </div>
-              <div className="flex gap-1 mt-3" onClick={(e) => e.stopPropagation()}>
-                <Link to={`/wishlists/${w.id}/edit`} className={buttonVariants({ variant: 'ghost', size: 'sm' })}>Изменить</Link>
-                <Button variant="destructive" size="sm" onClick={(e) => handleDelete(e, w.id)}>Удалить</Button>
-              </div>
+              {!w.isSystem && (
+                <div className="flex gap-1 mt-3" onClick={(e) => e.stopPropagation()}>
+                  <Link to={`/wishlists/${w.id}/edit`} className={buttonVariants({ variant: 'ghost', size: 'sm' })}>Изменить</Link>
+                  <Button variant="destructive" size="sm" onClick={(e) => handleDelete(e, w.id)}>Удалить</Button>
+                </div>
+              )}
             </div>
           ))}
         </div>
-      )}
-
-      {system.length > 0 && (
-        <>
-          <Separator className="my-6" />
-          <h2 className="text-base font-semibold mb-4">Системные</h2>
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-            {system.map((w) => (
-              <Link key={w.id} to={`/wishlists/${w.id}`} className="block rounded-xl border bg-card p-5 hover:shadow-md hover:-translate-y-0.5 transition-all">
-                <div className="text-3xl mb-2">{w.emoji || '⚙️'}</div>
-                <div className="font-bold text-sm">{SYSTEM_NAMES[w.name] || w.name}</div>
-                <div className="text-xs text-muted-foreground mt-2">{w.wishCount} желаний</div>
-              </Link>
-            ))}
-          </div>
-        </>
       )}
     </div>
   );

@@ -1,4 +1,4 @@
-import { apiGet, apiPost } from './client';
+import { apiGet, apiPost, apiDelete } from './client';
 import type { CatalogCategoryDto, CatalogCollectionDto, CatalogCollectionSummaryDto, CatalogItemDto, PagedResponse } from '../types';
 
 export function getCatalogCategories(): Promise<CatalogCategoryDto[]> {
@@ -29,6 +29,14 @@ export function getCatalogItem(id: string): Promise<CatalogItemDto> {
 
 export function addWishFromCatalog(wishlistId: string, catalogItemId: string): Promise<string> {
   return apiPost<string>(`/wishlists/${wishlistId}/wishes/from-catalog`, { catalogItemId });
+}
+
+export function rateCatalogItem(id: string, value: number): Promise<void> {
+  return apiPost<void>(`/catalog/items/${id}/rate`, { value });
+}
+
+export function unrateCatalogItem(id: string): Promise<void> {
+  return apiDelete<void>(`/catalog/items/${id}/rate`);
 }
 
 export function getCatalogCollections(): Promise<CatalogCollectionSummaryDto[]> {

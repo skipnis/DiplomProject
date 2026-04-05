@@ -33,6 +33,7 @@ public class ApplicationDbContext(
     public DbSet<CatalogItem> CatalogItems { get; set; }
     public DbSet<CatalogCollection> CatalogCollections { get; set; }
     public DbSet<CatalogCollectionItem> CatalogCollectionItems { get; set; }
+    public DbSet<CatalogItemRating> CatalogItemRatings { get; set; }
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {

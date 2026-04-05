@@ -28,7 +28,10 @@ public sealed class GetAllCatalogItemsHandler(ApplicationDbContext db)
                 i.Price, i.Currency != null ? i.Currency.ToString() : null,
                 i.ImagePath, i.Url,
                 i.CategoryId, i.Category.Name,
-                i.IsPublished, i.CreatedAt, i.UpdatedAt))
+                i.IsPublished, i.CreatedAt, i.UpdatedAt,
+                i.Ratings.Any() ? i.Ratings.Average(r => (double)r.Value) : (double?)null,
+                i.Ratings.Count,
+                null))
             .ToPagedResponseAsync(query.Request, ct);
 
         return result;

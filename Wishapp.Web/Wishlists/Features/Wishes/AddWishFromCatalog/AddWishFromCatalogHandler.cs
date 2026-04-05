@@ -33,7 +33,7 @@ public sealed class AddWishFromCatalogHandler(ApplicationDbContext db, ICatalogA
             catalogItem.Description,
             catalogItem.Price,
             catalogItem.Currency,
-            Entities.WishPriority.Medium,
+            Entities.WishPriority.None,
             catalogItem.Url);
 
         if (result.IsFailure)

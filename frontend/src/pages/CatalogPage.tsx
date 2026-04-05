@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { getCatalogCategories, getCatalogItems, addWishFromCatalog } from '../api/catalog';
+import { getCatalogCategories, getCatalogItems, addWishFromCatalog, rateCatalogItem, unrateCatalogItem } from '../api/catalog';
 import { getMyWishlists } from '../api/wishlists';
 import { getImageUrl } from '../api/client';
 import { useToast } from '../components/Toast';
@@ -11,6 +11,32 @@ import { Input } from '@/components/ui/input';
 import { Dialog, DialogContent, DialogTitle } from '@/components/ui/dialog';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { FieldError } from '@/components/ui/field-error';
+
+function StarRating({ item, onRate }: { item: CatalogItemDto; onRate: (id: string, value: number | null) => void }) {
+  const [hover, setHover] = useState<number | null>(null);
+  const displayed = hover ?? item.myRating ?? 0;
+
+  return (
+    <div className="flex items-center gap-0.5">
+      {[1, 2, 3, 4, 5].map((star) => (
+        <button
+          key={star}
+          className={`text-base leading-none transition-colors ${displayed >= star ? 'text-yellow-400' : 'text-muted-foreground/30'}`}
+          onMouseEnter={() => setHover(star)}
+          onMouseLeave={() => setHover(null)}
+          onClick={() => onRate(item.id, item.myRating === star ? null : star)}
+        >
+          ★
+        </button>
+      ))}
+      {item.ratingCount > 0 && (
+        <span className="text-xs text-muted-foreground ml-1">
+          {item.averageRating?.toFixed(1)} ({item.ratingCount})
+        </span>
+      )}
+    </div>
+  );
+}
 
 export default function CatalogPage() {
   const toast = useToast();
@@ -48,6 +74,23 @@ export default function CatalogPage() {
   useEffect(() => { if (page > 1) load(page); }, [page]);
 
   const handleSearch = (e: React.FormEvent) => { e.preventDefault(); setSearch(searchInput); };
+
+  const handleRate = async (id: string, value: number | null) => {
+    if (!user) { toast.error('Войдите в аккаунт'); return; }
+    try {
+      if (value === null) {
+        await unrateCatalogItem(id);
+      } else {
+        await rateCatalogItem(id, value);
+      }
+      setData((prev) => prev ? {
+        ...prev,
+        items: prev.items.map((i) => i.id === id ? { ...i, myRating: value } : i),
+      } : prev);
+    } catch (e) {
+      toast.error(parseError(e));
+    }
+  };
 
   const openAddModal = async (item: CatalogItemDto) => {
     if (!user) { toast.error('Войдите в аккаунт'); return; }
@@ -125,6 +168,7 @@ export default function CatalogPage() {
                       <div className="font-semibold text-sm leading-snug line-clamp-2">{item.name}</div>
                       <div className="text-xs text-muted-foreground">{item.categoryName}</div>
                       {item.price !== null && <div className="font-bold text-primary text-sm">{item.price} {item.currency}</div>}
+                      <StarRating item={item} onRate={handleRate} />
                       {item.url && (
                         <a href={item.url} target="_blank" rel="noopener noreferrer" className="text-xs text-muted-foreground hover:underline" onClick={(e) => e.stopPropagation()}>Перейти →</a>
                       )}

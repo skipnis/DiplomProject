@@ -1,7 +1,7 @@
 // Enums match C# backend integer values (no JsonStringEnumConverter)
 export type WishlistVisibility = 0 | 1 | 2 | 3; // Public | Friends | SelectedFriends | Private
 export type Currency = 0 | 1 | 2 | 3;           // BYN | RUB | USD | EUR
-export type WishPriority = 0 | 1 | 2 | 3;       // None | Low | Medium | High
+export type WishPriority = 0 | 1 | 2 | 3 | 4;   // None | NiceToHave | Want | ReallyWant | Dream
 export type WishlistMemberRole = 0 | 1 | 2;      // Viewer | Editor | Owner
 export type FriendshipStatus = 0 | 1 | 2;        // Pending | Accepted | Declined
 
@@ -18,11 +18,11 @@ export const VISIBILITY_ICONS: Record<number, string> = {
 };
 
 export const PRIORITY_LABELS: Record<number, string> = {
-  0: '—', 1: '🟢 Низкий', 2: '🟡 Средний', 3: '🔴 Высокий',
+  0: '—', 1: 'Неплохо бы', 2: 'Хочу', 3: 'Очень хочу', 4: 'Мечта',
 };
 
 export const PRIORITY_CLASS: Record<number, string> = {
-  0: 'priority-None', 1: 'priority-Low', 2: 'priority-Medium', 3: 'priority-High',
+  0: 'priority-None', 1: 'priority-NiceToHave', 2: 'priority-Want', 3: 'priority-ReallyWant', 4: 'priority-Dream',
 };
 
 export const CURRENCY_LABELS: Record<number, string> = {
@@ -196,6 +196,9 @@ export interface CatalogItemDto {
   isPublished: boolean;
   createdAt: string;
   updatedAt: string;
+  averageRating: number | null;
+  ratingCount: number;
+  myRating: number | null;
 }
 
 export interface CreateCatalogItemRequest {

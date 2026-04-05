@@ -204,9 +204,10 @@ export default function EditWishPage() {
                 <SelectTrigger><SelectValue /></SelectTrigger>
                 <SelectContent>
                   <SelectItem value="0">Без приоритета</SelectItem>
-                  <SelectItem value="1">🟢 Низкий</SelectItem>
-                  <SelectItem value="2">🟡 Средний</SelectItem>
-                  <SelectItem value="3">🔴 Высокий</SelectItem>
+                  <SelectItem value="1">Неплохо бы</SelectItem>
+                  <SelectItem value="2">Хочу</SelectItem>
+                  <SelectItem value="3">Очень хочу</SelectItem>
+                  <SelectItem value="4">Мечта</SelectItem>
                 </SelectContent>
               </Select>
             </div>

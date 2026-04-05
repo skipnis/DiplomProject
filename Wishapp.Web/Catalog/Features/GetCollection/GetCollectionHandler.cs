@@ -37,7 +37,10 @@ public sealed class GetCollectionHandler(ApplicationDbContext db)
                         i.CatalogItem.Category.Name,
                         i.CatalogItem.IsPublished,
                         i.CatalogItem.CreatedAt,
-                        i.CatalogItem.UpdatedAt))
+                        i.CatalogItem.UpdatedAt,
+                        i.CatalogItem.Ratings.Any() ? i.CatalogItem.Ratings.Average(r => (double)r.Value) : (double?)null,
+                        i.CatalogItem.Ratings.Count,
+                        null))
                     .ToList()))
             .FirstOrDefaultAsync(ct);
 

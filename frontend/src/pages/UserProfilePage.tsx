@@ -29,7 +29,7 @@ export default function UserProfilePage() {
   useEffect(() => {
     if (!id) return;
     Promise.all([getUserProfile(id), getUserWishlists(id)])
-      .then(([p, wl]) => { setProfile(p); setWishlists(wl.filter((w) => !w.isSystem)); })
+      .then(([p, wl]) => { setProfile(p); setWishlists(wl); })
       .catch((e) => toast.error(parseError(e)))
       .finally(() => setLoading(false));
 

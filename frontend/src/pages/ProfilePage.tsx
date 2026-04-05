@@ -85,8 +85,6 @@ export default function ProfilePage() {
 
   if (!user) return null;
 
-  const regular = wishlists.filter((w) => !w.isSystem);
-
   return (
     <div>
       <Card className="mb-6">
@@ -146,7 +144,7 @@ export default function ProfilePage() {
 
       {loading ? (
         <p className="text-sm text-muted-foreground">Загрузка...</p>
-      ) : regular.length === 0 ? (
+      ) : wishlists.length === 0 ? (
         <div className="text-center py-12">
           <div className="text-4xl mb-3">📋</div>
           <p className="font-semibold mb-3">Нет вишлистов</p>
@@ -154,7 +152,7 @@ export default function ProfilePage() {
         </div>
       ) : (
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-          {regular.slice(0, 6).map((w) => (
+          {wishlists.slice(0, 6).map((w) => (
             <Link key={w.id} to={`/wishlists/${w.id}`} className="block rounded-xl border bg-card p-5 hover:shadow-md hover:-translate-y-0.5 transition-all">
               <div className="text-3xl mb-2">{w.emoji || '📋'}</div>
               <div className="font-bold text-sm">{w.name}</div>

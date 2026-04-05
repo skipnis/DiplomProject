@@ -10,9 +10,9 @@ public sealed class WishlistsApi(ApplicationDbContext db) : IWishlistsApi
 {
     public Task CreateSystemWishlistsAsync(Guid userId, CancellationToken ct = default)
     {
-        var hidden = Wishlist.CreateSystem(userId, "Hidden", WishlistVisibility.Private);
+        var hidden = Wishlist.CreateSystem(userId, "Скрытые", WishlistVisibility.Private);
 
-        var blacklist = Wishlist.CreateSystem(userId, "Blacklist", WishlistVisibility.Public);
+        var blacklist = Wishlist.CreateSystem(userId, "Чёрный список", WishlistVisibility.Public);
 
         db.Wishlists.Add(hidden);
 

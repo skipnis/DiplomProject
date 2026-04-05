@@ -12,4 +12,7 @@ public record CatalogItemDto(
     string CategoryName,
     bool IsPublished,
     DateTimeOffset CreatedAt,
-    DateTimeOffset UpdatedAt);
+    DateTimeOffset UpdatedAt,
+    double? AverageRating,
+    int RatingCount,
+    int? MyRating);
