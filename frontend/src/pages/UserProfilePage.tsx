@@ -7,7 +7,7 @@ import { getImageUrl } from '../api/client';
 import { useAuth } from '../context/AuthContext';
 import { useToast } from '../components/Toast';
 import { parseError } from '../utils/errors';
-import { VISIBILITY_LABELS } from '../types';
+import { VISIBILITY_LABELS, getWishlistEmoji } from '../types';
 import type { UserProfile, WishlistSummaryDto } from '../types';
 import { Button, buttonVariants } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
@@ -108,7 +108,7 @@ export default function UserProfilePage() {
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
           {wishlists.map((w) => (
             <Link key={w.id} to={`/wishlists/${w.id}`} className="block rounded-xl border bg-card p-5 hover:shadow-md hover:-translate-y-0.5 transition-all">
-              <div className="text-3xl mb-2">{w.emoji || '📋'}</div>
+              <div className="text-3xl mb-2">{getWishlistEmoji(w)}</div>
               <div className="font-bold text-sm">{w.name}</div>
               <div className="flex gap-3 mt-2 text-xs text-muted-foreground">
                 <span>{w.wishCount} желаний</span>

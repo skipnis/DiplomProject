@@ -3,7 +3,7 @@ import { Link, useNavigate } from 'react-router-dom';
 import { getMyWishlists, deleteWishlist } from '../api/wishlists';
 import { useToast } from '../components/Toast';
 import { parseError } from '../utils/errors';
-import { VISIBILITY_LABELS } from '../types';
+import { VISIBILITY_LABELS, getWishlistEmoji } from '../types';
 import type { WishlistSummaryDto } from '../types';
 import { Button, buttonVariants } from '@/components/ui/button';
 
@@ -60,7 +60,7 @@ export default function WishlistsPage() {
               className="relative rounded-xl border bg-card p-5 cursor-pointer hover:shadow-md hover:-translate-y-0.5 transition-all"
               onClick={() => navigate(`/wishlists/${w.id}`)}
             >
-              <div className="text-3xl mb-2">{w.emoji || (w.isSystem ? '⚙️' : '📋')}</div>
+              <div className="text-3xl mb-2">{getWishlistEmoji(w)}</div>
               <div className="font-bold text-sm">{w.name}</div>
               {w.description && <div className="text-xs text-muted-foreground truncate mt-0.5">{w.description}</div>}
               <div className="flex gap-3 mt-2 text-xs text-muted-foreground">

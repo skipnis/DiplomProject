@@ -4,6 +4,7 @@
     <File Path=".env.example" />
     <File Path="Directory.Packages.props" />
     <File Path="docker-compose.yml" />
+    <File Path="postgres\postgresql.conf" />
   </Folder>
   <Project Path="Wishapp.Web/Wishapp.Web.csproj" />
 </Solution>

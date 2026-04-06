@@ -8,7 +8,7 @@ import { getImageUrl, API_URL } from '../api/client';
 import { useAuth } from '../context/AuthContext';
 import { useToast } from '../components/Toast';
 import { parseError } from '../utils/errors';
-import { VISIBILITY_LABELS, ROLE_LABELS, PRIORITY_LABELS } from '../types';
+import { VISIBILITY_LABELS, ROLE_LABELS, PRIORITY_LABELS, getWishlistEmoji } from '../types';
 import type { WishlistDto, WishDto, WishlistMemberRole, UserProfile } from '../types';
 import { Button, buttonVariants } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -144,7 +144,7 @@ export default function WishlistPage() {
       <Card className="mb-6">
         <CardContent className="pt-6">
           <div className="flex items-start gap-4 flex-wrap">
-            <div className="text-4xl leading-none">{wishlist.emoji || '📋'}</div>
+            <div className="text-4xl leading-none">{getWishlistEmoji(wishlist)}</div>
             <div className="flex-1 min-w-0">
               <h1 className="text-xl font-extrabold tracking-tight">{wishlist.name}</h1>
               {wishlist.description && <p className="text-sm text-muted-foreground mt-1">{wishlist.description}</p>}

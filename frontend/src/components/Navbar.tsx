@@ -45,7 +45,7 @@ export default function Navbar() {
           {user ? (
             <>
               <NavLink to="/wishlists" className={navCls} onClick={close}>Вишлисты</NavLink>
-              <NavLink to="/catalog" className={navCls} onClick={close}>Каталог</NavLink>
+              <NavLink to="/catalog" end className={navCls} onClick={close}>Каталог</NavLink>
               <NavLink to="/catalog/collections" className={navCls} onClick={close}>Подборки</NavLink>
               <NavLink to="/friends" className={navCls} onClick={close}>Друзья</NavLink>
               <NavLink to="/reservations" className={navCls} onClick={close}>Резервации</NavLink>
@@ -63,7 +63,7 @@ export default function Navbar() {
             </>
           ) : (
             <>
-              <NavLink to="/catalog" className={navCls} onClick={close}>Каталог</NavLink>
+              <NavLink to="/catalog" end className={navCls} onClick={close}>Каталог</NavLink>
               <NavLink to="/catalog/collections" className={navCls} onClick={close}>Подборки</NavLink>
               <Button variant="ghost" size="sm" onClick={toggle}>{theme === 'dark' ? '☀️' : '🌙'}</Button>
             </>

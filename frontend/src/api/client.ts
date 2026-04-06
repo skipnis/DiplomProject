@@ -1,6 +1,6 @@
 import { ApiError } from '../utils/errors';
 
-export const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:8080';
+export const API_URL = import.meta.env.VITE_API_URL || '/api';
 export const MINIO_URL = import.meta.env.VITE_MINIO_URL || 'http://192.168.1.11:9000/wishapp';
 
 export function getImageUrl(imagePath: string | null | undefined): string | null {

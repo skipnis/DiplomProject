@@ -35,19 +35,23 @@ public sealed class GoogleSignInHandler(
                 a.Provider == AuthProvider.Google &&
                 a.ProviderKey == result.Value.Subject, ct);
 
-        User user;
+        User? user;
 
         if (identity is null)
         {
-            user = User.Create(result.Value.Name, result.Value.Email, result.Value.Picture);
-            
+            user = await db.Users
+                .AsNoTracking()
+                .FirstOrDefaultAsync(u => u.Email == result.Value.Email, ct);
+
+            if (user is null)
+            {
+                user = User.Create(result.Value.Name, result.Value.Email, result.Value.Picture);
+                db.Users.Add(user);
+                await wishlistsApi.CreateSystemWishlistsAsync(user.Id, ct);
+            }
+
             var authIdentity = AuthIdentity.Create(user.Id, AuthProvider.Google, result.Value.Subject);
-
-            db.Users.Add(user);
-
             db.AuthIdentities.Add(authIdentity);
-
-            await wishlistsApi.CreateSystemWishlistsAsync(user.Id, ct);
 
             await db.SaveChangesAsync(ct);
         }

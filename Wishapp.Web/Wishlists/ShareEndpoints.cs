@@ -3,7 +3,7 @@ using Wishapp.Web.Common.Interfaces;
 using Wishapp.Web.Common.Types;
 using Wishapp.Web.Wishlists.Features.Wishes.GetSharedWish;
 
-namespace Wishapp.Web;
+namespace Wishapp.Web.Wishlists;
 
 public static class ShareEndpoints
 {

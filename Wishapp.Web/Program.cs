@@ -47,8 +47,9 @@ var app = builder.Build();
 
 app.UseCors(corsPolicyBuilder =>
 {
-    var allowedOrigin = app.Configuration["Cors:AllowedOrigin"] ?? "http://localhost:5173";
-    corsPolicyBuilder.WithOrigins(allowedOrigin);
+    var allowedOrigins = (app.Configuration["Cors:AllowedOrigins"] ?? app.Configuration["Cors:AllowedOrigin"] ?? "http://localhost:5173")
+        .Split(',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries);
+    corsPolicyBuilder.WithOrigins(allowedOrigins);
     corsPolicyBuilder.AllowAnyMethod();
     corsPolicyBuilder.AllowAnyHeader();
     corsPolicyBuilder.AllowCredentials();
@@ -82,6 +83,10 @@ if (app.Environment.IsDevelopment())
     app.UseApiDocumentation();
 }
 
-await DatabaseSeeder.SeedAsync(app.Services);
+if (args.Contains("--seed"))
+{
+    await DatabaseSeeder.SeedAsync(app.Services);
+    return;
+}
 
 app.Run();

@@ -270,6 +270,16 @@ export interface UpdateCollectionRequest extends CreateCollectionRequest {
   isPublished: boolean;
 }
 
+export function getWishlistEmoji(w: { emoji: string | null; isSystem: boolean; name: string }): string {
+  if (w.emoji) return w.emoji;
+  if (w.isSystem) {
+    if (w.name === 'Скрытые') return '🙈';
+    if (w.name === 'Чёрный список') return '❌';
+    return '⚙️';
+  }
+  return '📋';
+}
+
 export const OCCASION_LABELS: Record<string, string> = {
   birthday: '🎂 День рождения',
   new_year: '🎆 Новый год',
