@@ -14,5 +14,7 @@ public class CatalogCollectionItemConfig : IEntityTypeConfiguration<CatalogColle
             .WithMany()
             .HasForeignKey(i => i.CatalogItemId)
             .OnDelete(DeleteBehavior.Cascade);
+
+        builder.ToTable("catalog_collection_items", "catalog");
     }
 }

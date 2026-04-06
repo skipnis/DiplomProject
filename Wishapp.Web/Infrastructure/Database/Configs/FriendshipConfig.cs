@@ -15,8 +15,10 @@ public class FriendshipConfig : IEntityTypeConfiguration<Friendship>
 
         builder.HasIndex(f => new { f.RequesterId, f.AddresseeId }).IsUnique();
 
-        builder.HasIndex(f => f.AddresseeId);
-        
-        builder.HasIndex(f => f.RequesterId);
+        builder.HasIndex(f => new { f.RequesterId, f.Status });
+
+        builder.HasIndex(f => new { f.AddresseeId, f.Status });
+
+        builder.ToTable("friendships", "friendships", t => t.HasCheckConstraint("CK_friendships_no_self", "requester_id <> addressee_id"));
     }
 }

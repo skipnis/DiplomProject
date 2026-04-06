@@ -21,5 +21,7 @@ public class WishlistMemberConfig : IEntityTypeConfiguration<WishlistMember>
         builder.HasIndex(m => new { m.WishlistId, m.UserId }).IsUnique();
 
         builder.HasIndex(m => m.UserId);
+
+        builder.ToTable("wishlist_members", "wishlists");
     }
 }

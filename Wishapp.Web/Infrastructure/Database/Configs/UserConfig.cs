@@ -30,11 +30,15 @@ public class UserConfig : IEntityTypeConfiguration<User>
 
         builder.HasIndex(u => u.Email).IsUnique();
 
+        builder.HasIndex(u => u.Username)
+            .HasMethod("gin")
+            .HasOperators("gin_trgm_ops");
+
         builder.HasMany(u => u.Identities)
             .WithOne()
             .HasForeignKey(a => a.UserId);
 
-        builder.ToTable(t =>
+        builder.ToTable("users", "users", t =>
         {
             t.HasCheckConstraint("CK_users_email_not_empty", "trim(email) <> ''");
             t.HasCheckConstraint("CK_users_username_not_empty", "trim(username) <> ''");

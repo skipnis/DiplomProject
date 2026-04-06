@@ -21,5 +21,7 @@ public class AdminUserConfig : IEntityTypeConfiguration<AdminUser>
 
         builder.HasIndex(a => a.Username)
             .IsUnique();
+
+        builder.ToTable("admin_users", "admin");
     }
 }

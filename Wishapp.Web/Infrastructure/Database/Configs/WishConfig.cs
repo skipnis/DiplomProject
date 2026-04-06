@@ -40,9 +40,10 @@ public class WishConfig : IEntityTypeConfiguration<Wish>
 
         builder.HasIndex(w => w.WishlistId);
         builder.HasIndex(w => w.CreatedAt);
+        builder.HasIndex(w => w.UpdatedAt);
         builder.HasIndex(w => w.ShareToken).IsUnique();
 
-        builder.ToTable(t =>
+        builder.ToTable("wishes", "wishlists", t =>
         {
             t.HasCheckConstraint("CK_wishes_name_not_empty", "trim(name) <> ''");
             t.HasCheckConstraint("CK_wishes_price_positive", "price > 0");

@@ -16,5 +16,7 @@ public class WishReservationConfig : IEntityTypeConfiguration<WishReservation>
         builder.HasIndex(r => r.ReservedByUserId);
 
         builder.HasIndex(r => r.WishlistId);
+
+        builder.ToTable("wish_reservations", "reservations");
     }
 }

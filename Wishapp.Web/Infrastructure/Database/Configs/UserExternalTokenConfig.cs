@@ -26,5 +26,7 @@ public class UserExternalTokenConfig : IEntityTypeConfiguration<UserExternalToke
             .IsRequired();
 
         builder.HasIndex(t => new { t.UserId, t.Provider, t.Scope }).IsUnique();
+
+        builder.ToTable("user_external_tokens", "users");
     }
 }

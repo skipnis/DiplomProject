@@ -16,5 +16,7 @@ public class UserRefreshTokenConfig : IEntityTypeConfiguration<UserRefreshToken>
             .IsRequired();
 
         builder.HasIndex(t => new { t.UserId, t.TokenHash });
+
+        builder.ToTable("refresh_tokens", "users");
     }
 }

@@ -37,12 +37,10 @@ public class WishlistConfig : IEntityTypeConfiguration<Wishlist>
             .HasForeignKey(w => w.WishlistId)
             .OnDelete(DeleteBehavior.Cascade);
 
-        builder.HasIndex(w => w.OwnerId);
+        builder.HasIndex(w => new { w.OwnerId, w.CreatedAt });
 
         builder.HasIndex(w => w.Visibility);
 
-        builder.HasIndex(w => w.CreatedAt);
-
-        builder.ToTable(t => t.HasCheckConstraint("CK_wishlists_name_not_empty", "trim(name) <> ''"));
+        builder.ToTable("wishlists", "wishlists", t => t.HasCheckConstraint("CK_wishlists_name_not_empty", "trim(name) <> ''"));
     }
 }

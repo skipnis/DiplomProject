@@ -30,7 +30,7 @@ public class CatalogCollectionConfig : IEntityTypeConfiguration<CatalogCollectio
         builder.HasIndex(c => c.Order);
         builder.HasIndex(c => c.IsPublished);
 
-        builder.ToTable(t =>
+        builder.ToTable("catalog_collections", "catalog", t =>
         {
             t.HasCheckConstraint("CK_catalog_collections_name_not_empty", "trim(name) <> ''");
             t.HasCheckConstraint("CK_catalog_collections_order_non_negative", "\"order\" >= 0");

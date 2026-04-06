@@ -1,5 +1,6 @@
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
+using NpgsqlTypes;
 using Wishapp.Web.Catalog.Entities;
 
 namespace Wishapp.Web.Infrastructure.Database.Configs;
@@ -39,11 +40,19 @@ public class CatalogItemConfig : IEntityTypeConfiguration<CatalogItem>
             .HasForeignKey(i => i.CategoryId)
             .OnDelete(DeleteBehavior.Restrict);
 
+        builder.Property<NpgsqlTsVector>("SearchVector")
+            .HasComputedColumnSql(
+                "to_tsvector('russian', coalesce(name, '') || ' ' || coalesce(description, ''))",
+                stored: true);
+
+        builder.HasIndex("SearchVector")
+            .HasMethod("gin");
+
         builder.HasIndex(i => i.CategoryId);
         builder.HasIndex(i => i.IsPublished);
         builder.HasIndex(i => i.CreatedAt);
 
-        builder.ToTable(t =>
+        builder.ToTable("catalog_items", "catalog", t =>
         {
             t.HasCheckConstraint("CK_catalog_items_name_not_empty", "trim(name) <> ''");
             t.HasCheckConstraint("CK_catalog_items_price_positive", "price > 0");

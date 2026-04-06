@@ -16,6 +16,8 @@ public class AuthIdentityConfig : IEntityTypeConfiguration<AuthIdentity>
 
         builder.HasIndex(a => a.UserId);
 
+        builder.ToTable("auth_identities", "users");
+
         builder.Property(a => a.Provider)
             .HasConversion<string>()
             .HasMaxLength(50)

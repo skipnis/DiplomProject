@@ -20,7 +20,7 @@ public class CatalogCategoryConfig : IEntityTypeConfiguration<CatalogCategory>
 
         builder.HasIndex(c => c.Order);
 
-        builder.ToTable(t =>
+        builder.ToTable("catalog_categories", "catalog", t =>
         {
             t.HasCheckConstraint("CK_catalog_categories_name_not_empty", "trim(name) <> ''");
             t.HasCheckConstraint("CK_catalog_categories_order_non_negative", "\"order\" >= 0");
