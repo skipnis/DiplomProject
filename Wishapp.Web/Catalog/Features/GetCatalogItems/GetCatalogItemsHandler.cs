@@ -1,4 +1,5 @@
 using Microsoft.EntityFrameworkCore;
+using NpgsqlTypes;
 using Wishapp.Web.Catalog.Dtos;
 using Wishapp.Web.Common.Extensions;
 using Wishapp.Web.Common.Interfaces;
@@ -20,7 +21,8 @@ public sealed class GetCatalogItemsHandler(ApplicationDbContext db)
             .Where(i => i.IsPublished)
             .WhereIf(query.Filter.CategoryId.HasValue, i => i.CategoryId == query.Filter.CategoryId!.Value)
             .WhereIf(!string.IsNullOrWhiteSpace(query.Filter.Search),
-                i => EF.Functions.ILike(i.Name, $"%{query.Filter.Search}%"))
+                i => EF.Property<NpgsqlTsVector>(i, "SearchVector")
+                    .Matches(EF.Functions.WebSearchToTsQuery("russian", query.Filter.Search!)))
             .WhereIf(query.Filter.MinPrice.HasValue, i => i.Price >= query.Filter.MinPrice!.Value)
             .WhereIf(query.Filter.MaxPrice.HasValue, i => i.Price <= query.Filter.MaxPrice!.Value)
             .OrderBy(i => i.Name)
