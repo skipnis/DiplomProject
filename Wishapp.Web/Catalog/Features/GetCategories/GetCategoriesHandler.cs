@@ -3,22 +3,29 @@ using Wishapp.Web.Catalog.Dtos;
 using Wishapp.Web.Common.Interfaces;
 using Wishapp.Web.Common.Types;
 using Wishapp.Web.Infrastructure.Database;
+using ZiggyCreatures.Caching.Fusion;
 
 namespace Wishapp.Web.Catalog.Features.GetCategories;
 
-public sealed class GetCategoriesHandler(ApplicationDbContext db)
+public sealed class GetCategoriesHandler(ApplicationDbContext db, IFusionCache cache)
     : IQueryHandler<GetCategoriesQuery, List<CatalogCategoryDto>>
 {
     public async Task<Result<List<CatalogCategoryDto>>> HandleAsync(
         GetCategoriesQuery query,
         CancellationToken ct = default)
     {
-        var categories = await db.CatalogCategories
-            .AsNoTracking()
-            .OrderBy(c => c.Order)
-            .Select(c => new CatalogCategoryDto(c.Id, c.Name, c.Order))
-            .ToListAsync(ct);
-
-        return categories;
+        return await cache.GetOrSetAsync("catalog:categories",
+            async token => await db.CatalogCategories
+                .AsNoTracking()
+                .OrderBy(c => c.Order)
+                .Select(c => new CatalogCategoryDto(c.Id, c.Name, c.Order))
+                .ToListAsync(token),
+            new FusionCacheEntryOptions
+            {
+                Duration = TimeSpan.FromHours(1),
+                IsFailSafeEnabled = true,
+                FailSafeMaxDuration = TimeSpan.FromDays(1),
+            },
+            ct);
     }
 }

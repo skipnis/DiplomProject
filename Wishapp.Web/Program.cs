@@ -37,6 +37,8 @@ builder.Services
     .AddReservationsModule()
     .AddEventsModule();
 
+builder.Services.AddFusionCache();
+
 builder.Services.AddOpenApi();
 
 builder.Services.AddCors();
