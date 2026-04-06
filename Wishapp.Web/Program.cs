@@ -1,6 +1,8 @@
+using System.Threading.RateLimiting;
 using HealthChecks.UI.Client;
 using Wishapp.Web.Infrastructure.Database;
 using Microsoft.AspNetCore.Diagnostics.HealthChecks;
+using Microsoft.AspNetCore.RateLimiting;
 using Scalar.AspNetCore;
 using Serilog;
 using Wishapp.Web;
@@ -37,6 +39,17 @@ builder.Services
     .AddReservationsModule()
     .AddEventsModule();
 
+builder.Services.AddRateLimiter(options =>
+{
+    options.AddFixedWindowLimiter("parse-url", o =>
+    {
+        o.Window = TimeSpan.FromMinutes(1);
+        o.PermitLimit = 20;
+        o.QueueLimit = 0;
+    });
+    options.RejectionStatusCode = StatusCodes.Status429TooManyRequests;
+});
+
 builder.Services.AddFusionCache();
 
 builder.Services.AddOpenApi();
@@ -58,6 +71,8 @@ app.UseCors(corsPolicyBuilder =>
 app.UseExceptionHandler();
 
 app.UseSerilogRequestLogging();
+
+app.UseRateLimiter();
 
 app.UseAuthentication();
 

@@ -35,7 +35,8 @@ public static partial class WishlistsEndpoints
         wishlists.MapDelete("/{id:guid}", DeleteWishlist);
 
         wishlists.MapPost("/wishes/parse-url", ParseWishUrl)
-            .AddEndpointFilter<ValidationFilter<ParseWishUrlRequest>>();
+            .AddEndpointFilter<ValidationFilter<ParseWishUrlRequest>>()
+            .RequireRateLimiting("parse-url");
 
         wishlists.MapPost("/{id:guid}/wishes", AddWish)
             .AddEndpointFilter<ValidationFilter<AddWishRequest>>();
