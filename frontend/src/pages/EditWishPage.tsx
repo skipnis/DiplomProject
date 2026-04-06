@@ -7,6 +7,7 @@ import { parseError } from '../utils/errors';
 import { wishSchema, parseZodErrors, type FormErrors } from '../lib/schemas';
 import { parseApiFieldErrors } from '../utils/errors';
 import type { WishPriority, Currency } from '../types';
+import { CURRENCY_LABELS, PRIORITY_LABELS } from '../types';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
@@ -187,7 +188,7 @@ export default function EditWishPage() {
               <div className="flex flex-col gap-1.5">
                 <Label>Валюта</Label>
                 <Select value={String(currency)} onValueChange={(v) => setCurrency(Number(v) as Currency)}>
-                  <SelectTrigger><SelectValue /></SelectTrigger>
+                  <SelectTrigger><SelectValue>{CURRENCY_LABELS[currency]}</SelectValue></SelectTrigger>
                   <SelectContent>
                     <SelectItem value="0">BYN</SelectItem>
                     <SelectItem value="1">RUB</SelectItem>
@@ -201,7 +202,7 @@ export default function EditWishPage() {
             <div className="flex flex-col gap-1.5">
               <Label>Приоритет</Label>
               <Select value={String(priority)} onValueChange={(v) => setPriority(Number(v) as WishPriority)}>
-                <SelectTrigger><SelectValue /></SelectTrigger>
+                <SelectTrigger><SelectValue>{PRIORITY_LABELS[priority]}</SelectValue></SelectTrigger>
                 <SelectContent>
                   <SelectItem value="0">Без приоритета</SelectItem>
                   <SelectItem value="1">Неплохо бы</SelectItem>
