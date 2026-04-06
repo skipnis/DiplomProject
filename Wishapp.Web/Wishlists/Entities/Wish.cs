@@ -14,8 +14,10 @@ public sealed class Wish
     public string? Url { get; private set; }
     public string? ImagePath { get; private set; }
     public DateTimeOffset CreatedAt { get; private set; }
+    public DateTimeOffset UpdatedAt { get; private set; }
     public bool IsFulfilled { get; private set; }
     public DateTimeOffset? FulfilledAt { get; private set; }
+    public Guid? FulfilledByUserId { get; private set; }
     public Guid ShareToken { get; private set; }
 
     private Wish() { }
@@ -29,6 +31,7 @@ public sealed class Wish
         WishPriority priority,
         string? url)
     {
+        var now = DateTimeOffset.UtcNow;
         return new Wish
         {
             Id = Guid.CreateVersion7(),
@@ -39,8 +42,9 @@ public sealed class Wish
             Currency = currency,
             Priority = priority,
             Url = url,
-            CreatedAt = DateTimeOffset.UtcNow,
-            ShareToken = Guid.NewGuid()
+            CreatedAt = now,
+            UpdatedAt = now,
+            ShareToken = Guid.CreateVersion7()
         };
     }
 
@@ -58,37 +62,45 @@ public sealed class Wish
         Currency = currency;
         Priority = priority;
         Url = url;
+        UpdatedAt = DateTimeOffset.UtcNow;
     }
 
     public void SetImage(string imagePath)
     {
         ImagePath = imagePath;
+        UpdatedAt = DateTimeOffset.UtcNow;
     }
 
     public void RemoveImage()
     {
         ImagePath = null;
+        UpdatedAt = DateTimeOffset.UtcNow;
     }
 
-    public void Fulfill()
+    public void Fulfill(Guid fulfilledByUserId)
     {
         IsFulfilled = true;
         FulfilledAt = DateTimeOffset.UtcNow;
+        FulfilledByUserId = fulfilledByUserId;
+        UpdatedAt = DateTimeOffset.UtcNow;
     }
 
     public void Unfulfill()
     {
         IsFulfilled = false;
         FulfilledAt = null;
+        FulfilledByUserId = null;
+        UpdatedAt = DateTimeOffset.UtcNow;
     }
 
     public void RegenerateShareToken()
     {
-        ShareToken = Guid.NewGuid();
+        ShareToken = Guid.CreateVersion7();
     }
 
     public Wish Duplicate(Guid wishlistId)
     {
+        var now = DateTimeOffset.UtcNow;
         return new Wish
         {
             Id = Guid.CreateVersion7(),
@@ -102,13 +114,15 @@ public sealed class Wish
             ImagePath = null,
             IsFulfilled = false,
             FulfilledAt = null,
-            CreatedAt = DateTimeOffset.UtcNow,
-            ShareToken = Guid.NewGuid()
+            CreatedAt = now,
+            UpdatedAt = now,
+            ShareToken = Guid.CreateVersion7()
         };
     }
 
     public Wish CopyTo(Guid targetWishlistId)
     {
+        var now = DateTimeOffset.UtcNow;
         return new Wish
         {
             Id = Guid.CreateVersion7(),
@@ -122,8 +136,9 @@ public sealed class Wish
             ImagePath = null,
             IsFulfilled = false,
             FulfilledAt = null,
-            CreatedAt = DateTimeOffset.UtcNow,
-            ShareToken = Guid.NewGuid()
+            CreatedAt = now,
+            UpdatedAt = now,
+            ShareToken = Guid.CreateVersion7()
         };
     }
 }

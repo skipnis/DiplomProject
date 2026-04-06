@@ -46,7 +46,7 @@ public static partial class WishlistsEndpoints
             return TypedResults.Forbid();
         }
 
-        var result = await handler.HandleAsync(new Features.Wishes.FulfillWish.FulfillWishCommand(id, wishId), ct);
+        var result = await handler.HandleAsync(new Features.Wishes.FulfillWish.FulfillWishCommand(id, wishId, userIdResult.Value), ct);
 
         return result.IsSuccess
             ? TypedResults.NoContent()

@@ -232,7 +232,7 @@ public sealed class Wishlist
         return Result.Success(duplicate);
     }
 
-    public Result FulfillWish(Guid wishId)
+    public Result FulfillWish(Guid wishId, Guid fulfilledByUserId)
     {
         var wish = _wishes.FirstOrDefault(w => w.Id == wishId);
 
@@ -241,7 +241,7 @@ public sealed class Wishlist
             return Error.NotFound("Wishes.NotFound", "Wish not found");
         }
 
-        wish.Fulfill();
+        wish.Fulfill(fulfilledByUserId);
 
         return Result.Success();
     }

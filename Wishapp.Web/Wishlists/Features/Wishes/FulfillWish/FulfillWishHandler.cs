@@ -21,7 +21,7 @@ public sealed class FulfillWishHandler(ApplicationDbContext db)
             return Error.NotFound("Wishlists.NotFound", "Wishlist not found");
         }
 
-        var result = wishlist.FulfillWish(command.WishId);
+        var result = wishlist.FulfillWish(command.WishId, command.UserId);
 
         if (result.IsFailure)
         {
