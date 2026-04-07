@@ -11,6 +11,6 @@ public sealed class CreateCategoryCommandValidator : AbstractValidator<CreateCat
             .MaximumLength(100);
 
         RuleFor(x => x.Order)
-            .GreaterThanOrEqualTo(0);
+            .GreaterThan(0);
     }
 }

@@ -2,10 +2,11 @@ using Microsoft.EntityFrameworkCore;
 using Wishapp.Web.Common.Interfaces;
 using Wishapp.Web.Common.Types;
 using Wishapp.Web.Infrastructure.Database;
+using ZiggyCreatures.Caching.Fusion;
 
 namespace Wishapp.Web.Admin.Features.Categories.Delete;
 
-public sealed class DeleteCategoryHandler(ApplicationDbContext db)
+public sealed class DeleteCategoryHandler(ApplicationDbContext db, IFusionCache cache)
     : ICommandHandler<DeleteCategoryCommand>
 {
     public async Task<Result> HandleAsync(
@@ -31,6 +32,7 @@ public sealed class DeleteCategoryHandler(ApplicationDbContext db)
         db.CatalogCategories.Remove(category);
 
         await db.SaveChangesAsync(ct);
+        await cache.RemoveAsync("catalog:categories", token: ct);
 
         return Result.Success();
     }

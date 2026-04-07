@@ -61,7 +61,7 @@ export const catalogCategorySchema = z.object({
   name: z.string().min(1, 'Обязательное поле').max(100, 'Не более 100 символов'),
   order: z
     .string()
-    .refine((v) => v !== '' && Number.isInteger(Number(v)) && Number(v) >= 0, 'Порядок должен быть целым числом ≥ 0'),
+    .refine((v) => v !== '' && Number.isInteger(Number(v)) && Number(v) > 0, 'Порядок должен быть целым числом > 0'),
 });
 
 export const catalogCollectionSchema = z.object({
@@ -69,7 +69,7 @@ export const catalogCollectionSchema = z.object({
   description: z.string().max(500, 'Не более 500 символов').optional(),
   order: z
     .string()
-    .refine((v) => v !== '' && Number.isInteger(Number(v)) && Number(v) >= 0, 'Порядок должен быть целым числом ≥ 0'),
+    .refine((v) => v !== '' && Number.isInteger(Number(v)) && Number(v) > 0, 'Порядок должен быть целым числом > 0'),
 });
 
 export type FormErrors = Record<string, string>;

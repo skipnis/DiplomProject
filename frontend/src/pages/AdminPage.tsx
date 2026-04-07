@@ -144,6 +144,7 @@ function CollectionForm({ form, setForm, occasions, collectionImageFile, setColl
               <Label>Порядок *</Label>
               <Input
                 type="number"
+                min={1}
                 value={form.order}
                 onChange={(e) => { setForm({ ...form, order: e.target.value }); clearError('order'); }}
                 aria-invalid={!!errors.order}
@@ -208,11 +209,11 @@ function CategoriesTab() {
   const [categories, setCategories] = useState<CatalogCategoryDto[]>([]);
   const [loading, setLoading] = useState(true);
   const [newName, setNewName] = useState('');
-  const [newOrder, setNewOrder] = useState('0');
+  const [newOrder, setNewOrder] = useState('1');
   const [newErrors, setNewErrors] = useState<FormErrors>({});
   const [editId, setEditId] = useState<string | null>(null);
   const [editName, setEditName] = useState('');
-  const [editOrder, setEditOrder] = useState('0');
+  const [editOrder, setEditOrder] = useState('1');
   const [editErrors, setEditErrors] = useState<FormErrors>({});
 
   const load = () => { setLoading(true); adminGetCategories().then(setCategories).catch((e) => toast.error(parseError(e))).finally(() => setLoading(false)); };
@@ -223,7 +224,7 @@ function CategoriesTab() {
     const result = catalogCategorySchema.safeParse({ name: newName, order: newOrder });
     if (!result.success) { setNewErrors(parseZodErrors(result.error)); return; }
     setNewErrors({});
-    try { await adminCreateCategory({ name: newName, order: Number(newOrder) }); setNewName(''); setNewOrder('0'); load(); }
+    try { await adminCreateCategory({ name: newName, order: Number(newOrder) }); setNewName(''); setNewOrder('1'); load(); }
     catch (e) { const fe = parseApiFieldErrors(e); if (fe) setNewErrors((p) => ({ ...p, ...fe })); else toast.error(parseError(e)); }
   };
 
@@ -245,7 +246,7 @@ function CategoriesTab() {
         </div>
         <div className="flex flex-col gap-1.5 w-24">
           <Label>Порядок *</Label>
-          <Input type="number" value={newOrder} onChange={(e) => { setNewOrder(e.target.value); if (newErrors.order) setNewErrors((p) => ({ ...p, order: '' })); }} aria-invalid={!!newErrors.order} />
+          <Input type="number" min={1} value={newOrder} onChange={(e) => { setNewOrder(e.target.value); if (newErrors.order) setNewErrors((p) => ({ ...p, order: '' })); }} aria-invalid={!!newErrors.order} />
           <FieldError message={newErrors.order} />
         </div>
         <Button type="submit" className="mt-6">Создать</Button>
@@ -269,7 +270,7 @@ function CategoriesTab() {
                     <td className="p-3">
                       {editId === c.id ? (
                         <>
-                          <Input type="number" value={editOrder} onChange={(e) => { setEditOrder(e.target.value); if (editErrors.order) setEditErrors((p) => ({ ...p, order: '' })); }} className="h-7 w-20" aria-invalid={!!editErrors.order} />
+                          <Input type="number" min={1} value={editOrder} onChange={(e) => { setEditOrder(e.target.value); if (editErrors.order) setEditErrors((p) => ({ ...p, order: '' })); }} className="h-7 w-20" aria-invalid={!!editErrors.order} />
                           <FieldError message={editErrors.order} />
                         </>
                       ) : c.order}
@@ -414,7 +415,7 @@ function CollectionsTab() {
   const [editCollection, setEditCollection] = useState<CatalogCollectionAdminDto | null>(null);
   const [selectedCollection, setSelectedCollection] = useState<CatalogCollectionAdminDto | null>(null);
   const [addItemId, setAddItemId] = useState('');
-  const [form, setForm] = useState<CollectionFormValues>({ name: '', description: '', occasion: '', coverImagePath: '', order: '0', isPublished: false });
+  const [form, setForm] = useState<CollectionFormValues>({ name: '', description: '', occasion: '', coverImagePath: '', order: '1', isPublished: false });
   const [collectionImageFile, setCollectionImageFile] = useState<File | null>(null);
   const [errors, setErrors] = useState<FormErrors>({});
   const clearError = (field: string) => { if (errors[field]) setErrors((p) => ({ ...p, [field]: '' })); };
@@ -423,7 +424,7 @@ function CollectionsTab() {
   const load = () => { setLoading(true); adminGetAllCollections().then(setCollections).catch(() => {}).finally(() => setLoading(false)); };
   useEffect(() => { load(); adminGetAllItems({ pageSize: 200 }).then((r) => setAllItems(r.items)).catch(() => {}); }, []);
 
-  const resetForm = () => { setForm({ name: '', description: '', occasion: '', coverImagePath: '', order: '0', isPublished: false }); setCollectionImageFile(null); setErrors({}); };
+  const resetForm = () => { setForm({ name: '', description: '', occasion: '', coverImagePath: '', order: '1', isPublished: false }); setCollectionImageFile(null); setErrors({}); };
   const handleCancel = () => { setShowCreate(false); setEditCollection(null); resetForm(); };
 
   const validate = () => {
