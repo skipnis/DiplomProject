@@ -33,6 +33,7 @@ export default function EditWishlistPage() {
   const [description, setDescription] = useState('');
   const [emoji, setEmoji] = useState('🎁');
   const [visibility, setVisibility] = useState<WishlistVisibility>(1);
+  const [isSystem, setIsSystem] = useState(false);
   const [members, setMembers] = useState<WishlistMemberDto[]>([]);
   const [memberProfiles, setMemberProfiles] = useState<Record<string, UserProfile>>({});
   const [friends, setFriends] = useState<FriendInfo[]>([]);
@@ -49,6 +50,7 @@ export default function EditWishlistPage() {
         setDescription(wl.description ?? '');
         setEmoji(wl.emoji ?? '🎁');
         setVisibility(wl.visibility);
+        setIsSystem(wl.isSystem);
         setMembers(mems);
         setFriends(friendList.items);
         const profiles: Record<string, UserProfile> = {};
@@ -89,8 +91,10 @@ export default function EditWishlistPage() {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!id) return;
-    const result = wishlistSchema.safeParse({ name, description: description || undefined });
-    if (!result.success) { setErrors(parseZodErrors(result.error)); return; }
+    if (!isSystem) {
+      const result = wishlistSchema.safeParse({ name, description: description || undefined });
+      if (!result.success) { setErrors(parseZodErrors(result.error)); return; }
+    }
     setErrors({});
     setSaving(true);
     try { await updateWishlist(id, { name, description: description || null, emoji, visibility }); navigate(`/wishlists/${id}`); }
@@ -114,24 +118,28 @@ export default function EditWishlistPage() {
       <Card className="mb-6">
         <CardContent className="pt-6">
           <form onSubmit={handleSubmit} className="flex flex-col gap-4">
-            <div className="flex flex-col gap-1.5">
-              <Label>Эмодзи</Label>
-              <div className="flex flex-wrap gap-1">
-                {EMOJIS.map((e) => (
-                  <button key={e} type="button" className={`text-2xl p-1.5 rounded-md border-2 transition-colors ${emoji === e ? 'border-primary' : 'border-transparent hover:border-muted'}`} onClick={() => setEmoji(e)}>{e}</button>
-                ))}
-              </div>
-            </div>
-            <div className="flex flex-col gap-1.5">
-              <Label htmlFor="name">Название *</Label>
-              <Input
-                id="name"
-                value={name}
-                onChange={(e) => { setName(e.target.value); clearError('name'); }}
-                aria-invalid={!!errors.name}
-              />
-              <FieldError message={errors.name} />
-            </div>
+            {!isSystem && (
+              <>
+                <div className="flex flex-col gap-1.5">
+                  <Label>Эмодзи</Label>
+                  <div className="flex flex-wrap gap-1">
+                    {EMOJIS.map((e) => (
+                      <button key={e} type="button" className={`text-2xl p-1.5 rounded-md border-2 transition-colors ${emoji === e ? 'border-primary' : 'border-transparent hover:border-muted'}`} onClick={() => setEmoji(e)}>{e}</button>
+                    ))}
+                  </div>
+                </div>
+                <div className="flex flex-col gap-1.5">
+                  <Label htmlFor="name">Название *</Label>
+                  <Input
+                    id="name"
+                    value={name}
+                    onChange={(e) => { setName(e.target.value); clearError('name'); }}
+                    aria-invalid={!!errors.name}
+                  />
+                  <FieldError message={errors.name} />
+                </div>
+              </>
+            )}
             <div className="flex flex-col gap-1.5">
               <Label htmlFor="description">Описание</Label>
               <Textarea
@@ -143,18 +151,20 @@ export default function EditWishlistPage() {
               />
               <FieldError message={errors.description} />
             </div>
-            <div className="flex flex-col gap-1.5">
-              <Label>Видимость</Label>
-              <Select value={String(visibility)} onValueChange={(v) => setVisibility(Number(v) as WishlistVisibility)}>
-                <SelectTrigger><SelectValue>{VISIBILITY_LABELS[visibility]}</SelectValue></SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="0">🌍 Публичный</SelectItem>
-                  <SelectItem value="1">👥 Для друзей</SelectItem>
-                  <SelectItem value="2">👤 Избранные друзья</SelectItem>
-                  <SelectItem value="3">🔒 Приватный</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
+            {!isSystem && (
+              <div className="flex flex-col gap-1.5">
+                <Label>Видимость</Label>
+                <Select value={String(visibility)} onValueChange={(v) => setVisibility(Number(v) as WishlistVisibility)}>
+                  <SelectTrigger><SelectValue>{VISIBILITY_LABELS[visibility]}</SelectValue></SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="0">🌍 Публичный</SelectItem>
+                    <SelectItem value="1">👥 Для друзей</SelectItem>
+                    <SelectItem value="2">👤 Избранные друзья</SelectItem>
+                    <SelectItem value="3">🔒 Приватный</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+            )}
             <div className="flex gap-2 justify-end">
               <Button type="button" variant="ghost" onClick={() => navigate(`/wishlists/${id}`)}>Отмена</Button>
               <Button type="submit" disabled={saving}>{saving ? 'Сохранение...' : 'Сохранить'}</Button>
@@ -163,7 +173,7 @@ export default function EditWishlistPage() {
         </CardContent>
       </Card>
 
-      <Card>
+      {!isSystem && <Card>
         <CardContent className="pt-6">
           <h2 className="font-semibold mb-4">Участники</h2>
           <Input placeholder="Поиск по друзьям..." value={friendFilter} onChange={(e) => setFriendFilter(e.target.value)} className="mb-3" />
@@ -208,7 +218,7 @@ export default function EditWishlistPage() {
             })}
           </div>
         </CardContent>
-      </Card>
+      </Card>}
     </div>
   );
 }
