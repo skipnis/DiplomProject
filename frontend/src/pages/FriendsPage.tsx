@@ -43,6 +43,12 @@ export default function FriendsPage() {
   const [requestTotalCount, setRequestTotalCount] = useState(0);
   const [requestsLoading, setRequestsLoading] = useState(true);
 
+  const [outgoing, setOutgoing] = useState<FriendshipRequest[]>([]);
+  const [outgoingPage, setOutgoingPage] = useState(1);
+  const [outgoingTotalPages, setOutgoingTotalPages] = useState(1);
+  const [outgoingTotalCount, setOutgoingTotalCount] = useState(0);
+  const [outgoingLoading, setOutgoingLoading] = useState(true);
+
   const [searchQuery, setSearchQuery] = useState('');
   const [searchResults, setSearchResults] = useState<UserSearchResult[]>([]);
   const [searchLoading, setSearchLoading] = useState(false);
@@ -61,7 +67,7 @@ export default function FriendsPage() {
   const loadRequests = async (page: number) => {
     setRequestsLoading(true);
     try {
-      const res = await getFriendshipRequests('Pending', page, PAGE_SIZE);
+      const res = await getFriendshipRequests('Pending', false, page, PAGE_SIZE);
       setRequests(res.items);
       setRequestTotalPages(Math.ceil(res.totalCount / res.pageSize));
       setRequestTotalCount(res.totalCount);
@@ -69,8 +75,20 @@ export default function FriendsPage() {
     finally { setRequestsLoading(false); }
   };
 
+  const loadOutgoing = async (page: number) => {
+    setOutgoingLoading(true);
+    try {
+      const res = await getFriendshipRequests('Pending', true, page, PAGE_SIZE);
+      setOutgoing(res.items);
+      setOutgoingTotalPages(Math.ceil(res.totalCount / res.pageSize));
+      setOutgoingTotalCount(res.totalCount);
+    } catch (e) { toast.error(parseError(e)); }
+    finally { setOutgoingLoading(false); }
+  };
+
   useEffect(() => { loadFriends(friendPage); }, [friendPage]);
   useEffect(() => { loadRequests(requestPage); }, [requestPage]);
+  useEffect(() => { loadOutgoing(outgoingPage); }, [outgoingPage]);
 
   const handleSearch = async () => {
     if (!searchQuery.trim()) return;
@@ -101,6 +119,11 @@ export default function FriendsPage() {
     catch (e) { toast.error(parseError(e)); }
   };
 
+  const handleCancelRequest = async (userId: string) => {
+    try { await removeFriend(userId); setOutgoing((p) => p.filter((r) => r.userId !== userId)); setOutgoingTotalCount((n) => n - 1); toast.success('Заявка отменена'); }
+    catch (e) { toast.error(parseError(e)); }
+  };
+
   const handleSendRequest = async (userId: string) => {
     try { await sendFriendRequest(userId); setSearchResults((p) => p.filter((u) => u.id !== userId)); toast.success('Заявка отправлена'); }
     catch (e) { toast.error(parseError(e)); }
@@ -115,7 +138,7 @@ export default function FriendsPage() {
       <Tabs defaultValue="friends">
         <TabsList className="mb-6">
           <TabsTrigger value="friends">Друзья {friendTotalCount > 0 && `(${friendTotalCount})`}</TabsTrigger>
-          <TabsTrigger value="requests">Заявки {requestTotalCount > 0 && `(${requestTotalCount})`}</TabsTrigger>
+          <TabsTrigger value="requests">Заявки {(requestTotalCount + outgoingTotalCount) > 0 && `(${requestTotalCount + outgoingTotalCount})`}</TabsTrigger>
           <TabsTrigger value="search">Поиск</TabsTrigger>
         </TabsList>
 
@@ -149,40 +172,68 @@ export default function FriendsPage() {
         </TabsContent>
 
         <TabsContent value="requests">
-          {requestsLoading ? <p className="text-sm text-muted-foreground">Загрузка...</p> :
-            requests.length === 0 ? (
-              <div className="text-center py-12">
-                <div className="text-4xl mb-3">📨</div>
-                <p className="font-semibold">Нет входящих заявок</p>
-              </div>
-            ) : (
-              <>
-                <div className="flex flex-col gap-2">
-                  {requests.map((r) => (
-                    <UserRow key={r.friendshipId} avatarUrl={r.avatarUrl} name={r.username} userId={r.userId}>
-                      <div className="flex gap-2">
-                        <Button size="sm" onClick={() => handleAccept(r.userId)}>Принять</Button>
-                        <Button size="sm" variant="ghost" onClick={() => handleDecline(r.userId)}>Отклонить</Button>
+          <div className="flex flex-col gap-6">
+            <div>
+              <h2 className="text-sm font-semibold text-muted-foreground uppercase tracking-wide mb-3">Входящие {requestTotalCount > 0 && `(${requestTotalCount})`}</h2>
+              {requestsLoading ? <p className="text-sm text-muted-foreground">Загрузка...</p> :
+                requests.length === 0 ? (
+                  <p className="text-sm text-muted-foreground">Нет входящих заявок</p>
+                ) : (
+                  <>
+                    <div className="flex flex-col gap-2">
+                      {requests.map((r) => (
+                        <UserRow key={r.friendshipId} avatarUrl={r.avatarUrl} name={r.username} userId={r.userId}>
+                          <div className="flex gap-2">
+                            <Button size="sm" onClick={() => handleAccept(r.userId)}>Принять</Button>
+                            <Button size="sm" variant="ghost" onClick={() => handleDecline(r.userId)}>Отклонить</Button>
+                          </div>
+                        </UserRow>
+                      ))}
+                    </div>
+                    {requestTotalPages > 1 && (
+                      <div className="flex items-center justify-center gap-3 mt-4">
+                        <Button variant="ghost" size="sm" disabled={requestPage === 1} onClick={() => setRequestPage((p) => p - 1)}>← Назад</Button>
+                        <span className="text-sm text-muted-foreground">{requestPage} / {requestTotalPages}</span>
+                        <Button variant="ghost" size="sm" disabled={requestPage === requestTotalPages} onClick={() => setRequestPage((p) => p + 1)}>Вперёд →</Button>
                       </div>
-                    </UserRow>
-                  ))}
-                </div>
-                {requestTotalPages > 1 && (
-                  <div className="flex items-center justify-center gap-3 mt-4">
-                    <Button variant="ghost" size="sm" disabled={requestPage === 1} onClick={() => setRequestPage((p) => p - 1)}>← Назад</Button>
-                    <span className="text-sm text-muted-foreground">{requestPage} / {requestTotalPages}</span>
-                    <Button variant="ghost" size="sm" disabled={requestPage === requestTotalPages} onClick={() => setRequestPage((p) => p + 1)}>Вперёд →</Button>
-                  </div>
-                )}
-              </>
-            )
-          }
+                    )}
+                  </>
+                )
+              }
+            </div>
+
+            <div>
+              <h2 className="text-sm font-semibold text-muted-foreground uppercase tracking-wide mb-3">Исходящие {outgoingTotalCount > 0 && `(${outgoingTotalCount})`}</h2>
+              {outgoingLoading ? <p className="text-sm text-muted-foreground">Загрузка...</p> :
+                outgoing.length === 0 ? (
+                  <p className="text-sm text-muted-foreground">Нет исходящих заявок</p>
+                ) : (
+                  <>
+                    <div className="flex flex-col gap-2">
+                      {outgoing.map((r) => (
+                        <UserRow key={r.friendshipId} avatarUrl={r.avatarUrl} name={r.username} userId={r.userId}>
+                          <Button size="sm" variant="ghost" onClick={() => handleCancelRequest(r.userId)}>Отменить</Button>
+                        </UserRow>
+                      ))}
+                    </div>
+                    {outgoingTotalPages > 1 && (
+                      <div className="flex items-center justify-center gap-3 mt-4">
+                        <Button variant="ghost" size="sm" disabled={outgoingPage === 1} onClick={() => setOutgoingPage((p) => p - 1)}>← Назад</Button>
+                        <span className="text-sm text-muted-foreground">{outgoingPage} / {outgoingTotalPages}</span>
+                        <Button variant="ghost" size="sm" disabled={outgoingPage === outgoingTotalPages} onClick={() => setOutgoingPage((p) => p + 1)}>Вперёд →</Button>
+                      </div>
+                    )}
+                  </>
+                )
+              }
+            </div>
+          </div>
         </TabsContent>
 
         <TabsContent value="search">
           <div className="flex gap-2 mb-4">
             <Input
-              placeholder="Поиск по username..."
+              placeholder="Поиск по имени..."
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
               onKeyDown={(e) => e.key === 'Enter' && handleSearch()}
@@ -191,7 +242,7 @@ export default function FriendsPage() {
           </div>
           <div className="flex flex-col gap-2">
             {searchResults.map((u) => (
-              <UserRow key={u.id} avatarUrl={u.avatarUrl} name={u.username} userId={u.id}>
+              <UserRow key={u.id} avatarUrl={u.avatarUrl} name={u.displayName} userId={u.id}>
                 <Button size="sm" onClick={() => handleSendRequest(u.id)}>+ Добавить</Button>
               </UserRow>
             ))}

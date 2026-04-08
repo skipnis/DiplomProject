@@ -25,9 +25,9 @@ public sealed class GetFriendsHandler(ApplicationDbContext db)
             .Join(db.Users,
                 x => x.FriendId,
                 u => u.Id,
-                (x, u) => new { u.Id, u.Username, u.AvatarUrl })
-            .OrderBy(x => x.Username)
-            .Select(x => new FriendInfo(x.Id, x.Username, x.AvatarUrl))
+                (x, u) => new { u.Id, u.DisplayName, u.AvatarUrl })
+            .OrderBy(x => x.DisplayName)
+            .Select(x => new FriendInfo(x.Id, x.DisplayName, x.AvatarUrl))
             .ToPagedResponseAsync(query.Request, ct);
 
         return result;

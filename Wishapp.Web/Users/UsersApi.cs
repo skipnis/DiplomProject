@@ -22,7 +22,7 @@ public class UsersApi(ApplicationDbContext dbContext) : IUsersApi
         return await dbContext.Users
             .AsNoTracking()
             .Where(u => userIds.Contains(u.Id))
-            .ToDictionaryAsync(u => u.Id, u => u.Username, ct);
+            .ToDictionaryAsync(u => u.Id, u => u.DisplayName, ct);
     }
 
     public async Task<Result<string>> GetExternalRefreshTokenAsync(

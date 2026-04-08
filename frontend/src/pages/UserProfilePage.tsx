@@ -69,13 +69,14 @@ export default function UserProfilePage() {
         <CardContent className="pt-6">
           <div className="flex items-center gap-6 flex-wrap">
             <Avatar className="h-20 w-20">
-              <AvatarImage src={getImageUrl(profile.avatarUrl) ?? profile.avatarUrl ?? undefined} alt={profile.username} />
+              <AvatarImage src={getImageUrl(profile.avatarUrl) ?? profile.avatarUrl ?? undefined} alt={profile.displayName} />
               <AvatarFallback className="bg-primary text-primary-foreground text-2xl font-bold">
-                {profile.username[0].toUpperCase()}
+                {profile.displayName[0].toUpperCase()}
               </AvatarFallback>
             </Avatar>
             <div className="flex-1">
-              <h1 className="text-xl font-extrabold tracking-tight">{profile.username}</h1>
+              <h1 className="text-xl font-extrabold tracking-tight">{profile.displayName}</h1>
+              {profile.username && <div className="text-sm text-muted-foreground">@{profile.username}</div>}
               {profile.bio && <div className="text-sm mt-1">{profile.bio}</div>}
             </div>
             {me && !isMe && (

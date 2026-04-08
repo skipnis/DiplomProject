@@ -6,6 +6,7 @@ export function getMyProfile(): Promise<MyProfile> {
 }
 
 export function updateMyProfile(data: {
+  displayName: string;
   username: string;
   bio: string | null;
   birthDate: string | null;
@@ -17,8 +18,8 @@ export function getUserProfile(id: string): Promise<UserProfile> {
   return apiGet<UserProfile>(`/users/${id}`);
 }
 
-export function searchUsers(username: string): Promise<{ items: UserSearchResult[] }> {
-  return apiGet<{ items: UserSearchResult[] }>(`/users/search?username=${encodeURIComponent(username)}`);
+export function searchUsers(displayName: string): Promise<{ items: UserSearchResult[] }> {
+  return apiGet<{ items: UserSearchResult[] }>(`/users/search?displayName=${encodeURIComponent(displayName)}`);
 }
 
 export function connectGoogleCalendar(code: string): Promise<void> {

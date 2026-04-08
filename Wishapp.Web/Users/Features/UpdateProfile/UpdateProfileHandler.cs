@@ -20,6 +20,15 @@ public sealed class UpdateProfileHandler(ApplicationDbContext db)
             return Error.NotFound("Users.NotFound", "User not found");
         }
 
+        var usernameTaken = await db.Users
+            .AnyAsync(u => u.Username == command.Username && u.Id != command.UserId, ct);
+
+        if (usernameTaken)
+        {
+            return Error.Conflict("Users.UsernameAlreadyTaken", "Username is already taken");
+        }
+
+        user.DisplayName = command.DisplayName;
         user.Username = command.Username;
         user.Bio = command.Bio;
         user.BirthDate = command.BirthDate;

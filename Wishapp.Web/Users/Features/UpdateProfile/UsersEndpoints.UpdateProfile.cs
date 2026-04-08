@@ -9,7 +9,7 @@ namespace Wishapp.Web.Users;
 
 public static partial class UsersEndpoints
 {
-    private static async Task<Results<NoContent, NotFound<Error>, UnauthorizedHttpResult>> UpdateProfile(
+    private static async Task<Results<NoContent, NotFound<Error>, Conflict<Error>, UnauthorizedHttpResult>> UpdateProfile(
         UpdateProfileRequest request,
         ClaimsPrincipal user,
         ICommandHandler<UpdateProfileCommand> handler,
@@ -23,10 +23,14 @@ public static partial class UsersEndpoints
         }
 
         var result = await handler.HandleAsync(
-            new UpdateProfileCommand(userIdResult.Value, request.Username, request.Bio, request.BirthDate), ct);
+            new UpdateProfileCommand(userIdResult.Value, request.DisplayName, request.Username, request.Bio, request.BirthDate), ct);
 
-        return result.IsSuccess
-            ? TypedResults.NoContent()
-            : TypedResults.NotFound(result.Error);
+        if (result.IsSuccess) return TypedResults.NoContent();
+
+        return result.Error.Type switch
+        {
+            ErrorType.Conflict => TypedResults.Conflict(result.Error),
+            _ => TypedResults.NotFound(result.Error)
+        };
     }
 }

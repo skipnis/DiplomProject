@@ -13,8 +13,8 @@ public sealed class SearchUsersHandler(ApplicationDbContext db)
         CancellationToken ct = default)
     {
         var users = await db.Users
-            .Where(u => EF.Functions.ILike(u.Username, $"%{query.Username}%") && u.Id != query.CurrentUserId)
-            .Select(u => new UserSearchResult(u.Id, u.Username, u.AvatarUrl))
+            .Where(u => EF.Functions.ILike(u.DisplayName, $"%{query.DisplayName}%") && u.Id != query.CurrentUserId)
+            .Select(u => new UserSearchResult(u.Id, u.DisplayName, u.Username, u.AvatarUrl))
             .ToListAsync(ct);
 
         return Result.Success(new UsersSearchResponse(users));

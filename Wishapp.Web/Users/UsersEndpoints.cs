@@ -45,7 +45,7 @@ public static partial class UsersEndpoints
 
     private static void SetAuthCookies(HttpContext httpContext, string accessToken, string refreshToken)
     {
-        var isSecure = !httpContext.Request.Host.Host.Equals("localhost", StringComparison.OrdinalIgnoreCase);
+        var isSecure = httpContext.Request.IsHttps;
 
         var cookieOptions = new CookieOptions
         {

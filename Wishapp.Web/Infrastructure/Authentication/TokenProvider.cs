@@ -25,7 +25,7 @@ internal sealed class TokenProvider(IOptions<JwtOptions> options) : ITokenProvid
             Subject = new ClaimsIdentity(
             [
                 new Claim(JwtRegisteredClaimNames.Sub, user.Id.ToString()),
-                new Claim("username", user.Username),
+                new Claim("username", user.Username ?? string.Empty),
                 new Claim(JwtRegisteredClaimNames.Email, user.Email)
             ]),
             Expires = DateTime.UtcNow.AddMinutes(_jwt.ExpirationInMinutes),

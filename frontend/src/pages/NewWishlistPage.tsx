@@ -174,7 +174,7 @@ export default function NewWishlistPage() {
                         <button key={u.id} type="button" className="flex items-center gap-2 p-2 rounded-md hover:bg-muted text-left" onClick={() => addMember(u)}>
                           <Avatar className="h-7 w-7">
                             <AvatarImage src={getImageUrl(u.avatarUrl) ?? undefined} />
-                            <AvatarFallback className="text-xs">{u.username[0].toUpperCase()}</AvatarFallback>
+                            <AvatarFallback className="text-xs">{(u.username ?? '?')[0].toUpperCase()}</AvatarFallback>
                           </Avatar>
                           <span className="text-sm font-medium">{u.username}</span>
                         </button>

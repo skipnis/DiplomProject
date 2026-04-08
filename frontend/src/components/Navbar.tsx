@@ -52,7 +52,7 @@ export default function Navbar() {
               <NavLink to="/events" className={navCls} onClick={close}>События</NavLink>
               <Link to="/profile" onClick={close} className="ml-1">
                 <Avatar className="h-8 w-8">
-                  <AvatarImage src={getImageUrl(user.avatarUrl) ?? user.avatarUrl ?? undefined} alt={user.username} />
+                  <AvatarImage src={getImageUrl(user.avatarUrl) ?? user.avatarUrl ?? undefined} alt={user.username ?? undefined} />
                   <AvatarFallback className="bg-primary text-primary-foreground text-sm font-bold">
                     {user.username?.[0]?.toUpperCase() ?? '?'}
                   </AvatarFallback>

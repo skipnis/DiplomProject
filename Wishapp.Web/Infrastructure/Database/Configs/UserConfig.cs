@@ -15,10 +15,14 @@ public class UserConfig : IEntityTypeConfiguration<User>
             .HasColumnType("text")
             .IsRequired();
 
-        builder.Property(u => u.Username)
-            .HasMaxLength(50)
+        builder.Property(u => u.DisplayName)
+            .HasMaxLength(100)
             .HasColumnType("text")
             .IsRequired();
+
+        builder.Property(u => u.Username)
+            .HasMaxLength(50)
+            .HasColumnType("text");
 
         builder.Property(u => u.AvatarUrl)
             .HasMaxLength(500)
@@ -30,9 +34,11 @@ public class UserConfig : IEntityTypeConfiguration<User>
 
         builder.HasIndex(u => u.Email).IsUnique();
 
-        builder.HasIndex(u => u.Username)
+        builder.HasIndex(u => u.DisplayName)
             .HasMethod("gin")
             .HasOperators("gin_trgm_ops");
+
+        builder.HasIndex(u => u.Username).IsUnique();
 
         builder.HasMany(u => u.Identities)
             .WithOne()
@@ -41,7 +47,8 @@ public class UserConfig : IEntityTypeConfiguration<User>
         builder.ToTable("users", "users", t =>
         {
             t.HasCheckConstraint("CK_users_email_not_empty", "trim(email) <> ''");
-            t.HasCheckConstraint("CK_users_username_not_empty", "trim(username) <> ''");
+            t.HasCheckConstraint("CK_users_display_name_not_empty", "trim(display_name) <> ''");
+            t.HasCheckConstraint("CK_users_username_not_empty", "username IS NULL OR trim(username) <> ''");
         });
     }
 }

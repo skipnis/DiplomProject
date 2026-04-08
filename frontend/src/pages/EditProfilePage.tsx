@@ -18,6 +18,7 @@ export default function EditProfilePage() {
   const navigate = useNavigate();
   const toast = useToast();
 
+  const [displayName, setDisplayName] = useState('');
   const [username, setUsername] = useState('');
   const [bio, setBio] = useState('');
   const [birthDate, setBirthDate] = useState('');
@@ -26,7 +27,8 @@ export default function EditProfilePage() {
 
   useEffect(() => {
     if (user) {
-      setUsername(user.username);
+      setDisplayName(user.displayName);
+      setUsername(user.username ?? '');
       setBio(user.bio ?? '');
       setBirthDate(user.birthDate ?? '');
     }
@@ -38,18 +40,18 @@ export default function EditProfilePage() {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    const result = profileSchema.safeParse({ username, bio: bio || undefined });
+    const result = profileSchema.safeParse({ displayName, username, bio: bio || undefined });
     if (!result.success) { setErrors(parseZodErrors(result.error)); return; }
     setErrors({});
     setSaving(true);
     try {
-      await updateMyProfile({ username, bio: bio || null, birthDate: birthDate || null });
+      await updateMyProfile({ displayName, username, bio: bio || null, birthDate: birthDate || null });
       await refreshUser();
       toast.success('Профиль сохранён');
       navigate('/profile');
     } catch (e) {
       if (e instanceof ApiError && e.status === 409) {
-        setErrors((prev) => ({ ...prev, username: 'Это имя пользователя уже занято' }));
+        setErrors((prev) => ({ ...prev, username: 'Этот username уже занят' }));
       } else {
         const fieldErrors = parseApiFieldErrors(e);
         if (fieldErrors) setErrors((prev) => ({ ...prev, ...fieldErrors }));
@@ -69,14 +71,29 @@ export default function EditProfilePage() {
         <CardContent className="pt-6">
           <form onSubmit={handleSubmit} className="flex flex-col gap-4">
             <div className="flex flex-col gap-1.5">
-              <Label htmlFor="username">Имя пользователя</Label>
+              <Label htmlFor="displayName">Имя</Label>
               <Input
-                id="username"
-                value={username}
-                onChange={(e) => { setUsername(e.target.value); clearError('username'); }}
-                placeholder="username"
-                aria-invalid={!!errors.username}
+                id="displayName"
+                value={displayName}
+                onChange={(e) => { setDisplayName(e.target.value); clearError('displayName'); }}
+                placeholder="Алексей Кипнис"
+                aria-invalid={!!errors.displayName}
               />
+              <FieldError message={errors.displayName} />
+            </div>
+            <div className="flex flex-col gap-1.5">
+              <Label htmlFor="username">Username</Label>
+              <div className="relative">
+                <span className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground select-none">@</span>
+                <Input
+                  id="username"
+                  value={username}
+                  onChange={(e) => { setUsername(e.target.value); clearError('username'); }}
+                  placeholder="alexkipnis"
+                  className="pl-7"
+                  aria-invalid={!!errors.username}
+                />
+              </div>
               <FieldError message={errors.username} />
             </div>
             <div className="flex flex-col gap-1.5">

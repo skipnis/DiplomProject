@@ -91,13 +91,14 @@ export default function ProfilePage() {
         <CardContent className="pt-6">
           <div className="flex items-center gap-6 flex-wrap">
             <Avatar className="h-20 w-20">
-              <AvatarImage src={getImageUrl(user.avatarUrl) ?? user.avatarUrl ?? undefined} alt={user.username} />
+              <AvatarImage src={getImageUrl(user.avatarUrl) ?? user.avatarUrl ?? undefined} alt={user.displayName} />
               <AvatarFallback className="bg-primary text-primary-foreground text-2xl font-bold">
-                {user.username[0].toUpperCase()}
+                {user.displayName[0].toUpperCase()}
               </AvatarFallback>
             </Avatar>
             <div className="flex-1">
-              <h1 className="text-xl font-extrabold tracking-tight">{user.username}</h1>
+              <h1 className="text-xl font-extrabold tracking-tight">{user.displayName}</h1>
+              {user.username && <div className="text-sm text-muted-foreground">@{user.username}</div>}
               <div className="text-sm text-muted-foreground">{user.email}</div>
               {user.bio && <div className="text-sm mt-1">{user.bio}</div>}
               {user.birthDate && (
@@ -106,7 +107,26 @@ export default function ProfilePage() {
                 </div>
               )}
             </div>
-            <Link to="/profile/edit" className={buttonVariants({ variant: 'secondary' })}>Редактировать</Link>
+            <div className="flex gap-2">
+              <Link to="/profile/edit" className={buttonVariants({ variant: 'secondary' })}>Редактировать</Link>
+              <AlertDialog>
+                <AlertDialogTrigger render={<Button variant="destructive" size="sm" disabled={deleteLoading}>Удалить аккаунт</Button>} />
+                <AlertDialogContent>
+                  <AlertDialogHeader>
+                    <AlertDialogTitle>Удалить аккаунт?</AlertDialogTitle>
+                    <AlertDialogDescription>
+                      Это действие необратимо. Все ваши вишлисты, желания и данные будут удалены навсегда.
+                    </AlertDialogDescription>
+                  </AlertDialogHeader>
+                  <AlertDialogFooter>
+                    <AlertDialogCancel>Отмена</AlertDialogCancel>
+                    <AlertDialogAction onClick={handleDeleteAccount} className="bg-destructive text-destructive-foreground hover:bg-destructive/90">
+                      Удалить
+                    </AlertDialogAction>
+                  </AlertDialogFooter>
+                </AlertDialogContent>
+              </AlertDialog>
+            </div>
           </div>
         </CardContent>
       </Card>
@@ -165,25 +185,6 @@ export default function ProfilePage() {
         </div>
       )}
 
-      <div className="mt-10 border-t pt-6">
-        <AlertDialog>
-          <AlertDialogTrigger render={<Button variant="destructive" size="sm" disabled={deleteLoading}>Удалить аккаунт</Button>} />
-          <AlertDialogContent>
-            <AlertDialogHeader>
-              <AlertDialogTitle>Удалить аккаунт?</AlertDialogTitle>
-              <AlertDialogDescription>
-                Это действие необратимо. Все ваши вишлисты, желания и данные будут удалены навсегда.
-              </AlertDialogDescription>
-            </AlertDialogHeader>
-            <AlertDialogFooter>
-              <AlertDialogCancel>Отмена</AlertDialogCancel>
-              <AlertDialogAction onClick={handleDeleteAccount} className="bg-destructive text-destructive-foreground hover:bg-destructive/90">
-                Удалить
-              </AlertDialogAction>
-            </AlertDialogFooter>
-          </AlertDialogContent>
-        </AlertDialog>
-      </div>
     </div>
   );
 }

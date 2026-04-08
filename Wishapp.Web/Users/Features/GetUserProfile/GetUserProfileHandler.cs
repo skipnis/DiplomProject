@@ -23,6 +23,7 @@ public sealed class GetUserProfileHandler(ApplicationDbContext db)
 
         return new GetUserProfileResponse(
             user.Id,
+            user.DisplayName,
             user.Username,
             user.AvatarUrl,
             user.Bio);

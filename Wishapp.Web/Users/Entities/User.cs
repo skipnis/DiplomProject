@@ -4,7 +4,8 @@ public class User
 {
     public Guid Id { get; set; }
     public required string Email { get; set; }
-    public required string Username { get; set; }
+    public required string DisplayName { get; set; }
+    public string? Username { get; set; }
     public string? AvatarUrl { get; set; }
     public string? Bio { get; set; }
     public DateOnly? BirthDate { get; set; }
@@ -17,7 +18,7 @@ public class User
         return new User
         {
             Id = Guid.CreateVersion7(),
-            Username = displayName,
+            DisplayName = displayName,
             Email = email,
             AvatarUrl = avatarUrl,
             CreatedAt = DateTimeOffset.UtcNow,

@@ -5,8 +5,8 @@ export function getFriends(page = 1, pageSize = 20): Promise<PagedResponse<Frien
   return apiGet<PagedResponse<FriendInfo>>(`/friendships/?page=${page}&pageSize=${pageSize}`);
 }
 
-export function getFriendshipRequests(status = 'Pending', page = 1, pageSize = 20): Promise<PagedResponse<FriendshipRequest>> {
-  return apiGet<PagedResponse<FriendshipRequest>>(`/friendships/requests?status=${status}&page=${page}&pageSize=${pageSize}`);
+export function getFriendshipRequests(status = 'Pending', isOutgoing = false, page = 1, pageSize = 20): Promise<PagedResponse<FriendshipRequest>> {
+  return apiGet<PagedResponse<FriendshipRequest>>(`/friendships/requests?status=${status}&isOutgoing=${isOutgoing}&page=${page}&pageSize=${pageSize}`);
 }
 
 export function sendFriendRequest(userId: string): Promise<void> {

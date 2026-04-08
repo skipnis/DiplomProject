@@ -30,6 +30,7 @@ public sealed class GetMyProfileHandler(
 
         return new GetMyProfileResponse(
             user.Id,
+            user.DisplayName,
             user.Username,
             user.Email,
             user.AvatarUrl,

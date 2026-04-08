@@ -25,6 +25,7 @@ public static partial class FriendshipsEndpoints
             new GetFriendshipRequestsQuery(
                 userIdResult.Value,
                 request.Status,
+                request.IsOutgoing,
                 new PagedRequest(request.Page, request.PageSize)), ct);
 
         return TypedResults.Ok(result.Value);

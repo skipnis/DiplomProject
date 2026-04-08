@@ -7,11 +7,15 @@ const today = () => {
 };
 
 export const profileSchema = z.object({
+  displayName: z
+    .string()
+    .min(1, 'Обязательное поле')
+    .max(100, 'Не более 100 символов'),
   username: z
     .string()
     .min(1, 'Обязательное поле')
     .max(50, 'Не более 50 символов')
-    .regex(/^[a-zA-Z0-9_а-яА-ЯёЁ]+$/, 'Только буквы, цифры и символ _'),
+    .regex(/^[a-zA-Z0-9_]+$/, 'Только латинские буквы, цифры и символ _'),
   bio: z.string().max(500, 'Не более 500 символов').optional(),
   birthDate: z.string().optional(),
 });

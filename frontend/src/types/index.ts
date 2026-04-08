@@ -35,7 +35,8 @@ export const ROLE_LABELS: Record<number, string> = {
 
 export interface MyProfile {
   id: string;
-  username: string;
+  displayName: string;
+  username: string | null;
   email: string;
   avatarUrl: string | null;
   bio: string | null;
@@ -46,14 +47,16 @@ export interface MyProfile {
 
 export interface UserProfile {
   id: string;
-  username: string;
+  displayName: string;
+  username: string | null;
   avatarUrl: string | null;
   bio: string | null;
 }
 
 export interface UserSearchResult {
   id: string;
-  username: string;
+  displayName: string;
+  username: string | null;
   avatarUrl: string | null;
 }
 

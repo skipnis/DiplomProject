@@ -38,6 +38,7 @@ export default function EditWishlistPage() {
   const [memberProfiles, setMemberProfiles] = useState<Record<string, UserProfile>>({});
   const [friends, setFriends] = useState<FriendInfo[]>([]);
   const [friendFilter, setFriendFilter] = useState('');
+  const [customRoleEdits, setCustomRoleEdits] = useState<Record<string, string>>({});
   const [saving, setSaving] = useState(false);
   const [loading, setLoading] = useState(true);
   const [errors, setErrors] = useState<FormErrors>({});
@@ -53,6 +54,9 @@ export default function EditWishlistPage() {
         setIsSystem(wl.isSystem);
         setMembers(mems);
         setFriends(friendList.items);
+        const roleEdits: Record<string, string> = {};
+        mems.forEach((m) => { roleEdits[m.userId] = m.customRoleName ?? ''; });
+        setCustomRoleEdits(roleEdits);
         const profiles: Record<string, UserProfile> = {};
         await Promise.all(mems.map(async (m) => {
           try { profiles[m.userId] = await getUserProfile(m.userId); } catch { /* ignore */ }
@@ -72,7 +76,8 @@ export default function EditWishlistPage() {
     try {
       await addWishlistMembers(id, [{ userId: friend.userId, role: 1 }]);
       setMembers((prev) => [...prev, { userId: friend.userId, role: 1, customRoleName: null, joinedAt: new Date().toISOString() }]);
-      setMemberProfiles((prev) => ({ ...prev, [friend.userId]: { id: friend.userId, username: friend.username, avatarUrl: friend.avatarUrl, bio: null } }));
+      setCustomRoleEdits((prev) => ({ ...prev, [friend.userId]: '' }));
+      setMemberProfiles((prev) => ({ ...prev, [friend.userId]: { id: friend.userId, displayName: friend.username, username: friend.username, avatarUrl: friend.avatarUrl, bio: null } }));
     } catch (e) { toast.error(parseError(e)); }
   };
 
@@ -84,8 +89,22 @@ export default function EditWishlistPage() {
 
   const handleRoleChange = async (userId: string, role: WishlistMemberRole) => {
     if (!id) return;
-    try { await updateMemberRole(id, userId, role, null); setMembers((prev) => prev.map((m) => m.userId === userId ? { ...m, role } : m)); }
+    const member = members.find((m) => m.userId === userId);
+    const customRoleName = member?.customRoleName ?? null;
+    try { await updateMemberRole(id, userId, role, customRoleName); setMembers((prev) => prev.map((m) => m.userId === userId ? { ...m, role } : m)); }
     catch (e) { toast.error(parseError(e)); }
+  };
+
+  const handleCustomRoleBlur = async (userId: string) => {
+    if (!id) return;
+    const member = members.find((m) => m.userId === userId);
+    if (!member) return;
+    const customRoleName = customRoleEdits[userId]?.trim() || null;
+    if (customRoleName === (member.customRoleName ?? null)) return;
+    try {
+      await updateMemberRole(id, userId, member.role, customRoleName);
+      setMembers((prev) => prev.map((m) => m.userId === userId ? { ...m, customRoleName } : m));
+    } catch (e) { toast.error(parseError(e)); }
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -196,23 +215,37 @@ export default function EditWishlistPage() {
               const p = memberProfiles[m.userId];
               const isMe = m.userId === me?.id;
               return (
-                <div key={m.userId} className="flex items-center gap-3 py-1">
-                  <Avatar className="h-8 w-8">
-                    <AvatarImage src={getImageUrl(p?.avatarUrl) ?? undefined} />
-                    <AvatarFallback className="text-xs">{(p?.username ?? m.userId)[0].toUpperCase()}</AvatarFallback>
-                  </Avatar>
-                  <div className="flex-1 text-sm font-semibold">{p?.username ?? m.userId.slice(0, 8) + '…'}</div>
-                  {m.role === 2 ? (
-                    <Badge variant="secondary">{ROLE_LABELS[2]}</Badge>
-                  ) : (
-                    <Select value={String(m.role)} onValueChange={(v) => handleRoleChange(m.userId, Number(v) as WishlistMemberRole)} disabled={isMe}>
-                      <SelectTrigger className="w-28 h-7 text-xs"><SelectValue /></SelectTrigger>
-                      <SelectContent>
-                        {([0, 1] as WishlistMemberRole[]).map((r) => <SelectItem key={r} value={String(r)}>{ROLE_LABELS[r]}</SelectItem>)}
-                      </SelectContent>
-                    </Select>
+                <div key={m.userId} className="flex flex-col gap-1 py-1">
+                  <div className="flex items-center gap-3">
+                    <Avatar className="h-8 w-8">
+                      <AvatarImage src={getImageUrl(p?.avatarUrl) ?? undefined} />
+                      <AvatarFallback className="text-xs">{(p?.username ?? m.userId)[0].toUpperCase()}</AvatarFallback>
+                    </Avatar>
+                    <div className="flex-1 text-sm font-semibold">{p?.username ?? m.userId.slice(0, 8) + '…'}</div>
+                    {m.role === 2 ? (
+                      <Badge variant="secondary">{ROLE_LABELS[2]}</Badge>
+                    ) : (
+                      <Select value={String(m.role)} onValueChange={(v) => handleRoleChange(m.userId, Number(v) as WishlistMemberRole)} disabled={isMe}>
+                        <SelectTrigger className="w-28 h-7 text-xs"><SelectValue /></SelectTrigger>
+                        <SelectContent>
+                          {([0, 1] as WishlistMemberRole[]).map((r) => <SelectItem key={r} value={String(r)}>{ROLE_LABELS[r]}</SelectItem>)}
+                        </SelectContent>
+                      </Select>
+                    )}
+                    {!isMe && m.role !== 2 && <Button variant="destructive" size="sm" onClick={() => handleRemoveMember(m.userId)}>Удалить</Button>}
+                  </div>
+                  {m.role !== 2 && !isMe && (
+                    <div className="pl-11">
+                      <Input
+                        className="h-6 text-xs"
+                        placeholder="Кастомная роль..."
+                        value={customRoleEdits[m.userId] ?? ''}
+                        onChange={(e) => setCustomRoleEdits((prev) => ({ ...prev, [m.userId]: e.target.value }))}
+                        onBlur={() => handleCustomRoleBlur(m.userId)}
+                        onKeyDown={(e) => { if (e.key === 'Enter') (e.target as HTMLInputElement).blur(); }}
+                      />
+                    </div>
                   )}
-                  {!isMe && m.role !== 2 && <Button variant="destructive" size="sm" onClick={() => handleRemoveMember(m.userId)}>Удалить</Button>}
                 </div>
               );
             })}

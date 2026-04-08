@@ -10,7 +10,7 @@ namespace Wishapp.Web.Users;
 public static partial class UsersEndpoints
 {
     private static async Task<Results<Ok<UsersSearchResponse>, UnauthorizedHttpResult>> SearchUsers(
-        [FromQuery] string username,
+        [FromQuery] string displayName,
         ClaimsPrincipal user,
         IQueryHandler<SearchUsersQuery, UsersSearchResponse> handler,
         CancellationToken ct)
@@ -19,7 +19,7 @@ public static partial class UsersEndpoints
         if (userIdResult.IsFailure)
             return TypedResults.Unauthorized();
 
-        var result = await handler.HandleAsync(new SearchUsersQuery(username, userIdResult.Value), ct);
+        var result = await handler.HandleAsync(new SearchUsersQuery(displayName, userIdResult.Value), ct);
         return TypedResults.Ok(result.Value);
     }
 }
