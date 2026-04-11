@@ -18,6 +18,7 @@ public sealed class Wish
     public bool IsFulfilled { get; private set; }
     public DateTimeOffset? FulfilledAt { get; private set; }
     public Guid? FulfilledByUserId { get; private set; }
+    public Guid? FulfilledByReserverId { get; private set; }
     public Guid ShareToken { get; private set; }
 
     private Wish() { }
@@ -77,11 +78,12 @@ public sealed class Wish
         UpdatedAt = DateTimeOffset.UtcNow;
     }
 
-    public void Fulfill(Guid fulfilledByUserId)
+    public void Fulfill(Guid fulfilledByUserId, Guid? reserverId = null)
     {
         IsFulfilled = true;
         FulfilledAt = DateTimeOffset.UtcNow;
         FulfilledByUserId = fulfilledByUserId;
+        FulfilledByReserverId = reserverId;
         UpdatedAt = DateTimeOffset.UtcNow;
     }
 
@@ -90,6 +92,7 @@ public sealed class Wish
         IsFulfilled = false;
         FulfilledAt = null;
         FulfilledByUserId = null;
+        FulfilledByReserverId = null;
         UpdatedAt = DateTimeOffset.UtcNow;
     }
 

@@ -5,4 +5,6 @@ public record GetUserProfileResponse(
     string DisplayName,
     string? Username,
     string? AvatarUrl,
-    string? Bio);
+    string? Bio,
+    int ReceivedCount,
+    int GiftedCount);
