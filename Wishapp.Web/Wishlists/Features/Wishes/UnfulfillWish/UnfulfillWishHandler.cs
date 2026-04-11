@@ -2,6 +2,7 @@ using Microsoft.EntityFrameworkCore;
 using Wishapp.Web.Common.Interfaces;
 using Wishapp.Web.Common.Types;
 using Wishapp.Web.Infrastructure.Database;
+using Wishapp.Web.Wishlists.Entities;
 
 namespace Wishapp.Web.Wishlists.Features.Wishes.UnfulfillWish;
 
@@ -19,6 +20,11 @@ public sealed class UnfulfillWishHandler(ApplicationDbContext db)
         if (wishlist is null)
         {
             return Error.NotFound("Wishlists.NotFound", "Wishlist not found");
+        }
+
+        if (wishlist.SystemType == SystemWishlistType.Blacklist)
+        {
+            return Error.Forbidden("Wishes.BlacklistWishlist", "Cannot unfulfill wishes from a blacklist wishlist");
         }
 
         var result = wishlist.UnfulfillWish(command.WishId);

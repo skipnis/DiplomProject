@@ -2,6 +2,7 @@ using Microsoft.EntityFrameworkCore;
 using Wishapp.Web.Common.Interfaces;
 using Wishapp.Web.Common.Types;
 using Wishapp.Web.Infrastructure.Database;
+using Wishapp.Web.Wishlists.Entities;
 
 namespace Wishapp.Web.Wishlists.Features.Wishes.FulfillWish;
 
@@ -21,7 +22,17 @@ public sealed class FulfillWishHandler(ApplicationDbContext db)
             return Error.NotFound("Wishlists.NotFound", "Wishlist not found");
         }
 
-        var result = wishlist.FulfillWish(command.WishId, command.UserId);
+        if (wishlist.SystemType == SystemWishlistType.Blacklist)
+        {
+            return Error.Forbidden("Wishes.BlacklistWishlist", "Cannot fulfill wishes from a blacklist wishlist");
+        }
+
+        var reserverId = await db.WishReservations
+            .Where(r => r.WishId == command.WishId)
+            .Select(r => (Guid?)r.ReservedByUserId)
+            .FirstOrDefaultAsync(ct);
+
+        var result = wishlist.FulfillWish(command.WishId, command.UserId, reserverId);
 
         if (result.IsFailure)
         {
@@ -29,6 +40,10 @@ public sealed class FulfillWishHandler(ApplicationDbContext db)
         }
 
         await db.SaveChangesAsync(ct);
+
+        await db.WishReservations
+            .Where(r => r.WishId == command.WishId)
+            .ExecuteDeleteAsync(ct);
 
         return Result.Success();
     }

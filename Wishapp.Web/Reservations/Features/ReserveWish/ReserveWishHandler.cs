@@ -34,6 +34,11 @@ public sealed class ReserveWishHandler(
             return Error.NotFound("Wishlists.NotFound", "Wishlist not found");
         }
 
+        if (accessData.SystemType == Wishlists.Entities.SystemWishlistType.Blacklist)
+        {
+            return Error.Forbidden("Reservations.BlacklistWishlist", "Cannot reserve wishes from a blacklist wishlist");
+        }
+
         var wishExists = await wishlistsApi.WishExistsAsync(command.WishId, ct);
 
         if (!wishExists)
