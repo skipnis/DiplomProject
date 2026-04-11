@@ -2,11 +2,13 @@ using Microsoft.EntityFrameworkCore;
 using Wishapp.Web.Common.Interfaces;
 using Wishapp.Web.Common.Types;
 using Wishapp.Web.Infrastructure.Database;
+using Wishapp.Web.Notifications;
+using Wishapp.Web.Notifications.Entities;
 using Wishapp.Web.Wishlists.Entities;
 
 namespace Wishapp.Web.Wishlists.Features.Wishes.FulfillWish;
 
-public sealed class FulfillWishHandler(ApplicationDbContext db)
+public sealed class FulfillWishHandler(ApplicationDbContext db, INotificationsApi notificationsApi)
     : ICommandHandler<FulfillWishCommand>
 {
     public async Task<Result> HandleAsync(
@@ -44,6 +46,25 @@ public sealed class FulfillWishHandler(ApplicationDbContext db)
         await db.WishReservations
             .Where(r => r.WishId == command.WishId)
             .ExecuteDeleteAsync(ct);
+
+        if (reserverId.HasValue)
+        {
+            var wish = wishlist.Wishes.FirstOrDefault(w => w.Id == command.WishId);
+            var ownerName = await db.Users.AsNoTracking()
+                .Where(u => u.Id == wishlist.OwnerId)
+                .Select(u => u.DisplayName)
+                .FirstOrDefaultAsync(ct);
+
+            await notificationsApi.EnqueueAsync(reserverId.Value, NotificationType.WishFulfilled, new
+            {
+                wishId = command.WishId,
+                wishName = wish?.Name,
+                wishlistOwnerId = wishlist.OwnerId,
+                wishlistOwnerDisplayName = ownerName,
+                wishlistId = command.WishlistId,
+                wishlistName = wishlist.Name,
+            }, ct);
+        }
 
         return Result.Success();
     }

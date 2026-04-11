@@ -2,10 +2,12 @@ using Microsoft.EntityFrameworkCore;
 using Wishapp.Web.Common.Interfaces;
 using Wishapp.Web.Common.Types;
 using Wishapp.Web.Infrastructure.Database;
+using Wishapp.Web.Notifications;
+using Wishapp.Web.Notifications.Entities;
 
 namespace Wishapp.Web.Wishlists.Features.Members.RemoveMember;
 
-public sealed class RemoveMemberHandler(ApplicationDbContext db)
+public sealed class RemoveMemberHandler(ApplicationDbContext db, INotificationsApi notificationsApi)
     : ICommandHandler<RemoveMemberCommand>
 {
     public async Task<Result> HandleAsync(
@@ -29,6 +31,19 @@ public sealed class RemoveMemberHandler(ApplicationDbContext db)
         }
 
         await db.SaveChangesAsync(ct);
+
+        var ownerName = await db.Users.AsNoTracking()
+            .Where(u => u.Id == wishlist.OwnerId)
+            .Select(u => u.DisplayName)
+            .FirstOrDefaultAsync(ct);
+
+        await notificationsApi.EnqueueAsync(command.UserId, NotificationType.RemovedFromWishlist, new
+        {
+            wishlistId = command.WishlistId,
+            wishlistName = wishlist.Name,
+            removedByUserId = wishlist.OwnerId,
+            removedByDisplayName = ownerName,
+        }, ct);
 
         return Result.Success();
     }

@@ -3,6 +3,8 @@ using Wishapp.Web.Common.Interfaces;
 using Wishapp.Web.Common.Types;
 using Wishapp.Web.Friendships;
 using Wishapp.Web.Infrastructure.Database;
+using Wishapp.Web.Notifications;
+using Wishapp.Web.Notifications.Entities;
 using Wishapp.Web.Reservations.Entities;
 using Wishapp.Web.Wishlists;
 using Wishapp.Web.Wishlists.Entities;
@@ -12,7 +14,8 @@ namespace Wishapp.Web.Reservations.Features.ReserveWish;
 public sealed class ReserveWishHandler(
     ApplicationDbContext db,
     IWishlistsApi wishlistsApi,
-    IFriendshipsApi friendshipsApi)
+    IFriendshipsApi friendshipsApi,
+    INotificationsApi notificationsApi)
     : ICommandHandler<ReserveWishCommand>
 {
     public async Task<Result> HandleAsync(
@@ -70,6 +73,31 @@ public sealed class ReserveWishHandler(
         db.WishReservations.Add(reservation);
 
         await db.SaveChangesAsync(ct);
+
+        var wishName = await db.Wishes.AsNoTracking()
+            .Where(w => w.Id == command.WishId)
+            .Select(w => w.Name)
+            .FirstOrDefaultAsync(ct);
+
+        var wishlistName = await db.Wishlists.AsNoTracking()
+            .Where(wl => wl.Id == command.WishlistId)
+            .Select(wl => wl.Name)
+            .FirstOrDefaultAsync(ct);
+
+        var reserverName = await db.Users.AsNoTracking()
+            .Where(u => u.Id == command.UserId)
+            .Select(u => u.DisplayName)
+            .FirstOrDefaultAsync(ct);
+
+        await notificationsApi.EnqueueAsync(accessData.OwnerId, NotificationType.WishReserved, new
+        {
+            wishId = command.WishId,
+            wishName,
+            reservedByUserId = command.UserId,
+            reservedByDisplayName = reserverName,
+            wishlistId = command.WishlistId,
+            wishlistName,
+        }, ct);
 
         return Result.Success();
     }

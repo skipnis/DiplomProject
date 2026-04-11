@@ -3,12 +3,15 @@ using Wishapp.Web.Common.Interfaces;
 using Wishapp.Web.Common.Types;
 using Wishapp.Web.Friendships;
 using Wishapp.Web.Infrastructure.Database;
+using Wishapp.Web.Notifications;
+using Wishapp.Web.Notifications.Entities;
 
 namespace Wishapp.Web.Wishlists.Features.Members.AddMembers;
 
 public sealed class AddMembersHandler(
     ApplicationDbContext db,
-    IFriendshipsApi friendshipsApi)
+    IFriendshipsApi friendshipsApi,
+    INotificationsApi notificationsApi)
     : ICommandHandler<AddMembersCommand>
 {
     public async Task<Result> HandleAsync(
@@ -61,6 +64,23 @@ public sealed class AddMembersHandler(
         }
 
         await db.SaveChangesAsync(ct);
+
+        var ownerName = await db.Users.AsNoTracking()
+            .Where(u => u.Id == command.OwnerId)
+            .Select(u => u.DisplayName)
+            .FirstOrDefaultAsync(ct);
+
+        foreach (var invite in command.Members)
+        {
+            await notificationsApi.EnqueueAsync(invite.UserId, NotificationType.AddedToWishlist, new
+            {
+                wishlistId = command.WishlistId,
+                wishlistName = wishlist.Name,
+                addedByUserId = command.OwnerId,
+                addedByDisplayName = ownerName,
+                role = (int)invite.Role,
+            }, ct);
+        }
 
         return Result.Success();
     }

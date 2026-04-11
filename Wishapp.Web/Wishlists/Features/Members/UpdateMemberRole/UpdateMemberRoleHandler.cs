@@ -2,6 +2,8 @@ using Microsoft.EntityFrameworkCore;
 using Wishapp.Web.Common.Interfaces;
 using Wishapp.Web.Common.Types;
 using Wishapp.Web.Infrastructure.Database;
+using Wishapp.Web.Notifications;
+using Wishapp.Web.Notifications.Entities;
 using Wishapp.Web.Wishlists.Entities;
 
 namespace Wishapp.Web.Wishlists.Features.Members.UpdateMemberRole;
@@ -12,7 +14,7 @@ public record UpdateMemberRoleCommand(
     WishlistMemberRole Role,
     string? CustomRoleName) : ICommand;
 
-public sealed class UpdateMemberRoleHandler(ApplicationDbContext db)
+public sealed class UpdateMemberRoleHandler(ApplicationDbContext db, INotificationsApi notificationsApi)
     : ICommandHandler<UpdateMemberRoleCommand>
 {
     public async Task<Result> HandleAsync(
@@ -36,6 +38,14 @@ public sealed class UpdateMemberRoleHandler(ApplicationDbContext db)
         }
 
         await db.SaveChangesAsync(ct);
+
+        await notificationsApi.EnqueueAsync(command.UserId, NotificationType.WishlistRoleUpdated, new
+        {
+            wishlistId = command.WishlistId,
+            wishlistName = wishlist.Name,
+            newRole = (int)command.Role,
+            customRoleName = command.CustomRoleName,
+        }, ct);
 
         return Result.Success();
     }
