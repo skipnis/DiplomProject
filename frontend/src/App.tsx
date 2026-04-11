@@ -28,6 +28,7 @@ import CollectionsPage from './pages/CollectionsPage';
 import AdminLoginPage from './pages/AdminLoginPage';
 import AdminPage from './pages/AdminPage';
 import SharedWishPage from './pages/SharedWishPage';
+import NotificationsPage from './pages/NotificationsPage';
 import type { ReactNode } from 'react';
 
 const GOOGLE_CLIENT_ID = import.meta.env.VITE_GOOGLE_CLIENT_ID as string;
@@ -79,6 +80,7 @@ function AppRoutes() {
           <Route path="/catalog/collections" element={<CollectionsPage />} />
           <Route path="/admin/login" element={<AdminLoginPage />} />
           <Route path="/admin" element={<AdminRoute><AdminPage /></AdminRoute>} />
+          <Route path="/notifications" element={<PrivateRoute><NotificationsPage /></PrivateRoute>} />
           <Route path="/share/:token" element={<SharedWishPage />} />
           <Route path="/" element={<Navigate to="/wishlists" replace />} />
         </Routes>

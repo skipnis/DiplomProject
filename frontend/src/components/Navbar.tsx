@@ -1,16 +1,33 @@
-import { useState } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { Link, NavLink, useLocation } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { getImageUrl } from '../api/client';
 import { useTheme } from '../hooks/useTheme';
+import { useNotificationsHub } from '../hooks/useNotificationsHub';
+import { getUnreadCount } from '../api/notifications';
 import { Button } from '@/components/ui/button';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
+import type { NotificationDto } from '../types';
 
 export default function Navbar() {
   const { user, logout } = useAuth();
   const location = useLocation();
   const { theme, toggle } = useTheme();
   const [menuOpen, setMenuOpen] = useState(false);
+  const [unreadCount, setUnreadCount] = useState(0);
+
+  useEffect(() => {
+    if (!user) return;
+    getUnreadCount()
+      .then(setUnreadCount)
+      .catch(() => {});
+  }, [user]);
+
+  const handleNotification = useCallback((n: NotificationDto) => {
+    if (!n.isRead) setUnreadCount((c) => c + 1);
+  }, []);
+
+  useNotificationsHub(!!user, handleNotification);
 
   if (location.pathname === '/onboarding') return null;
 
@@ -50,6 +67,24 @@ export default function Navbar() {
               <NavLink to="/friends" className={navCls} onClick={close}>Друзья</NavLink>
               <NavLink to="/reservations" className={navCls} onClick={close}>Резервации</NavLink>
               <NavLink to="/events" className={navCls} onClick={close}>События</NavLink>
+              <NavLink
+                to="/notifications"
+                onClick={() => { setUnreadCount(0); close(); }}
+                className={({ isActive }) =>
+                  `relative text-sm font-medium px-3 py-1.5 rounded-md transition-colors ${
+                    isActive
+                      ? 'text-primary bg-primary/10'
+                      : 'text-muted-foreground hover:text-foreground hover:bg-muted'
+                  }`
+                }
+              >
+                🔔
+                {unreadCount > 0 && (
+                  <span className="absolute -top-1 -right-1 bg-destructive text-destructive-foreground text-[10px] font-bold rounded-full min-w-[16px] h-4 flex items-center justify-center px-0.5 leading-none">
+                    {unreadCount > 99 ? '99+' : unreadCount}
+                  </span>
+                )}
+              </NavLink>
               <Link to="/profile" onClick={close} className="ml-1">
                 <Avatar className="h-8 w-8">
                   <AvatarImage src={getImageUrl(user.avatarUrl) ?? user.avatarUrl ?? undefined} alt={user.username ?? undefined} />
