@@ -57,6 +57,7 @@ export default function WishlistPage() {
   const myRole: WishlistMemberRole | null = wishlist?.members.find((m) => m.userId === me?.id)?.role ?? null;
   const isOwner = myRole === 2;
   const canEdit = myRole !== null && myRole >= 1;
+  const isBlacklist = wishlist?.systemType === 'Blacklist';
 
   const loadWishes = useCallback(async (page: number) => {
     if (!id) return;
@@ -116,8 +117,14 @@ export default function WishlistPage() {
   const handleFulfill = async (wish: WishDto) => {
     if (!id) return;
     try {
-      if (wish.isFulfilled) await unfulfillWish(id, wish.id); else await fulfillWish(id, wish.id);
-      setWishes((prev) => prev.map((w) => w.id === wish.id ? { ...w, isFulfilled: !w.isFulfilled } : w));
+      if (wish.isFulfilled) {
+        await unfulfillWish(id, wish.id);
+        setWishes((prev) => prev.map((w) => w.id === wish.id ? { ...w, isFulfilled: false } : w));
+      } else {
+        await fulfillWish(id, wish.id);
+        setWishes((prev) => prev.map((w) => w.id === wish.id ? { ...w, isFulfilled: true, isReserved: false } : w));
+        setMyReservationIds((prev) => { const s = new Set(prev); s.delete(wish.id); return s; });
+      }
     } catch (e) { toast.error(parseError(e)); }
   };
 
@@ -164,7 +171,12 @@ export default function WishlistPage() {
       </Card>
 
       <div className="flex items-center justify-between mb-5">
-        <h2 className="text-lg font-bold">Желания ({wishTotalCount})</h2>
+        <h2 className="text-lg font-bold">
+          Желания ({wishTotalCount})
+          {wishlist.fulfilledWishCount > 0 && (
+            <span className="ml-2 text-sm font-normal text-green-600">✓ {wishlist.fulfilledWishCount} исполнено</span>
+          )}
+        </h2>
         {canEdit && <Link to={`/wishlists/${id}/wishes/new`} className={buttonVariants({ size: 'sm' })}>+ Добавить</Link>}
       </div>
 
@@ -180,7 +192,7 @@ export default function WishlistPage() {
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
           {wishes.map((wish) => {
             const iMineReserved = myReservationIds.has(wish.id);
-            const shouldBlur = wish.isReserved && myRole === null;
+            const shouldBlur = wish.isReserved && !iMineReserved && !wish.isFulfilled && myRole === null;
             return (
               <div key={wish.id} className="relative">
                 <Link to={`/wishlists/${id}/wishes/${wish.id}`} className={`block rounded-xl border bg-card overflow-hidden hover:shadow-md hover:-translate-y-0.5 transition-all ${wish.isFulfilled ? 'opacity-60' : ''}`}>
@@ -203,14 +215,14 @@ export default function WishlistPage() {
                   {wish.isFulfilled && <div className="absolute top-2 right-2 bg-green-500 text-white rounded-full px-2 py-0.5 text-xs font-semibold">✓ Исполнено</div>}
                 </Link>
                 <div className="flex flex-wrap gap-1 mt-2">
-                  {me && !isOwner && !wish.isFulfilled && (
+                  {me && !isOwner && !wish.isFulfilled && !isBlacklist && (
                     <Button size="sm" variant={iMineReserved ? 'destructive' : wish.isReserved ? 'ghost' : 'secondary'} onClick={() => handleReserve(wish)} disabled={wish.isReserved && !iMineReserved}>
                       {iMineReserved ? 'Отменить резерв' : wish.isReserved ? 'Зарезервировано' : 'Зарезервировать'}
                     </Button>
                   )}
                   {isOwner && (
                     <>
-                      <Button size="sm" variant="ghost" onClick={() => handleFulfill(wish)}>{wish.isFulfilled ? '↩ Не исполнено' : '✓ Исполнено'}</Button>
+                      {!isBlacklist && <Button size="sm" variant="ghost" onClick={() => handleFulfill(wish)}>{wish.isFulfilled ? '↩ Не исполнено' : '✓ Исполнено'}</Button>}
                       <Link to={`/wishlists/${id}/wishes/${wish.id}/edit`} className={buttonVariants({ size: 'sm', variant: 'ghost' })}>Изменить</Link>
                       <Button size="sm" variant="destructive" onClick={() => handleDeleteWish(wish.id)}>Удалить</Button>
                     </>
@@ -236,7 +248,7 @@ export default function WishlistPage() {
           <Separator className="my-6" />
           <div className="flex items-center justify-between mb-4">
             <h2 className="text-lg font-bold">Участники</h2>
-            {isOwner && <Link to={`/wishlists/${id}/edit`} className={buttonVariants({ variant: 'ghost', size: 'sm' })}>Управление</Link>}
+            {isOwner && <Link to={`/wishlists/${id}/members`} className={buttonVariants({ variant: 'ghost', size: 'sm' })}>Управление</Link>}
           </div>
           <Card>
             <CardContent className="pt-4 flex flex-col gap-2">

@@ -13,6 +13,7 @@ import WishlistsPage from './pages/WishlistsPage';
 import NewWishlistPage from './pages/NewWishlistPage';
 import WishlistPage from './pages/WishlistPage';
 import EditWishlistPage from './pages/EditWishlistPage';
+import WishlistMembersPage from './pages/WishlistMembersPage';
 import NewWishPage from './pages/NewWishPage';
 import WishPage from './pages/WishPage';
 import EditWishPage from './pages/EditWishPage';
@@ -64,6 +65,7 @@ function AppRoutes() {
           <Route path="/wishlists/new" element={<PrivateRoute><NewWishlistPage /></PrivateRoute>} />
           <Route path="/wishlists/:id" element={<WishlistPage />} />
           <Route path="/wishlists/:id/edit" element={<PrivateRoute><EditWishlistPage /></PrivateRoute>} />
+          <Route path="/wishlists/:id/members" element={<PrivateRoute><WishlistMembersPage /></PrivateRoute>} />
           <Route path="/wishlists/:id/wishes/new" element={<PrivateRoute><NewWishPage /></PrivateRoute>} />
           <Route path="/wishlists/:id/wishes/:wishId" element={<WishPage />} />
           <Route path="/wishlists/:id/wishes/:wishId/edit" element={<PrivateRoute><EditWishPage /></PrivateRoute>} />

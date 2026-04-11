@@ -1,5 +1,6 @@
 // Enums match C# backend integer values (no JsonStringEnumConverter)
 export type WishlistVisibility = 0 | 1 | 2 | 3; // Public | Friends | SelectedFriends | Private
+export type SystemWishlistType = 'None' | 'Hidden' | 'Blacklist';
 export type Currency = 0 | 1 | 2 | 3;           // BYN | RUB | USD | EUR
 export type WishPriority = 0 | 1 | 2 | 3 | 4;   // None | NiceToHave | Want | ReallyWant | Dream
 export type WishlistMemberRole = 0 | 1 | 2;      // Viewer | Editor | Owner
@@ -51,6 +52,8 @@ export interface UserProfile {
   username: string | null;
   avatarUrl: string | null;
   bio: string | null;
+  receivedCount: number;
+  giftedCount: number;
 }
 
 export interface UserSearchResult {
@@ -74,8 +77,10 @@ export interface WishlistDto {
   emoji: string | null;
   visibility: WishlistVisibility;
   isSystem: boolean;
+  systemType: SystemWishlistType;
   isSurpriseModeEnabled: boolean;
   createdAt: string;
+  fulfilledWishCount: number;
   members: WishlistMemberDto[];
 }
 
@@ -86,7 +91,9 @@ export interface WishlistSummaryDto {
   emoji: string | null;
   visibility: WishlistVisibility;
   isSystem: boolean;
+  systemType: SystemWishlistType;
   wishCount: number;
+  fulfilledWishCount: number;
   createdAt: string;
 }
 

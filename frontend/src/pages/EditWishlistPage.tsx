@@ -1,24 +1,19 @@
 import { useEffect, useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { getWishlist, updateWishlist, getWishlistMembers, addWishlistMembers, removeWishlistMember, updateMemberRole } from '../api/wishlists';
-import { getUserProfile } from '../api/users';
-import { getFriends } from '../api/friends';
-import { getImageUrl } from '../api/client';
-import { useAuth } from '../context/AuthContext';
+import { getWishlist, updateWishlist } from '../api/wishlists';
+import { getMyEvents, linkWishlist } from '../api/events';
 import { useToast } from '../components/Toast';
 import { parseError } from '../utils/errors';
 import { wishlistSchema, parseZodErrors, type FormErrors } from '../lib/schemas';
 import { parseApiFieldErrors } from '../utils/errors';
-import { ROLE_LABELS, VISIBILITY_LABELS } from '../types';
-import type { WishlistVisibility, WishlistMemberDto, WishlistMemberRole, UserProfile, FriendInfo } from '../types';
+import { VISIBILITY_LABELS } from '../types';
+import type { WishlistVisibility, EventDto } from '../types';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { Label } from '@/components/ui/label';
 import { Card, CardContent } from '@/components/ui/card';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
-import { Badge } from '@/components/ui/badge';
 import { FieldError } from '@/components/ui/field-error';
 
 const EMOJIS = ['🎁', '🎂', '🎮', '👗', '📚', '🏠', '✈️', '💄', '🎵', '🍕', '⚽', '🌸', '💻', '📷', '🎨'];
@@ -26,7 +21,6 @@ const EMOJIS = ['🎁', '🎂', '🎮', '👗', '📚', '🏠', '✈️', '💄'
 export default function EditWishlistPage() {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
-  const { user: me } = useAuth();
   const toast = useToast();
 
   const [name, setName] = useState('');
@@ -34,34 +28,27 @@ export default function EditWishlistPage() {
   const [emoji, setEmoji] = useState('🎁');
   const [visibility, setVisibility] = useState<WishlistVisibility>(1);
   const [isSystem, setIsSystem] = useState(false);
-  const [members, setMembers] = useState<WishlistMemberDto[]>([]);
-  const [memberProfiles, setMemberProfiles] = useState<Record<string, UserProfile>>({});
-  const [friends, setFriends] = useState<FriendInfo[]>([]);
-  const [friendFilter, setFriendFilter] = useState('');
-  const [customRoleEdits, setCustomRoleEdits] = useState<Record<string, string>>({});
+  const [events, setEvents] = useState<EventDto[]>([]);
+  const [selectedEventId, setSelectedEventId] = useState<string>('');
+  const [originalEventId, setOriginalEventId] = useState<string>('');
   const [saving, setSaving] = useState(false);
   const [loading, setLoading] = useState(true);
   const [errors, setErrors] = useState<FormErrors>({});
 
   useEffect(() => {
     if (!id) return;
-    Promise.all([getWishlist(id), getWishlistMembers(id), getFriends()])
-      .then(async ([wl, mems, friendList]) => {
+    Promise.all([getWishlist(id), getMyEvents(1, 100)])
+      .then(([wl, eventsRes]) => {
         setName(wl.name);
         setDescription(wl.description ?? '');
         setEmoji(wl.emoji ?? '🎁');
         setVisibility(wl.visibility);
         setIsSystem(wl.isSystem);
-        setMembers(mems);
-        setFriends(friendList.items);
-        const roleEdits: Record<string, string> = {};
-        mems.forEach((m) => { roleEdits[m.userId] = m.customRoleName ?? ''; });
-        setCustomRoleEdits(roleEdits);
-        const profiles: Record<string, UserProfile> = {};
-        await Promise.all(mems.map(async (m) => {
-          try { profiles[m.userId] = await getUserProfile(m.userId); } catch { /* ignore */ }
-        }));
-        setMemberProfiles(profiles);
+        setEvents(eventsRes.items);
+        const linked = eventsRes.items.find((e) => e.linkedWishlistId === id);
+        const linkedId = linked?.id ?? '';
+        setSelectedEventId(linkedId);
+        setOriginalEventId(linkedId);
       })
       .catch((e) => toast.error(parseError(e)))
       .finally(() => setLoading(false));
@@ -69,42 +56,6 @@ export default function EditWishlistPage() {
 
   const clearError = (field: string) => {
     if (errors[field]) setErrors((prev) => ({ ...prev, [field]: '' }));
-  };
-
-  const handleAddMember = async (friend: FriendInfo) => {
-    if (!id) return;
-    try {
-      await addWishlistMembers(id, [{ userId: friend.userId, role: 1 }]);
-      setMembers((prev) => [...prev, { userId: friend.userId, role: 1, customRoleName: null, joinedAt: new Date().toISOString() }]);
-      setCustomRoleEdits((prev) => ({ ...prev, [friend.userId]: '' }));
-      setMemberProfiles((prev) => ({ ...prev, [friend.userId]: { id: friend.userId, displayName: friend.username, username: friend.username, avatarUrl: friend.avatarUrl, bio: null } }));
-    } catch (e) { toast.error(parseError(e)); }
-  };
-
-  const handleRemoveMember = async (userId: string) => {
-    if (!id) return;
-    try { await removeWishlistMember(id, userId); setMembers((prev) => prev.filter((m) => m.userId !== userId)); }
-    catch (e) { toast.error(parseError(e)); }
-  };
-
-  const handleRoleChange = async (userId: string, role: WishlistMemberRole) => {
-    if (!id) return;
-    const member = members.find((m) => m.userId === userId);
-    const customRoleName = member?.customRoleName ?? null;
-    try { await updateMemberRole(id, userId, role, customRoleName); setMembers((prev) => prev.map((m) => m.userId === userId ? { ...m, role } : m)); }
-    catch (e) { toast.error(parseError(e)); }
-  };
-
-  const handleCustomRoleBlur = async (userId: string) => {
-    if (!id) return;
-    const member = members.find((m) => m.userId === userId);
-    if (!member) return;
-    const customRoleName = customRoleEdits[userId]?.trim() || null;
-    if (customRoleName === (member.customRoleName ?? null)) return;
-    try {
-      await updateMemberRole(id, userId, member.role, customRoleName);
-      setMembers((prev) => prev.map((m) => m.userId === userId ? { ...m, customRoleName } : m));
-    } catch (e) { toast.error(parseError(e)); }
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -116,8 +67,16 @@ export default function EditWishlistPage() {
     }
     setErrors({});
     setSaving(true);
-    try { await updateWishlist(id, { name, description: description || null, emoji, visibility }); navigate(`/wishlists/${id}`); }
-    catch (e) {
+    try {
+      await updateWishlist(id, { name, description: description || null, emoji, visibility });
+
+      if (!isSystem && selectedEventId !== originalEventId) {
+        if (originalEventId) await linkWishlist(originalEventId, null);
+        if (selectedEventId) await linkWishlist(selectedEventId, id);
+      }
+
+      navigate(`/wishlists/${id}`);
+    } catch (e) {
       const fieldErrors = parseApiFieldErrors(e);
       if (fieldErrors) setErrors((prev) => ({ ...prev, ...fieldErrors }));
       else toast.error(parseError(e));
@@ -126,15 +85,13 @@ export default function EditWishlistPage() {
 
   if (loading) return <div className="flex items-center justify-center min-h-[200px] text-muted-foreground">Загрузка...</div>;
 
-  const available = friends.filter((f) => !members.some((m) => m.userId === f.userId) && f.username.toLowerCase().includes(friendFilter.toLowerCase()));
-
   return (
     <div className="max-w-xl mx-auto">
       <div className="mb-7">
         <h1 className="text-2xl font-extrabold tracking-tight">Редактировать вишлист</h1>
       </div>
 
-      <Card className="mb-6">
+      <Card>
         <CardContent className="pt-6">
           <form onSubmit={handleSubmit} className="flex flex-col gap-4">
             {!isSystem && (
@@ -171,18 +128,34 @@ export default function EditWishlistPage() {
               <FieldError message={errors.description} />
             </div>
             {!isSystem && (
-              <div className="flex flex-col gap-1.5">
-                <Label>Видимость</Label>
-                <Select value={String(visibility)} onValueChange={(v) => setVisibility(Number(v) as WishlistVisibility)}>
-                  <SelectTrigger><SelectValue>{VISIBILITY_LABELS[visibility]}</SelectValue></SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="0">🌍 Публичный</SelectItem>
-                    <SelectItem value="1">👥 Для друзей</SelectItem>
-                    <SelectItem value="2">👤 Избранные друзья</SelectItem>
-                    <SelectItem value="3">🔒 Приватный</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
+              <>
+                <div className="flex flex-col gap-1.5">
+                  <Label>Видимость</Label>
+                  <Select value={String(visibility)} onValueChange={(v) => setVisibility(Number(v) as WishlistVisibility)}>
+                    <SelectTrigger><SelectValue>{VISIBILITY_LABELS[visibility]}</SelectValue></SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="0">🌍 Публичный</SelectItem>
+                      <SelectItem value="1">👥 Для друзей</SelectItem>
+                      <SelectItem value="2">👤 Избранные друзья</SelectItem>
+                      <SelectItem value="3">🔒 Приватный</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+                <div className="flex flex-col gap-1.5">
+                  <Label>Событие</Label>
+                  <Select value={selectedEventId} onValueChange={(v) => setSelectedEventId(v ?? '')}>
+                    <SelectTrigger>
+                      <SelectValue placeholder="Не привязан" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="">Не привязан</SelectItem>
+                      {events.map((ev) => (
+                        <SelectItem key={ev.id} value={ev.id}>{ev.title}</SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+              </>
             )}
             <div className="flex gap-2 justify-end">
               <Button type="button" variant="ghost" onClick={() => navigate(`/wishlists/${id}`)}>Отмена</Button>
@@ -191,67 +164,6 @@ export default function EditWishlistPage() {
           </form>
         </CardContent>
       </Card>
-
-      {!isSystem && <Card>
-        <CardContent className="pt-6">
-          <h2 className="font-semibold mb-4">Участники</h2>
-          <Input placeholder="Поиск по друзьям..." value={friendFilter} onChange={(e) => setFriendFilter(e.target.value)} className="mb-3" />
-          {available.length > 0 && (
-            <div className="flex flex-col gap-1 mb-4">
-              {available.map((f) => (
-                <button key={f.userId} type="button" className="flex items-center gap-2 p-2 rounded-md hover:bg-muted text-left cursor-pointer" onClick={() => handleAddMember(f)}>
-                  <Avatar className="h-7 w-7">
-                    <AvatarImage src={getImageUrl(f.avatarUrl) ?? undefined} />
-                    <AvatarFallback className="text-xs">{f.username[0].toUpperCase()}</AvatarFallback>
-                  </Avatar>
-                  <span className="text-sm font-medium flex-1">{f.username}</span>
-                  <span className="text-xs text-primary font-semibold">+ Добавить</span>
-                </button>
-              ))}
-            </div>
-          )}
-          <div className="flex flex-col gap-2">
-            {members.map((m) => {
-              const p = memberProfiles[m.userId];
-              const isMe = m.userId === me?.id;
-              return (
-                <div key={m.userId} className="flex flex-col gap-1 py-1">
-                  <div className="flex items-center gap-3">
-                    <Avatar className="h-8 w-8">
-                      <AvatarImage src={getImageUrl(p?.avatarUrl) ?? undefined} />
-                      <AvatarFallback className="text-xs">{(p?.username ?? m.userId)[0].toUpperCase()}</AvatarFallback>
-                    </Avatar>
-                    <div className="flex-1 text-sm font-semibold">{p?.username ?? m.userId.slice(0, 8) + '…'}</div>
-                    {m.role === 2 ? (
-                      <Badge variant="secondary">{ROLE_LABELS[2]}</Badge>
-                    ) : (
-                      <Select value={String(m.role)} onValueChange={(v) => handleRoleChange(m.userId, Number(v) as WishlistMemberRole)} disabled={isMe}>
-                        <SelectTrigger className="w-28 h-7 text-xs"><SelectValue /></SelectTrigger>
-                        <SelectContent>
-                          {([0, 1] as WishlistMemberRole[]).map((r) => <SelectItem key={r} value={String(r)}>{ROLE_LABELS[r]}</SelectItem>)}
-                        </SelectContent>
-                      </Select>
-                    )}
-                    {!isMe && m.role !== 2 && <Button variant="destructive" size="sm" onClick={() => handleRemoveMember(m.userId)}>Удалить</Button>}
-                  </div>
-                  {m.role !== 2 && !isMe && (
-                    <div className="pl-11">
-                      <Input
-                        className="h-6 text-xs"
-                        placeholder="Кастомная роль..."
-                        value={customRoleEdits[m.userId] ?? ''}
-                        onChange={(e) => setCustomRoleEdits((prev) => ({ ...prev, [m.userId]: e.target.value }))}
-                        onBlur={() => handleCustomRoleBlur(m.userId)}
-                        onKeyDown={(e) => { if (e.key === 'Enter') (e.target as HTMLInputElement).blur(); }}
-                      />
-                    </div>
-                  )}
-                </div>
-              );
-            })}
-          </div>
-        </CardContent>
-      </Card>}
     </div>
   );
 }

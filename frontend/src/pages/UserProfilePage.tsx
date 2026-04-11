@@ -78,6 +78,10 @@ export default function UserProfilePage() {
               <h1 className="text-xl font-extrabold tracking-tight">{profile.displayName}</h1>
               {profile.username && <div className="text-sm text-muted-foreground">@{profile.username}</div>}
               {profile.bio && <div className="text-sm mt-1">{profile.bio}</div>}
+              <div className="flex gap-4 mt-2 text-sm">
+                <span><span className="font-bold">{profile.receivedCount}</span> <span className="text-muted-foreground">получено</span></span>
+                <span><span className="font-bold">{profile.giftedCount}</span> <span className="text-muted-foreground">подарено</span></span>
+              </div>
             </div>
             {me && !isMe && (
               <Button
@@ -113,6 +117,7 @@ export default function UserProfilePage() {
               <div className="font-bold text-sm">{w.name}</div>
               <div className="flex gap-3 mt-2 text-xs text-muted-foreground">
                 <span>{w.wishCount} желаний</span>
+                {w.fulfilledWishCount > 0 && <span className="text-green-600 font-medium">✓ {w.fulfilledWishCount} исполнено</span>}
                 <span>{VISIBILITY_LABELS[w.visibility]}</span>
               </div>
             </Link>

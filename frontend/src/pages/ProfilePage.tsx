@@ -3,13 +3,13 @@ import { Link, useNavigate } from 'react-router-dom';
 import { useGoogleLogin } from '@react-oauth/google';
 import { useAuth } from '../context/AuthContext';
 import { getMyWishlists } from '../api/wishlists';
-import { connectGoogleCalendar, disconnectGoogleCalendar, deleteMyAccount } from '../api/users';
+import { connectGoogleCalendar, disconnectGoogleCalendar, deleteMyAccount, getUserProfile } from '../api/users';
 import { syncAllEvents } from '../api/events';
 import { getImageUrl } from '../api/client';
 import { useToast } from '../components/Toast';
 import { parseError } from '../utils/errors';
 import { VISIBILITY_LABELS, getWishlistEmoji } from '../types';
-import type { WishlistSummaryDto } from '../types';
+import type { WishlistSummaryDto, UserProfile } from '../types';
 import { Button, buttonVariants } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
@@ -31,13 +31,17 @@ export default function ProfilePage() {
   const navigate = useNavigate();
   const toast = useToast();
   const [wishlists, setWishlists] = useState<WishlistSummaryDto[]>([]);
+  const [stats, setStats] = useState<Pick<UserProfile, 'receivedCount' | 'giftedCount'> | null>(null);
   const [loading, setLoading] = useState(true);
   const [calendarLoading, setCalendarLoading] = useState(false);
   const [deleteLoading, setDeleteLoading] = useState(false);
 
   useEffect(() => {
-    getMyWishlists().then(setWishlists).finally(() => setLoading(false));
-  }, []);
+    if (!user) return;
+    Promise.all([getMyWishlists(), getUserProfile(user.id)])
+      .then(([wl, profile]) => { setWishlists(wl); setStats({ receivedCount: profile.receivedCount, giftedCount: profile.giftedCount }); })
+      .finally(() => setLoading(false));
+  }, [user?.id]);
 
   const connectCalendar = useGoogleLogin({
     flow: 'auth-code',
@@ -104,6 +108,12 @@ export default function ProfilePage() {
               {user.birthDate && (
                 <div className="text-sm text-muted-foreground mt-1">
                   🎂 {new Date(user.birthDate).toLocaleDateString('ru-RU', { day: 'numeric', month: 'long', year: 'numeric' })}
+                </div>
+              )}
+              {stats && (
+                <div className="flex gap-4 mt-2 text-sm">
+                  <span><span className="font-bold">{stats.receivedCount}</span> <span className="text-muted-foreground">получено</span></span>
+                  <span><span className="font-bold">{stats.giftedCount}</span> <span className="text-muted-foreground">подарено</span></span>
                 </div>
               )}
             </div>
@@ -176,8 +186,9 @@ export default function ProfilePage() {
             <Link key={w.id} to={`/wishlists/${w.id}`} className="block rounded-xl border bg-card p-5 hover:shadow-md hover:-translate-y-0.5 transition-all">
               <div className="text-3xl mb-2">{getWishlistEmoji(w)}</div>
               <div className="font-bold text-sm">{w.name}</div>
-              <div className="flex gap-3 mt-auto pt-2 text-xs text-muted-foreground">
+              <div className="flex gap-3 mt-auto pt-2 text-xs text-muted-foreground flex-wrap">
                 <span>{w.wishCount} желаний</span>
+                {w.fulfilledWishCount > 0 && <span className="text-green-600 font-medium">✓ {w.fulfilledWishCount} исполнено</span>}
                 <span>{VISIBILITY_LABELS[w.visibility]}</span>
               </div>
             </Link>
