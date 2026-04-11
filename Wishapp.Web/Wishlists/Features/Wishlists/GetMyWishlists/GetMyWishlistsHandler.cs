@@ -25,7 +25,9 @@ public sealed class GetMyWishlistsHandler(ApplicationDbContext db)
                 w.Emoji,
                 w.Visibility,
                 w.IsSystem,
+                w.SystemType,
                 w.Wishes.Count,
+                w.Wishes.Count(wish => wish.IsFulfilled),
                 w.CreatedAt))
             .ToPagedResponseAsync(query.Request, ct);
 

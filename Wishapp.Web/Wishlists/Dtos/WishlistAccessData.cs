@@ -6,4 +6,5 @@ namespace Wishapp.Web.Wishlists.Dtos;
 public record WishlistAccessData(
     Guid OwnerId,
     WishlistVisibility Visibility,
-    IReadOnlyCollection<WishlistMemberInfo> Members);
+    IReadOnlyCollection<WishlistMemberInfo> Members,
+    SystemWishlistType SystemType);

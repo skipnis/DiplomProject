@@ -1,3 +1,4 @@
+using Wishapp.Web.Common.Types;
 using Wishapp.Web.Wishlists.Dtos;
 
 namespace Wishapp.Web.Wishlists;
@@ -10,4 +11,8 @@ public interface IWishlistsApi
     Task<WishlistAccessData?> GetWishlistAccessDataAsync(Guid wishlistId, CancellationToken ct = default);
     Task<bool> IsWishFulfilledAsync(Guid wishId, CancellationToken ct = default);
     Task<List<WishSummary>> GetWishesSummaryAsync(List<Guid> wishIds, CancellationToken ct = default);
+    Task<Result> CanLinkWishlistAsync(Guid userId, Guid wishlistId, CancellationToken ct = default);
+    Task<UserWishStats> GetUserWishStatsAsync(Guid userId, CancellationToken ct = default);
 }
+
+public record UserWishStats(int ReceivedCount, int GiftedCount);

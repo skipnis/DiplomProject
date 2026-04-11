@@ -17,6 +17,7 @@ public sealed class Wishlist
     public string? Emoji { get; private set; }
     public WishlistVisibility Visibility { get; private set; }
     public bool IsSystem { get; private set; }
+    public SystemWishlistType SystemType { get; private set; }
     public bool IsSurpriseModeEnabled { get; private set; }
     public DateTimeOffset CreatedAt { get; private set; }
 
@@ -52,7 +53,8 @@ public sealed class Wishlist
     public static Wishlist CreateSystem(
         Guid ownerId,
         string name,
-        WishlistVisibility visibility)
+        WishlistVisibility visibility,
+        SystemWishlistType systemType)
     {
         var wishlist = new Wishlist
         {
@@ -61,6 +63,7 @@ public sealed class Wishlist
             Name = name,
             Visibility = visibility,
             IsSystem = true,
+            SystemType = systemType,
             CreatedAt = DateTimeOffset.UtcNow
         };
 
@@ -232,7 +235,7 @@ public sealed class Wishlist
         return Result.Success(duplicate);
     }
 
-    public Result FulfillWish(Guid wishId, Guid fulfilledByUserId)
+    public Result FulfillWish(Guid wishId, Guid fulfilledByUserId, Guid? reserverId = null)
     {
         var wish = _wishes.FirstOrDefault(w => w.Id == wishId);
 
@@ -241,7 +244,7 @@ public sealed class Wishlist
             return Error.NotFound("Wishes.NotFound", "Wish not found");
         }
 
-        wish.Fulfill(fulfilledByUserId);
+        wish.Fulfill(fulfilledByUserId, reserverId);
 
         return Result.Success();
     }

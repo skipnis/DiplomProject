@@ -9,5 +9,7 @@ public record WishlistSummaryDto(
     string? Emoji,
     WishlistVisibility Visibility,
     bool IsSystem,
+    SystemWishlistType SystemType,
     int WishCount,
+    int FulfilledWishCount,
     DateTimeOffset CreatedAt);

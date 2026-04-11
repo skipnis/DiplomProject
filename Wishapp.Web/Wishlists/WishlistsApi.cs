@@ -1,4 +1,5 @@
 using Microsoft.EntityFrameworkCore;
+using Wishapp.Web.Common.Types;
 using Wishapp.Web.Infrastructure.Authorization;
 using Wishapp.Web.Infrastructure.Database;
 using Wishapp.Web.Wishlists.Dtos;
@@ -10,9 +11,9 @@ public sealed class WishlistsApi(ApplicationDbContext db) : IWishlistsApi
 {
     public Task CreateSystemWishlistsAsync(Guid userId, CancellationToken ct = default)
     {
-        var hidden = Wishlist.CreateSystem(userId, "Скрытые", WishlistVisibility.Private);
+        var hidden = Wishlist.CreateSystem(userId, "Скрытые", WishlistVisibility.Private, SystemWishlistType.Hidden);
 
-        var blacklist = Wishlist.CreateSystem(userId, "Чёрный список", WishlistVisibility.Public);
+        var blacklist = Wishlist.CreateSystem(userId, "Чёрный список", WishlistVisibility.Public, SystemWishlistType.Blacklist);
 
         db.Wishlists.Add(hidden);
 
@@ -63,7 +64,8 @@ public sealed class WishlistsApi(ApplicationDbContext db) : IWishlistsApi
             .Select(w => new WishlistAccessData(
                 w.OwnerId,
                 w.Visibility,
-                w.Members.Select(m => new WishlistMemberInfo(m.UserId, m.Role)).ToList()))
+                w.Members.Select(m => new WishlistMemberInfo(m.UserId, m.Role)).ToList(),
+                w.SystemType))
             .FirstOrDefaultAsync(ct);
     }
 
@@ -72,6 +74,43 @@ public sealed class WishlistsApi(ApplicationDbContext db) : IWishlistsApi
         return await db.Wishlists
             .AsNoTracking()
             .AnyAsync(w => w.Wishes.Any(wish => wish.Id == wishId && wish.IsFulfilled), ct);
+    }
+
+    public async Task<Result> CanLinkWishlistAsync(Guid userId, Guid wishlistId, CancellationToken ct = default)
+    {
+        var wishlist = await db.Wishlists
+            .AsNoTracking()
+            .Where(w => w.Id == wishlistId)
+            .Select(w => new { w.OwnerId, w.IsSystem })
+            .FirstOrDefaultAsync(ct);
+
+        if (wishlist is null)
+            return Error.NotFound("Wishlists.NotFound", "Wishlist not found");
+
+        if (wishlist.IsSystem)
+            return Error.Failure("Wishlists.SystemWishlist", "Cannot link a system wishlist to an event");
+
+        if (wishlist.OwnerId != userId)
+            return Error.Forbidden("Wishlists.Forbidden", "Access denied");
+
+        return Result.Success();
+    }
+
+    public async Task<UserWishStats> GetUserWishStatsAsync(Guid userId, CancellationToken ct = default)
+    {
+        var received = await db.Wishlists
+            .AsNoTracking()
+            .Where(wl => wl.OwnerId == userId && !wl.IsSystem)
+            .SelectMany(wl => wl.Wishes)
+            .CountAsync(w => w.IsFulfilled, ct);
+
+        var gifted = await db.Wishlists
+            .AsNoTracking()
+            .Where(wl => wl.OwnerId != userId && !wl.IsSystem)
+            .SelectMany(wl => wl.Wishes)
+            .CountAsync(w => w.FulfilledByReserverId == userId, ct);
+
+        return new UserWishStats(received, gifted);
     }
 
     public async Task<List<WishSummary>> GetWishesSummaryAsync(

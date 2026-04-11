@@ -9,8 +9,10 @@ public record WishlistDto(
     string? Emoji,
     WishlistVisibility Visibility,
     bool IsSystem,
+    SystemWishlistType SystemType,
     bool IsSurpriseModeEnabled,
     DateTimeOffset CreatedAt,
+    int FulfilledWishCount,
     List<WishlistMemberDto> Members)
 {
     public static WishlistDto From(Wishlist wishlist) => new(
@@ -20,7 +22,9 @@ public record WishlistDto(
         wishlist.Emoji,
         wishlist.Visibility,
         wishlist.IsSystem,
+        wishlist.SystemType,
         wishlist.IsSurpriseModeEnabled,
         wishlist.CreatedAt,
+        wishlist.Wishes.Count(w => w.IsFulfilled),
         wishlist.Members.Select(WishlistMemberDto.From).ToList());
 }
