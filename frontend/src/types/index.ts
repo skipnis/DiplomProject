@@ -1,6 +1,7 @@
 // Enums match C# backend integer values (no JsonStringEnumConverter)
 export type WishlistVisibility = 0 | 1 | 2 | 3; // Public | Friends | SelectedFriends | Private
 export type SystemWishlistType = 'None' | 'Hidden' | 'Blacklist';
+export type NotificationType = 1 | 2 | 3 | 10 | 11 | 20 | 21 | 22;
 export type Currency = 0 | 1 | 2 | 3;           // BYN | RUB | USD | EUR
 export type WishPriority = 0 | 1 | 2 | 3 | 4;   // None | NiceToHave | Want | ReallyWant | Dream
 export type WishlistMemberRole = 0 | 1 | 2;      // Viewer | Editor | Owner
@@ -28,6 +29,17 @@ export const PRIORITY_CLASS: Record<number, string> = {
 
 export const CURRENCY_LABELS: Record<number, string> = {
   0: 'BYN', 1: 'RUB', 2: 'USD', 3: 'EUR',
+};
+
+export const NOTIFICATION_TYPE_LABELS: Record<number, string> = {
+  1: 'Ваш подарок зарезервировали',
+  2: 'Резервация отменена',
+  3: 'Подарок передан',
+  10: 'Новая заявка в друзья',
+  11: 'Заявка в друзья принята',
+  20: 'Вас добавили в вишлист',
+  21: 'Вас удалили из вишлиста',
+  22: 'Ваша роль изменена',
 };
 
 export const ROLE_LABELS: Record<number, string> = {
@@ -303,3 +315,11 @@ export const OCCASION_LABELS: Record<string, string> = {
   easter: '🐣 Пасха',
   other: '🎁 Другое',
 };
+
+export interface NotificationDto {
+  id: string;
+  type: NotificationType;
+  payload: Record<string, unknown>;
+  isRead: boolean;
+  createdAt: string;
+}

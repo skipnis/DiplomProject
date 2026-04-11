@@ -11,6 +11,8 @@ using Wishapp.Web.Catalog;
 using Wishapp.Web.Events;
 using Wishapp.Web.Friendships;
 using Wishapp.Web.Infrastructure;
+using Wishapp.Web.Notifications;
+using Wishapp.Web.Notifications.SignalR;
 using Wishapp.Web.Reservations;
 using Wishapp.Web.Users;
 using Wishapp.Web.Wishlists;
@@ -37,7 +39,8 @@ builder.Services
     .AddCatalogModule()
     .AddWishlistsModule()
     .AddReservationsModule()
-    .AddEventsModule();
+    .AddEventsModule()
+    .AddNotificationsModule();
 
 builder.Services.AddRateLimiter(options =>
 {
@@ -91,7 +94,10 @@ app.MapUsersEndpoints()
     .MapEventsEndpoints()
     .MapCatalogEndpoints()
     .MapAdminEndpoints()
-    .MapShareEndpoints();
+    .MapShareEndpoints()
+    .MapNotificationsEndpoints();
+
+app.MapHub<NotificationsHub>("/hubs/notifications");
 
 if (app.Environment.IsDevelopment())
 {
