@@ -22,7 +22,7 @@ public sealed class GetMyNotificationsHandler(ApplicationDbContext db)
             .Select(n => new NotificationDto(
                 n.Id,
                 n.Type,
-                n.Payload.RootElement,
+                n.Payload,
                 n.IsRead,
                 n.CreatedAt))
             .ToPagedResponseAsync(query.Request, ct);

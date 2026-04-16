@@ -5,6 +5,10 @@ export function getCatalogCategories(): Promise<CatalogCategoryDto[]> {
   return apiGet<CatalogCategoryDto[]>('/catalog/categories');
 }
 
+export function getCatalogPriceRange(): Promise<{ max: number }> {
+  return apiGet<{ max: number }>('/catalog/price-range');
+}
+
 export function getCatalogItems(params: {
   categoryId?: string;
   search?: string;

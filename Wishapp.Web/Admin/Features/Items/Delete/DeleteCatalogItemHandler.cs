@@ -2,10 +2,11 @@ using Microsoft.EntityFrameworkCore;
 using Wishapp.Web.Common.Interfaces;
 using Wishapp.Web.Common.Types;
 using Wishapp.Web.Infrastructure.Database;
+using ZiggyCreatures.Caching.Fusion;
 
 namespace Wishapp.Web.Admin.Features.Items.Delete;
 
-public sealed class DeleteCatalogItemHandler(ApplicationDbContext db)
+public sealed class DeleteCatalogItemHandler(ApplicationDbContext db, IFusionCache cache)
     : ICommandHandler<DeleteCatalogItemCommand>
 {
     public async Task<Result> HandleAsync(
@@ -23,6 +24,7 @@ public sealed class DeleteCatalogItemHandler(ApplicationDbContext db)
         db.CatalogItems.Remove(item);
 
         await db.SaveChangesAsync(ct);
+        await cache.RemoveAsync("catalog:price-range", token: ct);
 
         return Result.Success();
     }

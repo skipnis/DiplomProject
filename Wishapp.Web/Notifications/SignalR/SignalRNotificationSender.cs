@@ -12,7 +12,7 @@ public sealed class SignalRNotificationSender(IHubContext<NotificationsHub> hubC
         var dto = new NotificationDto(
             notification.Id,
             notification.Type,
-            notification.Payload.RootElement.Clone(),
+            notification.Payload.Clone(),
             notification.IsRead,
             notification.CreatedAt);
 

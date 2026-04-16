@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { getCatalogCategories, getCatalogItems, addWishFromCatalog, rateCatalogItem, unrateCatalogItem } from '../api/catalog';
+import { getCatalogCategories, getCatalogItems, getCatalogPriceRange, addWishFromCatalog, rateCatalogItem, unrateCatalogItem } from '../api/catalog';
 import { getMyWishlists } from '../api/wishlists';
 import { getImageUrl } from '../api/client';
 import { useToast } from '../components/Toast';
@@ -10,7 +10,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Dialog, DialogContent, DialogTitle } from '@/components/ui/dialog';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { FieldError } from '@/components/ui/field-error';
+import { Slider } from '@/components/ui/slider';
 
 function StarRating({ item, onRate }: { item: CatalogItemDto; onRate: (id: string, value: number | null) => void }) {
   const [hover, setHover] = useState<number | null>(null);
@@ -49,19 +49,18 @@ export default function CatalogPage() {
   const [selectedCategory, setSelectedCategory] = useState<string | undefined>();
   const [search, setSearch] = useState('');
   const [searchInput, setSearchInput] = useState('');
-  const [minPrice, setMinPrice] = useState<number | undefined>();
-  const [maxPrice, setMaxPrice] = useState<number | undefined>();
+  const FALLBACK_MAX_PRICE = 100000;
+  const [maxCatalogPrice, setMaxCatalogPrice] = useState<number>(FALLBACK_MAX_PRICE);
+  const [priceRange, setPriceRange] = useState<[number, number]>([1, FALLBACK_MAX_PRICE]);
+  const priceFilterActive = priceRange[0] > 1 || priceRange[1] < maxCatalogPrice;
+  const minPrice = priceFilterActive ? priceRange[0] : undefined;
+  const maxPrice = priceFilterActive ? priceRange[1] : undefined;
   const [addModal, setAddModal] = useState<CatalogItemDto | null>(null);
   const [wishlists, setWishlists] = useState<WishlistSummaryDto[]>([]);
   const [selectedWishlistId, setSelectedWishlistId] = useState('');
   const [adding, setAdding] = useState(false);
 
-  const priceError = minPrice != null && maxPrice != null && maxPrice < minPrice
-    ? 'Максимальная цена не может быть меньше минимальной'
-    : undefined;
-
   const load = (p: number) => {
-    if (priceError) return;
     setLoading(true);
     getCatalogItems({ categoryId: selectedCategory, search, minPrice, maxPrice, page: p })
       .then(setData)
@@ -69,8 +68,16 @@ export default function CatalogPage() {
       .finally(() => setLoading(false));
   };
 
-  useEffect(() => { getCatalogCategories().then(setCategories).catch(() => {}); }, []);
-  useEffect(() => { setPage(1); load(1); }, [selectedCategory, search, minPrice, maxPrice]);
+  useEffect(() => {
+    getCatalogCategories().then(setCategories).catch(() => {});
+    getCatalogPriceRange().then(({ max }) => {
+      if (max > 0) {
+        setMaxCatalogPrice(max);
+        setPriceRange([1, max]);
+      }
+    }).catch(() => {});
+  }, []);
+  useEffect(() => { setPage(1); load(1); }, [selectedCategory, search, priceRange]);
   useEffect(() => { if (page > 1) load(page); }, [page]);
 
   const handleSearch = (e: React.FormEvent) => { e.preventDefault(); setSearch(searchInput); };
@@ -139,10 +146,18 @@ export default function CatalogPage() {
           </div>
           <div>
             <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wide mb-2">Цена</p>
-            <div className="flex flex-col gap-2">
-              <Input type="number" placeholder="От" value={minPrice ?? ''} onChange={(e) => setMinPrice(e.target.value ? Number(e.target.value) : undefined)} aria-invalid={!!priceError} />
-              <Input type="number" placeholder="До" value={maxPrice ?? ''} onChange={(e) => setMaxPrice(e.target.value ? Number(e.target.value) : undefined)} aria-invalid={!!priceError} />
-              <FieldError message={priceError} />
+            <div className="flex flex-col gap-3">
+              <Slider
+                min={1}
+                max={maxCatalogPrice}
+                step={50}
+                value={priceRange}
+                onValueChange={(v) => { const r = v as number[]; setPriceRange([r[0], r[1]]); }}
+              />
+              <div className="flex justify-between text-xs text-muted-foreground">
+                <span>{priceRange[0].toLocaleString('ru-RU')} р.</span>
+                <span>{priceRange[1].toLocaleString('ru-RU')} р.</span>
+              </div>
             </div>
           </div>
         </aside>

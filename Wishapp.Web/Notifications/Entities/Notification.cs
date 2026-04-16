@@ -7,7 +7,7 @@ public sealed class Notification
     public Guid Id { get; private set; }
     public Guid UserId { get; private set; }
     public NotificationType Type { get; private set; }
-    public JsonDocument Payload { get; private set; } = null!;
+    public JsonElement Payload { get; private set; }
     public bool IsRead { get; private set; }
     public NotificationStatus Status { get; private set; }
     public int RetryCount { get; private set; }
@@ -16,7 +16,7 @@ public sealed class Notification
 
     private Notification() { }
 
-    public static Notification Create(Guid userId, NotificationType type, JsonDocument payload)
+    public static Notification Create(Guid userId, NotificationType type, JsonElement payload)
     {
         return new Notification
         {

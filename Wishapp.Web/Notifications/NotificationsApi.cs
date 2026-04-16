@@ -8,8 +8,8 @@ public sealed class NotificationsApi(ApplicationDbContext db) : INotificationsAp
 {
     public async Task EnqueueAsync(Guid userId, NotificationType type, object payload, CancellationToken ct = default)
     {
-        var document = JsonSerializer.SerializeToDocument(payload);
-        var notification = Notification.Create(userId, type, document);
+        var element = JsonSerializer.SerializeToElement(payload);
+        var notification = Notification.Create(userId, type, element);
         db.Notifications.Add(notification);
         await db.SaveChangesAsync(ct);
     }

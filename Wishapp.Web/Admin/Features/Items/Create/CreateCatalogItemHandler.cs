@@ -3,10 +3,11 @@ using Wishapp.Web.Catalog.Entities;
 using Wishapp.Web.Common.Interfaces;
 using Wishapp.Web.Common.Types;
 using Wishapp.Web.Infrastructure.Database;
+using ZiggyCreatures.Caching.Fusion;
 
 namespace Wishapp.Web.Admin.Features.Items.Create;
 
-public sealed class CreateCatalogItemHandler(ApplicationDbContext db)
+public sealed class CreateCatalogItemHandler(ApplicationDbContext db, IFusionCache cache)
     : ICommandHandler<CreateCatalogItemCommand, Guid>
 {
     public async Task<Result<Guid>> HandleAsync(
@@ -33,6 +34,7 @@ public sealed class CreateCatalogItemHandler(ApplicationDbContext db)
         db.CatalogItems.Add(item);
 
         await db.SaveChangesAsync(ct);
+        await cache.RemoveAsync("catalog:price-range", token: ct);
 
         return item.Id;
     }

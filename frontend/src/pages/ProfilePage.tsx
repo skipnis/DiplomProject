@@ -120,7 +120,7 @@ export default function ProfilePage() {
             <div className="flex gap-2">
               <Link to="/profile/edit" className={buttonVariants({ variant: 'secondary' })}>Редактировать</Link>
               <AlertDialog>
-                <AlertDialogTrigger render={<Button variant="destructive" size="sm" disabled={deleteLoading}>Удалить аккаунт</Button>} />
+                <AlertDialogTrigger render={<Button variant="destructive" disabled={deleteLoading}>Удалить аккаунт</Button>} />
                 <AlertDialogContent>
                   <AlertDialogHeader>
                     <AlertDialogTitle>Удалить аккаунт?</AlertDialogTitle>

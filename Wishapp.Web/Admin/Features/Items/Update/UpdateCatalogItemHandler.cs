@@ -2,10 +2,11 @@ using Microsoft.EntityFrameworkCore;
 using Wishapp.Web.Common.Interfaces;
 using Wishapp.Web.Common.Types;
 using Wishapp.Web.Infrastructure.Database;
+using ZiggyCreatures.Caching.Fusion;
 
 namespace Wishapp.Web.Admin.Features.Items.Update;
 
-public sealed class UpdateCatalogItemHandler(ApplicationDbContext db)
+public sealed class UpdateCatalogItemHandler(ApplicationDbContext db, IFusionCache cache)
     : ICommandHandler<UpdateCatalogItemCommand>
 {
     public async Task<Result> HandleAsync(
@@ -39,6 +40,7 @@ public sealed class UpdateCatalogItemHandler(ApplicationDbContext db)
             command.IsPublished);
 
         await db.SaveChangesAsync(ct);
+        await cache.RemoveAsync("catalog:price-range", token: ct);
 
         return Result.Success();
     }

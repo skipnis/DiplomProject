@@ -11,6 +11,7 @@ public static partial class CatalogEndpoints
         var catalog = app.MapGroup("/catalog");
 
         catalog.MapGet("/categories", GetCategories);
+        catalog.MapGet("/price-range", GetPriceRange);
         catalog.MapGet("/items", GetCatalogItems)
             .AddEndpointFilter<ValidationFilter<CatalogItemsRequest>>();
         catalog.MapGet("/items/{id:guid}", GetCatalogItem);
