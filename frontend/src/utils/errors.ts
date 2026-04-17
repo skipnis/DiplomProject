@@ -13,11 +13,11 @@ const CODE_MESSAGES: Record<string, string> = {
   'Wishes.NotFound': 'Желание не найдено',
   'Users.NotFound': 'Пользователь не найден',
   'Friendships.NotFound': 'Дружба не найдена',
-  'Reservations.NotFound': 'Резервация не найдена',
+  'Reservations.NotFound': 'Бронирование не найдено',
   'Friendships.AlreadyFriends': 'Вы уже друзья',
   'Friendships.RequestAlreadySent': 'Заявка уже отправлена',
-  'Reservations.AlreadyReserved': 'Желание уже зарезервировано',
-  'Reservations.CannotReserveOwn': 'Нельзя зарезервировать собственное желание',
+  'Reservations.AlreadyReserved': 'Желание уже забронировано',
+  'Reservations.CannotReserveOwn': 'Нельзя забронировать собственное желание',
   'Users.UsernameAlreadyTaken': 'Имя пользователя уже занято',
 };
 

@@ -116,7 +116,7 @@ export default function SharedWishPage() {
             <div>
               <div className="text-xs text-muted-foreground mb-0.5">Статус</div>
               <div className="font-semibold text-sm">
-                {wish.isFulfilled ? '✅ Исполнено' : wish.isReserved ? '🔒 Зарезервировано' : '⏳ Ожидает'}
+                {wish.isFulfilled ? '✅ Исполнено' : wish.isReserved ? '🔒 Забронировано' : '⏳ Ожидает'}
               </div>
             </div>
           </div>
@@ -140,13 +140,13 @@ export default function SharedWishPage() {
               onClick={handleReserve}
               disabled={wish.isReserved && !isMineReserved}
             >
-              {isMineReserved ? 'Отменить резервацию' : wish.isReserved ? 'Уже зарезервировано' : 'Зарезервировать'}
+              {isMineReserved ? 'Отменить бронирование' : wish.isReserved ? 'Уже забронировано' : 'Забронировать'}
             </Button>
           )}
 
           {!me && !wish.isFulfilled && (
             <Link to="/login" className={buttonVariants()}>
-              Войти чтобы зарезервировать
+              Войти чтобы забронировать
             </Link>
           )}
         </CardContent>

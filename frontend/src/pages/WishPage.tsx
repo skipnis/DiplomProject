@@ -25,11 +25,29 @@ const PRIORITY_BADGE: Record<number, string> = {
 };
 
 function QrModal({ url, open, onClose }: { url: string; open: boolean; onClose: () => void }) {
+  const [blobUrl, setBlobUrl] = useState<string | null>(null);
+  const [failed, setFailed] = useState(false);
+
+  useEffect(() => {
+    if (!open) return;
+    setBlobUrl(null);
+    setFailed(false);
+    fetch(url, { credentials: 'include' })
+      .then((res) => { if (!res.ok) throw new Error(); return res.blob(); })
+      .then((blob) => setBlobUrl(URL.createObjectURL(blob)))
+      .catch(() => setFailed(true));
+    return () => { setBlobUrl((prev) => { if (prev) URL.revokeObjectURL(prev); return null; }); };
+  }, [open, url]);
+
   return (
     <Dialog open={open} onOpenChange={onClose}>
       <DialogContent className="max-w-sm">
         <DialogTitle>QR-код желания</DialogTitle>
-        <img src={url} alt="QR код" className="w-full rounded-lg" />
+        {failed
+          ? <p className="text-center text-sm text-muted-foreground py-4">Не удалось загрузить QR-код</p>
+          : blobUrl
+            ? <img src={blobUrl} alt="QR код" className="w-full rounded-lg" />
+            : <div className="h-48 flex items-center justify-center text-muted-foreground text-sm">Загрузка...</div>}
       </DialogContent>
     </Dialog>
   );
@@ -189,7 +207,7 @@ export default function WishPage() {
             <div>
               <div className="text-xs text-muted-foreground mb-0.5">Статус</div>
               <div className="font-semibold text-sm">
-                {wish.isFulfilled ? '✅ Исполнено' : wish.isReserved ? '🔒 Зарезервировано' : '⏳ Ожидает'}
+                {wish.isFulfilled ? '✅ Исполнено' : wish.isReserved ? '🔒 Забронировано' : '⏳ Ожидает'}
               </div>
             </div>
           </div>
@@ -212,7 +230,7 @@ export default function WishPage() {
                 onClick={handleReserve}
                 disabled={wish.isReserved && !isMineReserved}
               >
-                {isMineReserved ? 'Отменить резервацию' : wish.isReserved ? 'Уже зарезервировано' : 'Зарезервировать'}
+                {isMineReserved ? 'Отменить бронирование' : wish.isReserved ? 'Уже забронировано' : 'Забронировать'}
               </Button>
             )}
           </div>

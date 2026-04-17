@@ -18,11 +18,29 @@ import { Separator } from '@/components/ui/separator';
 import { Dialog, DialogContent, DialogTitle } from '@/components/ui/dialog';
 
 function QrModal({ url, open, onClose }: { url: string; open: boolean; onClose: () => void }) {
+  const [blobUrl, setBlobUrl] = useState<string | null>(null);
+  const [failed, setFailed] = useState(false);
+
+  useEffect(() => {
+    if (!open) return;
+    setBlobUrl(null);
+    setFailed(false);
+    fetch(url, { credentials: 'include' })
+      .then((res) => { if (!res.ok) throw new Error(); return res.blob(); })
+      .then((blob) => setBlobUrl(URL.createObjectURL(blob)))
+      .catch(() => setFailed(true));
+    return () => { setBlobUrl((prev) => { if (prev) URL.revokeObjectURL(prev); return null; }); };
+  }, [open, url]);
+
   return (
     <Dialog open={open} onOpenChange={onClose}>
       <DialogContent className="max-w-sm">
         <DialogTitle>QR-код</DialogTitle>
-        <img src={url} alt="QR код" className="w-full rounded-lg" />
+        {failed
+          ? <p className="text-center text-sm text-muted-foreground py-4">Не удалось загрузить QR-код</p>
+          : blobUrl
+            ? <img src={blobUrl} alt="QR код" className="w-full rounded-lg" />
+            : <div className="h-48 flex items-center justify-center text-muted-foreground text-sm">Загрузка...</div>}
       </DialogContent>
     </Dialog>
   );
@@ -211,13 +229,13 @@ export default function WishlistPage() {
                       )}
                     </div>
                   </div>
-                  {shouldBlur && <div className="absolute inset-0 flex items-center justify-center font-bold text-muted-foreground text-sm bg-white/30">🔒 Зарезервировано</div>}
+                  {shouldBlur && <div className="absolute inset-0 flex items-center justify-center font-bold text-muted-foreground text-sm bg-white/30">🔒 Забронировано</div>}
                   {wish.isFulfilled && <div className="absolute top-2 right-2 bg-green-500 text-white rounded-full px-2 py-0.5 text-xs font-semibold">✓ Исполнено</div>}
                 </Link>
                 <div className="flex flex-wrap gap-1 mt-2">
                   {me && !isOwner && !wish.isFulfilled && !isBlacklist && (
                     <Button size="sm" variant={iMineReserved ? 'destructive' : wish.isReserved ? 'ghost' : 'secondary'} onClick={() => handleReserve(wish)} disabled={wish.isReserved && !iMineReserved}>
-                      {iMineReserved ? 'Отменить резерв' : wish.isReserved ? 'Зарезервировано' : 'Зарезервировать'}
+                      {iMineReserved ? 'Отменить бронь' : wish.isReserved ? 'Забронировано' : 'Забронировать'}
                     </Button>
                   )}
                   {isOwner && (

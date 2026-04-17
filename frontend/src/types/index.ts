@@ -32,8 +32,8 @@ export const CURRENCY_LABELS: Record<number, string> = {
 };
 
 export const NOTIFICATION_TYPE_LABELS: Record<number, string> = {
-  1: 'Ваш подарок зарезервировали',
-  2: 'Резервация отменена',
+  1: 'Ваш подарок забронировали',
+  2: 'Бронирование отменено',
   3: 'Подарок передан',
   10: 'Новая заявка в друзья',
   11: 'Заявка в друзья принята',

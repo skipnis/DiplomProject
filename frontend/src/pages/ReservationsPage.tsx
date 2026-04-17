@@ -25,7 +25,7 @@ export default function ReservationsPage() {
   useEffect(() => { load(page); }, [page]);
 
   const handleCancel = async (wishId: string) => {
-    if (!confirm('Отменить резервацию?')) return;
+    if (!confirm('Отменить бронирование?')) return;
     try {
       await cancelReservation(wishId);
       setData((prev) => prev ? { ...prev, items: prev.items.filter((r) => r.wishId !== wishId), totalCount: prev.totalCount - 1 } : prev);
@@ -36,8 +36,8 @@ export default function ReservationsPage() {
     <div>
       <div className="flex items-center justify-between mb-7 gap-4">
         <div>
-          <h1 className="text-2xl font-extrabold tracking-tight">Мои резервации</h1>
-          {data && <p className="text-sm text-muted-foreground mt-0.5">{data.totalCount} резерваций</p>}
+          <h1 className="text-2xl font-extrabold tracking-tight">Мои бронирования</h1>
+          {data && <p className="text-sm text-muted-foreground mt-0.5">{data.totalCount} бронирований</p>}
         </div>
       </div>
 
@@ -46,8 +46,8 @@ export default function ReservationsPage() {
       ) : !data || data.items.length === 0 ? (
         <div className="text-center py-16">
           <div className="text-5xl mb-4">🎁</div>
-          <p className="font-semibold mb-1">Нет резерваций</p>
-          <p className="text-sm text-muted-foreground">Зайди в вишлист друга и зарезервируй желание</p>
+          <p className="font-semibold mb-1">Нет бронирований</p>
+          <p className="text-sm text-muted-foreground">Зайди в вишлист друга и забронируй желание</p>
         </div>
       ) : (
         <>
