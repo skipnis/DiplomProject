@@ -29,7 +29,9 @@ public sealed class UrlParser(IHttpClientFactory httpClientFactory, ILogger<UrlP
         try
         {
             var client = httpClientFactory.CreateClient("parser");
-            var html = await client.GetStringAsync(url, ct);
+            var response = await client.GetAsync(url, ct);
+            logger.LogInformation("Parser got {StatusCode} from {Url}", (int)response.StatusCode, url);
+            var html = await response.Content.ReadAsStringAsync(ct);
 
             var context = BrowsingContext.New(Configuration.Default);
             var document = await context.OpenAsync(req => req.Content(html), ct);
