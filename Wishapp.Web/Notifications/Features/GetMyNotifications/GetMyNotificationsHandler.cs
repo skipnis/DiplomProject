@@ -14,9 +14,26 @@ public sealed class GetMyNotificationsHandler(ApplicationDbContext db)
         GetMyNotificationsQuery query,
         CancellationToken ct = default)
     {
-        var result = await db.Notifications
+        var notifications = db.Notifications
             .AsNoTracking()
-            .Where(n => n.UserId == query.UserId)
+            .Where(n => n.UserId == query.UserId);
+
+        if (query.From.HasValue)
+        {
+            var fromUtc = query.From.Value.ToDateTime(TimeOnly.MinValue, DateTimeKind.Utc);
+            notifications = notifications.Where(n => n.CreatedAt >= fromUtc);
+        }
+
+        if (query.To.HasValue)
+        {
+            var toUtc = query.To.Value.ToDateTime(TimeOnly.MaxValue, DateTimeKind.Utc);
+            notifications = notifications.Where(n => n.CreatedAt <= toUtc);
+        }
+
+        if (query.IsRead.HasValue)
+            notifications = notifications.Where(n => n.IsRead == query.IsRead.Value);
+
+        var result = await notifications
             .OrderBy(n => n.IsRead)
             .ThenByDescending(n => n.CreatedAt)
             .Select(n => new NotificationDto(

@@ -14,13 +14,16 @@ public static partial class NotificationsEndpoints
         IQueryHandler<Features.GetMyNotifications.GetMyNotificationsQuery, PagedResponse<NotificationDto>> handler,
         int page = 1,
         int pageSize = 20,
+        DateOnly? from = null,
+        DateOnly? to = null,
+        bool? isRead = null,
         CancellationToken ct = default)
     {
         var userIdResult = user.TryGetUserId();
         if (userIdResult.IsFailure) return TypedResults.Unauthorized();
 
         var result = await handler.HandleAsync(
-            new Features.GetMyNotifications.GetMyNotificationsQuery(userIdResult.Value, new PagedRequest(page, pageSize)), ct);
+            new Features.GetMyNotifications.GetMyNotificationsQuery(userIdResult.Value, new PagedRequest(page, pageSize), from, to, isRead), ct);
 
         return TypedResults.Ok(result.Value);
     }
