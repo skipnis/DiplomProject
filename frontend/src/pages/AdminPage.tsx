@@ -65,7 +65,13 @@ function ItemForm({ form, setForm, categories, itemImageFile, setItemImageFile, 
             <div className="flex flex-col gap-1.5">
               <Label>Категория *</Label>
               <Select value={form.categoryId} onValueChange={(v) => { setForm({ ...form, categoryId: v ?? '' }); clearError('categoryId'); }}>
-                <SelectTrigger aria-invalid={!!errors.categoryId}><SelectValue placeholder="Выберите..." /></SelectTrigger>
+                <SelectTrigger aria-invalid={!!errors.categoryId}>
+                  <SelectValue>
+                    {form.categoryId
+                      ? (categories.find((c) => c.id === form.categoryId)?.name ?? form.categoryId)
+                      : <span className="text-muted-foreground">Выберите...</span>}
+                  </SelectValue>
+                </SelectTrigger>
                 <SelectContent>{categories.map((c) => <SelectItem key={c.id} value={c.id}>{c.name}</SelectItem>)}</SelectContent>
               </Select>
               <FieldError message={errors.categoryId} />
@@ -133,7 +139,13 @@ function CollectionForm({ form, setForm, occasions, collectionImageFile, setColl
             <div className="flex flex-col gap-1.5">
               <Label>Повод</Label>
               <Select value={form.occasion || '__none__'} onValueChange={(v) => setForm({ ...form, occasion: v == null || v === '__none__' ? '' : v })}>
-                <SelectTrigger><SelectValue /></SelectTrigger>
+                <SelectTrigger>
+                  <SelectValue>
+                    {form.occasion
+                      ? (occasions.find(([key]) => key === form.occasion)?.[1] ?? form.occasion)
+                      : '—'}
+                  </SelectValue>
+                </SelectTrigger>
                 <SelectContent>
                   <SelectItem value="__none__">—</SelectItem>
                   {occasions.map(([key, label]) => <SelectItem key={key} value={key}>{label}</SelectItem>)}
@@ -184,27 +196,35 @@ function CollectionForm({ form, setForm, occasions, collectionImageFile, setColl
 }
 
 export default function AdminPage() {
+  const [activeTab, setActiveTab] = useState('categories');
+  const [filterCategoryId, setFilterCategoryId] = useState<string | undefined>(undefined);
+
+  const openItemsByCategory = (categoryId: string) => {
+    setFilterCategoryId(categoryId);
+    setActiveTab('items');
+  };
+
   return (
     <div>
       <div className="flex items-center justify-between mb-7">
         <h1 className="text-2xl font-extrabold tracking-tight">Администрирование каталога</h1>
         <Button variant="ghost" size="sm" onClick={() => { localStorage.removeItem('admin_token'); window.location.href = '/admin/login'; }}>Выйти</Button>
       </div>
-      <Tabs defaultValue="categories">
+      <Tabs value={activeTab} onValueChange={(v) => { setActiveTab(v); if (v !== 'items') setFilterCategoryId(undefined); }}>
         <TabsList className="mb-6">
           <TabsTrigger value="categories">Категории</TabsTrigger>
           <TabsTrigger value="items">Товары</TabsTrigger>
           <TabsTrigger value="collections">Подборки</TabsTrigger>
         </TabsList>
-        <TabsContent value="categories"><CategoriesTab /></TabsContent>
-        <TabsContent value="items"><ItemsTab /></TabsContent>
+        <TabsContent value="categories"><CategoriesTab onOpenItems={openItemsByCategory} /></TabsContent>
+        <TabsContent value="items"><ItemsTab initialCategoryId={filterCategoryId} /></TabsContent>
         <TabsContent value="collections"><CollectionsTab /></TabsContent>
       </Tabs>
     </div>
   );
 }
 
-function CategoriesTab() {
+function CategoriesTab({ onOpenItems }: { onOpenItems: (categoryId: string) => void }) {
   const toast = useToast();
   const [categories, setCategories] = useState<CatalogCategoryDto[]>([]);
   const [loading, setLoading] = useState(true);
@@ -265,7 +285,14 @@ function CategoriesTab() {
                           <Input value={editName} onChange={(e) => { setEditName(e.target.value); if (editErrors.name) setEditErrors((p) => ({ ...p, name: '' })); }} className="h-7" aria-invalid={!!editErrors.name} />
                           <FieldError message={editErrors.name} />
                         </>
-                      ) : c.name}
+                      ) : (
+                        <button
+                          className="hover:underline text-left"
+                          onClick={() => onOpenItems(c.id)}
+                        >
+                          {c.name}
+                        </button>
+                      )}
                     </td>
                     <td className="p-3">
                       {editId === c.id ? (
@@ -283,6 +310,7 @@ function CategoriesTab() {
                         </div>
                       ) : (
                         <div className="flex gap-2 justify-end">
+                          <Button size="sm" variant="ghost" onClick={() => onOpenItems(c.id)}>Открыть</Button>
                           <Button size="sm" variant="ghost" onClick={() => { setEditId(c.id); setEditName(c.name); setEditOrder(String(c.order)); setEditErrors({}); }}>Изменить</Button>
                           <Button size="sm" variant="ghost" className="text-destructive" onClick={async () => { if (!confirm('Удалить?')) return; try { await adminDeleteCategory(c.id); load(); } catch (e) { toast.error(parseError(e)); } }}>Удалить</Button>
                         </div>
@@ -299,11 +327,12 @@ function CategoriesTab() {
   );
 }
 
-function ItemsTab() {
+function ItemsTab({ initialCategoryId }: { initialCategoryId?: string }) {
   const toast = useToast();
   const [categories, setCategories] = useState<CatalogCategoryDto[]>([]);
   const [data, setData] = useState<PagedResponse<CatalogItemDto> | null>(null);
   const [page, setPage] = useState(1);
+  const [categoryFilter, setCategoryFilter] = useState<string>('');
   const [loading, setLoading] = useState(true);
   const [showCreate, setShowCreate] = useState(false);
   const [editItem, setEditItem] = useState<CatalogItemDto | null>(null);
@@ -315,9 +344,14 @@ function ItemsTab() {
 
   const clearError = (field: string) => { if (errors[field]) setErrors((p) => ({ ...p, [field]: '' })); };
 
-  useEffect(() => { adminGetCategories().then(setCategories).catch(() => {}); }, []);
-  const load = (p: number) => { setLoading(true); adminGetAllItems({ page: p }).then(setData).catch(() => {}).finally(() => setLoading(false)); };
-  useEffect(() => { load(page); }, [page]);
+  useEffect(() => {
+    adminGetCategories().then((cats) => {
+      setCategories(cats);
+      if (initialCategoryId) setCategoryFilter(initialCategoryId);
+    }).catch(() => {});
+  }, []);
+  const load = (p: number, catId?: string) => { setLoading(true); adminGetAllItems({ page: p, categoryId: catId || undefined }).then(setData).catch(() => {}).finally(() => setLoading(false)); };
+  useEffect(() => { load(page, categoryFilter); }, [page, categoryFilter]);
 
   const resetForm = () => { setForm({ name: '', description: '', price: '', currency: '0', imagePath: '', url: '', categoryId: '', isPublished: false }); setItemImageFile(null); setExternalImageUrl(null); setErrors({}); };
 
@@ -367,7 +401,25 @@ function ItemsTab() {
 
   return (
     <div>
-      {!showCreate && !editItem && <Button className="mb-4" onClick={() => { setShowCreate(true); resetForm(); }}>Добавить товар</Button>}
+      {!showCreate && !editItem && (
+        <div className="flex items-center gap-3 mb-4">
+          <Button onClick={() => { setShowCreate(true); resetForm(); }}>Добавить товар</Button>
+          <Select value={categoryFilter} onValueChange={(v) => { setCategoryFilter(v ?? ''); setPage(1); }}>
+            <SelectTrigger className="w-52 h-9">
+              <SelectValue>
+                {categoryFilter
+                  ? (categories.find((c) => c.id === categoryFilter)?.name ?? categoryFilter)
+                  : <span className="text-muted-foreground">Все категории</span>}
+              </SelectValue>
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="">Все категории</SelectItem>
+              {categories.map((c) => <SelectItem key={c.id} value={c.id}>{c.name}</SelectItem>)}
+            </SelectContent>
+          </Select>
+          {categoryFilter && <Button variant="ghost" size="sm" onClick={() => { setCategoryFilter(''); setPage(1); }}>Сбросить</Button>}
+        </div>
+      )}
       {showCreate && <ItemForm form={form} setForm={setForm} categories={categories} itemImageFile={itemImageFile} setItemImageFile={setItemImageFile} externalImageUrl={externalImageUrl} setExternalImageUrl={setExternalImageUrl} onSubmit={handleCreate} submitLabel="Создать" onCancel={handleCancel} onParseUrl={handleParseUrl} parsing={parsing} errors={errors} clearError={clearError} />}
       {editItem && <ItemForm form={form} setForm={setForm} categories={categories} itemImageFile={itemImageFile} setItemImageFile={setItemImageFile} externalImageUrl={externalImageUrl} setExternalImageUrl={setExternalImageUrl} onSubmit={handleUpdate} submitLabel="Сохранить" onCancel={handleCancel} onParseUrl={handleParseUrl} parsing={parsing} errors={errors} clearError={clearError} />}
 
@@ -485,7 +537,13 @@ function CollectionsTab() {
                       <td colSpan={5} className="p-4 bg-muted/30 border-b">
                         <div className="flex gap-2 mb-3">
                           <Select value={addItemId} onValueChange={(v) => setAddItemId(v ?? '')}>
-                            <SelectTrigger className="flex-1"><SelectValue placeholder="Выберите товар..." /></SelectTrigger>
+                            <SelectTrigger className="flex-1">
+                              <SelectValue>
+                                {addItemId
+                                  ? (allItems.find((i) => i.id === addItemId)?.name ?? addItemId)
+                                  : <span className="text-muted-foreground">Выберите товар...</span>}
+                              </SelectValue>
+                            </SelectTrigger>
                             <SelectContent>{allItems.map((i) => <SelectItem key={i.id} value={i.id}>{i.name} ({i.categoryName})</SelectItem>)}</SelectContent>
                           </Select>
                           <Button size="sm" disabled={!addItemId} onClick={async () => { try { await adminAddItemToCollection(c.id, addItemId); setAddItemId(''); load(); toast.success('Товар добавлен'); } catch (e) { toast.error(parseError(e)); } }}>Добавить</Button>

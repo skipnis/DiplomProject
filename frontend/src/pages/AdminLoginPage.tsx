@@ -1,6 +1,7 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { adminLogin } from '../api/admin';
+import { logout } from '../api/auth';
 import { parseError } from '../utils/errors';
 import { useToast } from '../components/Toast';
 import { Button } from '@/components/ui/button';
@@ -14,6 +15,10 @@ export default function AdminLoginPage() {
   const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
   const [loading, setLoading] = useState(false);
+
+  useEffect(() => {
+    logout().catch(() => {});
+  }, []);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();

@@ -44,10 +44,15 @@ export default function NewWishPage() {
     setParsing(true);
     try {
       const data = await parseWishUrl(url.trim());
-      if (data.name) setName(data.name);
-      if (data.description) setDescription(data.description);
-      if (data.price != null) setPrice(String(data.price));
-      if (data.externalImageUrl) { setExternalImageUrl(data.externalImageUrl); setImageFile(null); setImagePreview(data.externalImageUrl); }
+      const nothingParsed = !data.name && !data.description && data.price == null && !data.externalImageUrl;
+      if (nothingParsed) {
+        toast.warning('Магазин не разрешил получить данные. Заполни поля вручную.');
+      } else {
+        if (data.name) setName(data.name);
+        if (data.description) setDescription(data.description);
+        if (data.price != null) setPrice(String(data.price));
+        if (data.externalImageUrl) { setExternalImageUrl(data.externalImageUrl); setImageFile(null); setImagePreview(data.externalImageUrl); }
+      }
     } catch (e) { toast.error(parseError(e)); }
     finally { setParsing(false); }
   };
