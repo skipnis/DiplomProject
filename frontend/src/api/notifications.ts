@@ -1,8 +1,18 @@
-import { apiGet, apiPatch } from './client';
+import { apiGet, apiPatch, apiDelete } from './client';
 import type { NotificationDto, PagedResponse } from '../types';
 
-export function getMyNotifications(page = 1, pageSize = 20): Promise<PagedResponse<NotificationDto>> {
-  return apiGet<PagedResponse<NotificationDto>>(`/notifications/my?page=${page}&pageSize=${pageSize}`);
+export function getMyNotifications(
+  page = 1,
+  pageSize = 20,
+  from?: string,
+  to?: string,
+  isRead?: boolean,
+): Promise<PagedResponse<NotificationDto>> {
+  const params = new URLSearchParams({ page: String(page), pageSize: String(pageSize) });
+  if (from) params.set('from', from);
+  if (to) params.set('to', to);
+  if (isRead !== undefined) params.set('isRead', String(isRead));
+  return apiGet<PagedResponse<NotificationDto>>(`/notifications/my?${params}`);
 }
 
 export function getUnreadCount(): Promise<number> {
@@ -15,4 +25,8 @@ export function markAsRead(id: string): Promise<void> {
 
 export function markAllAsRead(): Promise<void> {
   return apiPatch<void>('/notifications/read-all');
+}
+
+export function deleteNotification(id: string): Promise<void> {
+  return apiDelete<void>(`/notifications/${id}`);
 }
