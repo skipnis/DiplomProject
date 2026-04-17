@@ -10,6 +10,7 @@ public static partial class NotificationsEndpoints
         notifications.MapGet("/unread-count", GetUnreadCount);
         notifications.MapPatch("/{id:guid}/read", MarkAsRead);
         notifications.MapPatch("/read-all", MarkAllAsRead);
+        notifications.MapDelete("/{id:guid}", DeleteNotification);
 
         return app;
     }
