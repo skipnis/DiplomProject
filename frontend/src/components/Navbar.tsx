@@ -1,5 +1,5 @@
-import { useState, useEffect, useCallback } from 'react';
-import { Link, NavLink, useLocation } from 'react-router-dom';
+import { useState, useCallback } from 'react';
+import { Link, NavLink, useLocation, useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { getImageUrl } from '../api/client';
 import { useTheme } from '../hooks/useTheme';
@@ -12,24 +12,23 @@ import type { NotificationDto } from '../types';
 export default function Navbar() {
   const { user, logout } = useAuth();
   const location = useLocation();
+  const navigate = useNavigate();
   const { theme, toggle } = useTheme();
   const [menuOpen, setMenuOpen] = useState(false);
   const [unreadCount, setUnreadCount] = useState(0);
 
-  useEffect(() => {
-    if (!user) return;
-    getUnreadCount()
-      .then(setUnreadCount)
-      .catch(() => {});
-  }, [user]);
-
   const handleNotification = useCallback((n: NotificationDto) => {
     if (!n.isRead) setUnreadCount((c) => c + 1);
+    window.dispatchEvent(new CustomEvent('new-notification', { detail: n }));
   }, []);
 
-  useNotificationsHub(!!user, handleNotification);
+  const handleConnected = useCallback(() => {
+    getUnreadCount().then(setUnreadCount).catch(() => {});
+  }, []);
 
-  if (location.pathname === '/onboarding') return null;
+  useNotificationsHub(!!user, handleNotification, handleConnected);
+
+  if (location.pathname === '/onboarding' || location.pathname.startsWith('/admin')) return null;
 
   const close = () => setMenuOpen(false);
 
@@ -65,7 +64,7 @@ export default function Navbar() {
               <NavLink to="/catalog" end className={navCls} onClick={close}>Каталог</NavLink>
               <NavLink to="/catalog/collections" className={navCls} onClick={close}>Подборки</NavLink>
               <NavLink to="/friends" className={navCls} onClick={close}>Друзья</NavLink>
-              <NavLink to="/reservations" className={navCls} onClick={close}>Резервации</NavLink>
+              <NavLink to="/reservations" className={navCls} onClick={close}>Бронирования</NavLink>
               <NavLink to="/events" className={navCls} onClick={close}>События</NavLink>
               <NavLink
                 to="/notifications"
@@ -93,7 +92,7 @@ export default function Navbar() {
                   </AvatarFallback>
                 </Avatar>
               </Link>
-              <Button variant="ghost" size="sm" onClick={() => { logout(); close(); }}>Выйти</Button>
+              <Button variant="ghost" size="sm" onClick={async () => { close(); await logout(); navigate('/login'); }}>Выйти</Button>
               <Button variant="ghost" size="sm" onClick={toggle}>{theme === 'dark' ? '☀️' : '🌙'}</Button>
             </>
           ) : (
