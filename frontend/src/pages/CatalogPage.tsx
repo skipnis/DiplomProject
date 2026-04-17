@@ -211,7 +211,13 @@ export default function CatalogPage() {
           {wishlists.length === 0
             ? <p className="text-sm text-muted-foreground">Нет вишлистов</p>
             : <Select value={selectedWishlistId} onValueChange={(v) => setSelectedWishlistId(v ?? '')}>
-                <SelectTrigger><SelectValue /></SelectTrigger>
+                <SelectTrigger>
+                  <SelectValue>
+                    {selectedWishlistId
+                      ? (wishlists.find((w) => w.id === selectedWishlistId)?.name ?? selectedWishlistId)
+                      : <span className="text-muted-foreground">Выберите вишлист...</span>}
+                  </SelectValue>
+                </SelectTrigger>
                 <SelectContent>
                   {wishlists.map((w) => <SelectItem key={w.id} value={w.id}>{w.name}</SelectItem>)}
                 </SelectContent>

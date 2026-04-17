@@ -145,7 +145,11 @@ export default function EditWishlistPage() {
                   <Label>Событие</Label>
                   <Select value={selectedEventId} onValueChange={(v) => setSelectedEventId(v ?? '')}>
                     <SelectTrigger>
-                      <SelectValue placeholder="Не привязан" />
+                      <SelectValue>
+                        {selectedEventId
+                          ? (events.find((ev) => ev.id === selectedEventId)?.title ?? selectedEventId)
+                          : <span className="text-muted-foreground">Не привязан</span>}
+                      </SelectValue>
                     </SelectTrigger>
                     <SelectContent>
                       <SelectItem value="">Не привязан</SelectItem>

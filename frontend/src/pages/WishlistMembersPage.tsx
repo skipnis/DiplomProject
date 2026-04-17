@@ -131,7 +131,7 @@ export default function WishlistMembersPage() {
                       <Badge variant="secondary">{ROLE_LABELS[2]}</Badge>
                     ) : (
                       <Select value={String(m.role)} onValueChange={(v) => handleRoleChange(m.userId, Number(v) as WishlistMemberRole)} disabled={isMe}>
-                        <SelectTrigger className="w-28 h-7 text-xs"><SelectValue /></SelectTrigger>
+                        <SelectTrigger className="w-28 h-7 text-xs"><SelectValue>{ROLE_LABELS[m.role]}</SelectValue></SelectTrigger>
                         <SelectContent>
                           {([0, 1] as WishlistMemberRole[]).map((r) => <SelectItem key={r} value={String(r)}>{ROLE_LABELS[r]}</SelectItem>)}
                         </SelectContent>
