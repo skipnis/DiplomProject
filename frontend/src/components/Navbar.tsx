@@ -5,7 +5,7 @@ import { getImageUrl } from '../api/client';
 import { useTheme } from '../hooks/useTheme';
 import { useNotificationsHub } from '../hooks/useNotificationsHub';
 import { getUnreadCount } from '../api/notifications';
-import { Button } from '@/components/ui/button';
+import { Button, buttonVariants } from '@/components/ui/button';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import type { NotificationDto } from '../types';
 
@@ -92,7 +92,7 @@ export default function Navbar() {
                   </AvatarFallback>
                 </Avatar>
               </Link>
-              <Button variant="ghost" size="sm" onClick={async () => { close(); await logout(); navigate('/login'); }}>Выйти</Button>
+              <Button variant="ghost" size="sm" onClick={async () => { close(); await logout(); navigate('/'); }}>Выйти</Button>
               <Button variant="ghost" size="sm" onClick={toggle}>{theme === 'dark' ? '☀️' : '🌙'}</Button>
             </>
           ) : (
@@ -100,6 +100,9 @@ export default function Navbar() {
               <NavLink to="/catalog" end className={navCls} onClick={close}>Каталог</NavLink>
               <NavLink to="/catalog/collections" className={navCls} onClick={close}>Подборки</NavLink>
               <Button variant="ghost" size="sm" onClick={toggle}>{theme === 'dark' ? '☀️' : '🌙'}</Button>
+              <Link to="/login" onClick={close} className={buttonVariants({ size: 'sm' })}>
+                Войти
+              </Link>
             </>
           )}
         </div>

@@ -29,6 +29,7 @@ import AdminLoginPage from './pages/AdminLoginPage';
 import AdminPage from './pages/AdminPage';
 import SharedWishPage from './pages/SharedWishPage';
 import NotificationsPage from './pages/NotificationsPage';
+import LandingPage from './pages/LandingPage';
 import type { ReactNode } from 'react';
 
 const GOOGLE_CLIENT_ID = import.meta.env.VITE_GOOGLE_CLIENT_ID as string;
@@ -42,7 +43,7 @@ function AdminRoute({ children }: { children: ReactNode }) {
 function PrivateRoute({ children, skipOnboarding = false }: { children: ReactNode; skipOnboarding?: boolean }) {
   const { user, loading } = useAuth();
   if (loading) return <div className="flex items-center justify-center min-h-screen text-muted-foreground">Загрузка...</div>;
-  if (!user) return <Navigate to="/login" replace />;
+  if (!user) return <Navigate to="/" replace />;
   if (!skipOnboarding && !user.isOnboarded) return <Navigate to="/onboarding" replace />;
   return <>{children}</>;
 }
@@ -57,6 +58,7 @@ function AppRoutes() {
       <Navbar />
       <main className="max-w-[1100px] mx-auto px-6 py-8">
         <Routes>
+          <Route path="/" element={user ? <Navigate to="/wishlists" replace /> : <LandingPage />} />
           <Route path="/login" element={user ? <Navigate to="/wishlists" replace /> : <LoginPage />} />
           <Route path="/profile" element={<PrivateRoute><ProfilePage /></PrivateRoute>} />
           <Route path="/profile/edit" element={<PrivateRoute><EditProfilePage /></PrivateRoute>} />
@@ -82,7 +84,6 @@ function AppRoutes() {
           <Route path="/admin" element={<AdminRoute><AdminPage /></AdminRoute>} />
           <Route path="/notifications" element={<PrivateRoute><NotificationsPage /></PrivateRoute>} />
           <Route path="/share/:token" element={<SharedWishPage />} />
-          <Route path="/" element={<Navigate to="/wishlists" replace />} />
         </Routes>
       </main>
     </>
