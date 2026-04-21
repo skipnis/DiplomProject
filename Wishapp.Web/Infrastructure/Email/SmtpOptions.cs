@@ -14,4 +14,7 @@ public sealed class SmtpOptions
 
     [Required]
     public string From { get; init; } = string.Empty;
+
+    public string? Username { get; init; }
+    public string? Password { get; init; }
 }
