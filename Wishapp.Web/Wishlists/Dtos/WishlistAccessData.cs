@@ -7,4 +7,5 @@ public record WishlistAccessData(
     Guid OwnerId,
     WishlistVisibility Visibility,
     IReadOnlyCollection<WishlistMemberInfo> Members,
-    SystemWishlistType SystemType);
+    SystemWishlistType SystemType,
+    bool IsSurpriseModeEnabled);

@@ -65,7 +65,8 @@ public sealed class WishlistsApi(ApplicationDbContext db) : IWishlistsApi
                 w.OwnerId,
                 w.Visibility,
                 w.Members.Select(m => new WishlistMemberInfo(m.UserId, m.Role)).ToList(),
-                w.SystemType))
+                w.SystemType,
+                w.IsSurpriseModeEnabled))
             .FirstOrDefaultAsync(ct);
     }
 

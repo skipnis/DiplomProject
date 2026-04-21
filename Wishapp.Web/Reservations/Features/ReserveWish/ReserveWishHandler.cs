@@ -89,15 +89,18 @@ public sealed class ReserveWishHandler(
             .Select(u => u.DisplayName)
             .FirstOrDefaultAsync(ct);
 
-        await notificationsApi.EnqueueAsync(accessData.OwnerId, NotificationType.WishReserved, new
+        if (!accessData.IsSurpriseModeEnabled)
         {
-            wishId = command.WishId,
-            wishName,
-            reservedByUserId = command.UserId,
-            reservedByDisplayName = reserverName,
-            wishlistId = command.WishlistId,
-            wishlistName,
-        }, ct);
+            await notificationsApi.EnqueueAsync(accessData.OwnerId, NotificationType.WishReserved, new
+            {
+                wishId = command.WishId,
+                wishName,
+                reservedByUserId = command.UserId,
+                reservedByDisplayName = reserverName,
+                wishlistId = command.WishlistId,
+                wishlistName,
+            }, ct);
+        }
 
         return Result.Success();
     }

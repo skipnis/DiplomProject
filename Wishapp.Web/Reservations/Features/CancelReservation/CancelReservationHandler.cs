@@ -47,7 +47,7 @@ public sealed class CancelReservationHandler(
 
         var wishlistData = await db.Wishlists.AsNoTracking()
             .Where(wl => wl.Id == wishlistId)
-            .Select(wl => new { wl.Name, wl.OwnerId })
+            .Select(wl => new { wl.Name, wl.OwnerId, wl.IsSurpriseModeEnabled })
             .FirstOrDefaultAsync(ct);
 
         var wishName = await db.Wishes.AsNoTracking()
@@ -60,7 +60,7 @@ public sealed class CancelReservationHandler(
             .Select(u => u.DisplayName)
             .FirstOrDefaultAsync(ct);
 
-        if (wishlistData is not null)
+        if (wishlistData is not null && !wishlistData.IsSurpriseModeEnabled)
         {
             await notificationsApi.EnqueueAsync(wishlistData.OwnerId, NotificationType.ReservationCancelled, new
             {
