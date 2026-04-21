@@ -13,4 +13,11 @@ internal sealed class CatalogApi(ApplicationDbContext db) : ICatalogApi
             .Select(i => new CatalogItemData(i.Name, i.Description, i.Price, i.Currency, i.ImagePath, i.Url))
             .FirstOrDefaultAsync(ct);
     }
+
+    public async Task IncrementWishCountAsync(Guid id, CancellationToken ct = default)
+    {
+        var item = await db.CatalogItems.FindAsync([id], ct);
+        item?.IncrementWishCount();
+        await db.SaveChangesAsync(ct);
+    }
 }

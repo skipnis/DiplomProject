@@ -49,6 +49,7 @@ public sealed class AddWishFromCatalogHandler(ApplicationDbContext db, ICatalogA
         db.Entry(result.Value).State = EntityState.Added;
 
         await db.SaveChangesAsync(ct);
+        await catalogApi.IncrementWishCountAsync(command.CatalogItemId, ct);
 
         return result.Value.Id;
     }
