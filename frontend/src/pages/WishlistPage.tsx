@@ -123,6 +123,24 @@ export default function WishlistPage() {
     try { await deleteWishlist(id); navigate('/wishlists'); } catch (e) { toast.error(parseError(e)); }
   };
 
+  const handleShare = async () => {
+    const url = `${window.location.origin}/wishlists/${id}`;
+    if (navigator.share) {
+      try {
+        await navigator.share({ title: wishlist?.name, url });
+      } catch {
+        // user cancelled — do nothing
+      }
+      return;
+    }
+    try {
+      await navigator.clipboard.writeText(url);
+      toast.success('Ссылка скопирована');
+    } catch {
+      toast.error('Не удалось скопировать ссылку');
+    }
+  };
+
   const handleDeleteWish = async (wishId: string) => {
     if (!id || !confirm('Удалить желание?')) return;
     try {
@@ -181,6 +199,9 @@ export default function WishlistPage() {
             </div>
             <div className="flex flex-wrap gap-2">
               {wishlist.visibility === 0 && <Button variant="ghost" size="sm" onClick={() => setShowQr(true)}>📷 QR</Button>}
+              {(wishlist.visibility === 0 || isOwner) && (
+                <Button variant="ghost" size="sm" onClick={handleShare}>Поделиться</Button>
+              )}
               {canEdit && <Link to={`/wishlists/${id}/edit`} className={buttonVariants({ variant: 'secondary', size: 'sm' })}>Изменить</Link>}
               {isOwner && <Button variant="destructive" size="sm" onClick={handleDeleteWishlist}>Удалить</Button>}
             </div>

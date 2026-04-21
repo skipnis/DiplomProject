@@ -224,7 +224,7 @@ export default function WishPage() {
                 {wish.isFulfilled ? '↩ Отметить не исполненным' : '✓ Отметить исполненным'}
               </Button>
             )}
-            {me && !isOwner && !wish.isFulfilled && (
+            {me && !isOwner && !wish.isFulfilled && wishlist?.systemType !== 'Blacklist' && (
               <Button
                 variant={isMineReserved ? 'destructive' : wish.isReserved ? 'ghost' : 'default'}
                 onClick={handleReserve}
