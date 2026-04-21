@@ -31,6 +31,8 @@ public sealed class GetAllCatalogItemsHandler(ApplicationDbContext db)
                 i.IsPublished, i.CreatedAt, i.UpdatedAt,
                 i.Ratings.Any() ? i.Ratings.Average(r => (double)r.Value) : (double?)null,
                 i.Ratings.Count,
+                null,
+                i.WishCount,
                 null))
             .ToPagedResponseAsync(query.Request, ct);
 

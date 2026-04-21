@@ -1,6 +1,6 @@
 using Microsoft.AspNetCore.Http.HttpResults;
 using Microsoft.AspNetCore.Mvc;
-using Wishapp.Web.Admin.Features.Collections.AddItem;
+using Wishapp.Web.Admin.Features.Occasions.Update;
 using Wishapp.Web.Common.Interfaces;
 using Wishapp.Web.Common.Types;
 
@@ -8,14 +8,13 @@ namespace Wishapp.Web.Admin;
 
 public static partial class AdminEndpoints
 {
-    private static async Task<Results<NoContent, NotFound<Error>, Conflict<Error>>> AddItemToCollection(
+    private static async Task<Results<NoContent, NotFound<Error>, Conflict<Error>>> UpdateOccasion(
         [FromRoute] Guid id,
-        [FromRoute] Guid itemId,
-        [FromBody] AddItemToCollectionRequest? request,
-        ICommandHandler<AddItemToCollectionCommand> handler,
+        UpdateOccasionRequest request,
+        ICommandHandler<UpdateOccasionCommand> handler,
         CancellationToken ct)
     {
-        var result = await handler.HandleAsync(new AddItemToCollectionCommand(id, itemId, request?.Description), ct);
+        var result = await handler.HandleAsync(new UpdateOccasionCommand(id, request.Key, request.Label, request.Order), ct);
 
         if (!result.IsSuccess)
         {

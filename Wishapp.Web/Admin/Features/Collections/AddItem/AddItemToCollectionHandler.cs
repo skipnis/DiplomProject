@@ -31,7 +31,7 @@ public sealed class AddItemToCollectionHandler(ApplicationDbContext db)
         if (alreadyAdded)
             return Error.Conflict("Catalog.ItemAlreadyInCollection", "Item already in collection");
 
-        var collectionItem = CatalogCollectionItem.Create(command.CollectionId, command.CatalogItemId);
+        var collectionItem = CatalogCollectionItem.Create(command.CollectionId, command.CatalogItemId, command.Description);
         db.CatalogCollectionItems.Add(collectionItem);
         await db.SaveChangesAsync(ct);
 
