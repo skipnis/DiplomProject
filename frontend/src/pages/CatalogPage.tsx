@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react';
+import { Link } from 'react-router-dom';
 import { getCatalogCategories, getCatalogItems, getCatalogPriceRange, addWishFromCatalog, rateCatalogItem, unrateCatalogItem } from '../api/catalog';
 import { getMyWishlists } from '../api/wishlists';
 import { getImageUrl } from '../api/client';
@@ -175,17 +176,21 @@ export default function CatalogPage() {
               <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-4">
                 {data.items.map((item) => (
                   <div key={item.id} className="rounded-xl border bg-card overflow-hidden flex flex-col hover:shadow-md transition-shadow">
-                    {item.imagePath
-                      ? <img src={getImageUrl(item.imagePath) ?? ''} alt={item.name} className="w-full h-36 object-contain bg-muted" />
-                      : <div className="w-full h-36 bg-muted flex items-center justify-center text-4xl">🛍️</div>
-                    }
-                    <div className="p-3 flex flex-col gap-1 flex-1">
-                      <div className="font-semibold text-sm leading-snug line-clamp-2">{item.name}</div>
-                      <div className="text-xs text-muted-foreground">{item.categoryName}</div>
-                      {item.price !== null && <div className="font-bold text-primary text-sm">{item.price} {item.currency}</div>}
+                    <Link to={`/catalog/items/${item.id}`} className="block">
+                      {item.imagePath
+                        ? <img src={getImageUrl(item.imagePath) ?? ''} alt={item.name} className="w-full h-36 object-contain bg-muted" />
+                        : <div className="w-full h-36 bg-muted flex items-center justify-center text-4xl">🛍️</div>
+                      }
+                      <div className="px-3 pt-3 flex flex-col gap-1">
+                        <div className="font-semibold text-sm leading-snug line-clamp-2 min-h-[2.5rem]">{item.name}</div>
+                        <div className="text-xs text-muted-foreground">{item.categoryName}</div>
+                        {item.price !== null && <div className="font-bold text-primary text-sm">{item.price} {item.currency}</div>}
+                      </div>
+                    </Link>
+                    <div className="px-3 pb-3 flex flex-col gap-1 flex-1">
                       <StarRating item={item} onRate={handleRate} />
-                      {item.url && (
-                        <a href={item.url} target="_blank" rel="noopener noreferrer" className="text-xs text-muted-foreground hover:underline" onClick={(e) => e.stopPropagation()}>Перейти →</a>
+                      {item.wishCount > 0 && (
+                        <div className="text-xs text-muted-foreground">{item.wishCount} в вишлистах</div>
                       )}
                       <Button size="sm" className="mt-auto" onClick={() => openAddModal(item)}>В вишлист</Button>
                     </div>

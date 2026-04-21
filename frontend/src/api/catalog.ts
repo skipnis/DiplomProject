@@ -1,5 +1,5 @@
 import { apiGet, apiPost, apiDelete } from './client';
-import type { CatalogCategoryDto, CatalogCollectionDto, CatalogCollectionSummaryDto, CatalogItemDto, PagedResponse } from '../types';
+import type { CatalogCategoryDto, CatalogCollectionDto, CatalogCollectionSummaryDto, CatalogItemDto, OccasionDto, PagedResponse } from '../types';
 
 export function getCatalogCategories(): Promise<CatalogCategoryDto[]> {
   return apiGet<CatalogCategoryDto[]>('/catalog/categories');
@@ -41,6 +41,10 @@ export function rateCatalogItem(id: string, value: number): Promise<void> {
 
 export function unrateCatalogItem(id: string): Promise<void> {
   return apiDelete<void>(`/catalog/items/${id}/rate`);
+}
+
+export function getCatalogOccasions(): Promise<OccasionDto[]> {
+  return apiGet<OccasionDto[]>('/catalog/occasions');
 }
 
 export function getCatalogCollections(): Promise<CatalogCollectionSummaryDto[]> {

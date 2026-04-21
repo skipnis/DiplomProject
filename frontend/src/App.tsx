@@ -24,6 +24,7 @@ import EventPage from './pages/EventPage';
 import EditEventPage from './pages/EditEventPage';
 import OnboardingPage from './pages/OnboardingPage';
 import CatalogPage from './pages/CatalogPage';
+import CatalogItemPage from './pages/CatalogItemPage';
 import CollectionsPage from './pages/CollectionsPage';
 import AdminLoginPage from './pages/AdminLoginPage';
 import AdminPage from './pages/AdminPage';
@@ -79,6 +80,7 @@ function AppRoutes() {
           <Route path="/events/:id/edit" element={<PrivateRoute><EditEventPage /></PrivateRoute>} />
           <Route path="/onboarding" element={<PrivateRoute skipOnboarding><OnboardingPage /></PrivateRoute>} />
           <Route path="/catalog" element={<CatalogPage />} />
+          <Route path="/catalog/items/:id" element={<CatalogItemPage />} />
           <Route path="/catalog/collections" element={<CollectionsPage />} />
           <Route path="/admin/login" element={<AdminLoginPage />} />
           <Route path="/admin" element={<AdminRoute><AdminPage /></AdminRoute>} />

@@ -204,6 +204,7 @@ export interface CatalogCategoryDto {
   id: string;
   name: string;
   order: number;
+  isPublished: boolean;
 }
 
 export interface CatalogItemDto {
@@ -222,6 +223,8 @@ export interface CatalogItemDto {
   averageRating: number | null;
   ratingCount: number;
   myRating: number | null;
+  wishCount: number;
+  collectionItemDescription: string | null;
 }
 
 export interface CreateCatalogItemRequest {
@@ -315,6 +318,13 @@ export const OCCASION_LABELS: Record<string, string> = {
   easter: '🐣 Пасха',
   other: '🎁 Другое',
 };
+
+export interface OccasionDto {
+  id: string;
+  key: string;
+  label: string;
+  order: number;
+}
 
 export interface NotificationDto {
   id: string;
