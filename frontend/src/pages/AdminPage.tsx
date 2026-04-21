@@ -1,17 +1,20 @@
 import { useEffect, useState } from 'react';
+import { Link } from 'react-router-dom';
 import {
   adminGetCategories, adminCreateCategory, adminUpdateCategory, adminDeleteCategory,
   adminGetAllItems, adminCreateItem, adminUpdateItem, adminDeleteItem,
   adminGetAllCollections, adminCreateCollection, adminUpdateCollection, adminDeleteCollection,
   adminAddItemToCollection, adminRemoveItemFromCollection, adminGetCollectionItems,
   adminUploadItemImage, adminUploadCollectionImage, adminParseUrl, adminSetItemPublished,
+  adminSetCategoryPublished, adminSetCollectionPublished,
+  adminBatchImportItems, type BatchImportItemResult,
+  adminGetOccasions, adminCreateOccasion, adminUpdateOccasion, adminDeleteOccasion,
 } from '../api/admin';
 import { useToast } from '../components/Toast';
 import { parseError } from '../utils/errors';
 import { catalogItemSchema, catalogCategorySchema, catalogCollectionSchema, parseZodErrors, type FormErrors } from '../lib/schemas';
 import { parseApiFieldErrors } from '../utils/errors';
-import { OCCASION_LABELS } from '../types';
-import type { CatalogCategoryDto, CatalogCollectionAdminDto, CatalogItemDto, PagedResponse } from '../types';
+import type { CatalogCategoryDto, CatalogCollectionAdminDto, CatalogItemDto, OccasionDto, PagedResponse } from '../types';
 import { getImageUrl } from '../api/client';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -178,12 +181,6 @@ function CollectionForm({ form, setForm, occasions, collectionImageFile, setColl
               />
               <FieldError message={errors.description} />
             </div>
-            {isEdit && (
-              <div className="flex items-center gap-2 col-span-2">
-                <input type="checkbox" id="colPublished" checked={form.isPublished} onChange={(e) => setForm({ ...form, isPublished: e.target.checked })} />
-                <label htmlFor="colPublished" className="text-sm font-medium">Опубликована</label>
-              </div>
-            )}
           </div>
           <div className="flex gap-2">
             <Button type="submit">{submitLabel}</Button>
@@ -214,10 +211,12 @@ export default function AdminPage() {
         <TabsList className="mb-6">
           <TabsTrigger value="categories">Категории</TabsTrigger>
           <TabsTrigger value="items">Товары</TabsTrigger>
+          <TabsTrigger value="occasions">Поводы</TabsTrigger>
           <TabsTrigger value="collections">Подборки</TabsTrigger>
         </TabsList>
         <TabsContent value="categories"><CategoriesTab onOpenItems={openItemsByCategory} /></TabsContent>
         <TabsContent value="items"><ItemsTab initialCategoryId={filterCategoryId} /></TabsContent>
+        <TabsContent value="occasions"><OccasionsTab /></TabsContent>
         <TabsContent value="collections"><CollectionsTab /></TabsContent>
       </Tabs>
     </div>
@@ -275,7 +274,7 @@ function CategoriesTab({ onOpenItems }: { onOpenItems: (categoryId: string) => v
         <Card>
           <CardContent className="p-0">
             <table className="w-full border-collapse text-sm">
-              <thead><tr className="border-b"><th className="p-3 text-left text-xs font-semibold text-muted-foreground uppercase">Название</th><th className="p-3 text-left text-xs font-semibold text-muted-foreground uppercase">Порядок</th><th className="p-3"></th></tr></thead>
+              <thead><tr className="border-b"><th className="p-3 text-left text-xs font-semibold text-muted-foreground uppercase">Название</th><th className="p-3 text-left text-xs font-semibold text-muted-foreground uppercase">Порядок</th><th className="p-3 text-left text-xs font-semibold text-muted-foreground uppercase">Статус</th><th className="p-3"></th></tr></thead>
               <tbody>
                 {categories.map((c) => (
                   <tr key={c.id} className="border-b last:border-0">
@@ -302,6 +301,9 @@ function CategoriesTab({ onOpenItems }: { onOpenItems: (categoryId: string) => v
                         </>
                       ) : c.order}
                     </td>
+                    <td className="p-3">
+                      {editId !== c.id && <Badge variant={c.isPublished ? 'default' : 'secondary'}>{c.isPublished ? 'Опубликована' : 'Черновик'}</Badge>}
+                    </td>
                     <td className="p-3 text-right">
                       {editId === c.id ? (
                         <div className="flex gap-2 justify-end">
@@ -310,6 +312,7 @@ function CategoriesTab({ onOpenItems }: { onOpenItems: (categoryId: string) => v
                         </div>
                       ) : (
                         <div className="flex gap-2 justify-end">
+                          <Button size="sm" variant="ghost" onClick={async () => { try { await adminSetCategoryPublished(c.id, !c.isPublished); load(); } catch (e) { toast.error(parseError(e)); } }}>{c.isPublished ? 'Скрыть' : 'Опубликовать'}</Button>
                           <Button size="sm" variant="ghost" onClick={() => onOpenItems(c.id)}>Открыть</Button>
                           <Button size="sm" variant="ghost" onClick={() => { setEditId(c.id); setEditName(c.name); setEditOrder(String(c.order)); setEditErrors({}); }}>Изменить</Button>
                           <Button size="sm" variant="ghost" className="text-destructive" onClick={async () => { if (!confirm('Удалить?')) return; try { await adminDeleteCategory(c.id); load(); } catch (e) { toast.error(parseError(e)); } }}>Удалить</Button>
@@ -341,6 +344,11 @@ function ItemsTab({ initialCategoryId }: { initialCategoryId?: string }) {
   const [externalImageUrl, setExternalImageUrl] = useState<string | null>(null);
   const [parsing, setParsing] = useState(false);
   const [errors, setErrors] = useState<FormErrors>({});
+  const [showBatchImport, setShowBatchImport] = useState(false);
+  const [batchUrls, setBatchUrls] = useState('');
+  const [batchCategoryId, setBatchCategoryId] = useState('');
+  const [batchImporting, setBatchImporting] = useState(false);
+  const [batchResults, setBatchResults] = useState<BatchImportItemResult[] | null>(null);
 
   const clearError = (field: string) => { if (errors[field]) setErrors((p) => ({ ...p, [field]: '' })); };
 
@@ -354,6 +362,22 @@ function ItemsTab({ initialCategoryId }: { initialCategoryId?: string }) {
   useEffect(() => { load(page, categoryFilter); }, [page, categoryFilter]);
 
   const resetForm = () => { setForm({ name: '', description: '', price: '', currency: '0', imagePath: '', url: '', categoryId: '', isPublished: false }); setItemImageFile(null); setExternalImageUrl(null); setErrors({}); };
+
+  const handleBatchImport = async () => {
+    const urls = batchUrls.split('\n').map((url) => url.trim()).filter(Boolean);
+    if (!urls.length || !batchCategoryId) return;
+    setBatchImporting(true);
+    setBatchResults(null);
+    try {
+      const results = await adminBatchImportItems({ urls, categoryId: batchCategoryId });
+      setBatchResults(results);
+      load(page, categoryFilter);
+    } catch (error) {
+      toast.error(parseError(error));
+    } finally {
+      setBatchImporting(false);
+    }
+  };
 
   const handleParseUrl = async () => {
     if (!form.url.trim()) return;
@@ -402,23 +426,81 @@ function ItemsTab({ initialCategoryId }: { initialCategoryId?: string }) {
   return (
     <div>
       {!showCreate && !editItem && (
-        <div className="flex items-center gap-3 mb-4">
-          <Button onClick={() => { setShowCreate(true); resetForm(); }}>Добавить товар</Button>
-          <Select value={categoryFilter} onValueChange={(v) => { setCategoryFilter(v ?? ''); setPage(1); }}>
-            <SelectTrigger className="w-52 h-9">
-              <SelectValue>
-                {categoryFilter
-                  ? (categories.find((c) => c.id === categoryFilter)?.name ?? categoryFilter)
-                  : <span className="text-muted-foreground">Все категории</span>}
-              </SelectValue>
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="">Все категории</SelectItem>
-              {categories.map((c) => <SelectItem key={c.id} value={c.id}>{c.name}</SelectItem>)}
-            </SelectContent>
-          </Select>
-          {categoryFilter && <Button variant="ghost" size="sm" onClick={() => { setCategoryFilter(''); setPage(1); }}>Сбросить</Button>}
-        </div>
+        <>
+          <div className="flex items-center gap-3 mb-4">
+            <Button onClick={() => { setShowCreate(true); resetForm(); }}>Добавить товар</Button>
+            <Button variant="outline" onClick={() => { setShowBatchImport((v) => !v); setBatchResults(null); }}>
+              {showBatchImport ? 'Скрыть импорт' : 'Импортировать по ссылкам'}
+            </Button>
+            <Select value={categoryFilter} onValueChange={(v) => { setCategoryFilter(v ?? ''); setPage(1); }}>
+              <SelectTrigger className="w-52 h-9">
+                <SelectValue>
+                  {categoryFilter
+                    ? (categories.find((c) => c.id === categoryFilter)?.name ?? categoryFilter)
+                    : <span className="text-muted-foreground">Все категории</span>}
+                </SelectValue>
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="">Все категории</SelectItem>
+                {categories.map((c) => <SelectItem key={c.id} value={c.id}>{c.name}</SelectItem>)}
+              </SelectContent>
+            </Select>
+            {categoryFilter && <Button variant="ghost" size="sm" onClick={() => { setCategoryFilter(''); setPage(1); }}>Сбросить</Button>}
+          </div>
+          {showBatchImport && (
+            <Card className="mb-4">
+              <CardContent className="pt-4 flex flex-col gap-3">
+                <div className="flex flex-col gap-1.5">
+                  <Label>Ссылки (по одной на строку, до 50)</Label>
+                  <Textarea
+                    rows={6}
+                    placeholder={'https://example.com/product-1\nhttps://example.com/product-2'}
+                    value={batchUrls}
+                    onChange={(e) => setBatchUrls(e.target.value)}
+                  />
+                </div>
+                <div className="flex gap-3 items-end">
+                  <div className="flex flex-col gap-1.5 flex-1">
+                    <Label>Категория *</Label>
+                    <Select value={batchCategoryId} onValueChange={(v) => setBatchCategoryId(v ?? '')}>
+                      <SelectTrigger>
+                        <SelectValue>
+                          {batchCategoryId
+                            ? (categories.find((c) => c.id === batchCategoryId)?.name ?? batchCategoryId)
+                            : <span className="text-muted-foreground">Выберите...</span>}
+                        </SelectValue>
+                      </SelectTrigger>
+                      <SelectContent>
+                        {categories.map((c) => <SelectItem key={c.id} value={c.id}>{c.name}</SelectItem>)}
+                      </SelectContent>
+                    </Select>
+                  </div>
+                  <Button
+                    onClick={handleBatchImport}
+                    disabled={batchImporting || !batchCategoryId || !batchUrls.trim()}
+                  >
+                    {batchImporting ? 'Импортируем...' : 'Импортировать'}
+                  </Button>
+                </div>
+                {batchResults && (
+                  <BatchImportResults
+                    results={batchResults}
+                    onEdit={(itemId) => {
+                      const found = data?.items.find((item) => item.id === itemId) ?? null;
+                      if (found) {
+                        setEditItem(found);
+                        setShowCreate(false);
+                        setForm({ name: found.name, description: found.description ?? '', price: found.price !== null ? String(found.price) : '', currency: '0', imagePath: found.imagePath ?? '', url: found.url ?? '', categoryId: found.categoryId, isPublished: found.isPublished });
+                        setErrors({});
+                        setShowBatchImport(false);
+                      }
+                    }}
+                  />
+                )}
+              </CardContent>
+            </Card>
+          )}
+        </>
       )}
       {showCreate && <ItemForm form={form} setForm={setForm} categories={categories} itemImageFile={itemImageFile} setItemImageFile={setItemImageFile} externalImageUrl={externalImageUrl} setExternalImageUrl={setExternalImageUrl} onSubmit={handleCreate} submitLabel="Создать" onCancel={handleCancel} onParseUrl={handleParseUrl} parsing={parsing} errors={errors} clearError={clearError} />}
       {editItem && <ItemForm form={form} setForm={setForm} categories={categories} itemImageFile={itemImageFile} setItemImageFile={setItemImageFile} externalImageUrl={externalImageUrl} setExternalImageUrl={setExternalImageUrl} onSubmit={handleUpdate} submitLabel="Сохранить" onCancel={handleCancel} onParseUrl={handleParseUrl} parsing={parsing} errors={errors} clearError={clearError} />}
@@ -431,7 +513,7 @@ function ItemsTab({ initialCategoryId }: { initialCategoryId?: string }) {
               <tbody>
                 {data.items.map((item) => (
                   <tr key={item.id} className="border-b last:border-0">
-                    <td className="p-3 font-medium">{item.name}</td>
+                    <td className="p-3 font-medium"><Link to={`/catalog/items/${item.id}`} target="_blank" className="hover:underline">{item.name}</Link></td>
                     <td className="p-3 text-muted-foreground">{item.categoryName}</td>
                     <td className="p-3">{item.price !== null ? `${item.price} ${item.currency ?? ''}` : '—'}</td>
                     <td className="p-3"><Badge variant={item.isPublished ? 'default' : 'secondary'}>{item.isPublished ? 'Опубликован' : 'Черновик'}</Badge></td>
@@ -462,19 +544,25 @@ function CollectionsTab() {
   const toast = useToast();
   const [collections, setCollections] = useState<CatalogCollectionAdminDto[]>([]);
   const [allItems, setAllItems] = useState<CatalogItemDto[]>([]);
+  const [occasions, setOccasions] = useState<OccasionDto[]>([]);
   const [loading, setLoading] = useState(true);
   const [showCreate, setShowCreate] = useState(false);
   const [editCollection, setEditCollection] = useState<CatalogCollectionAdminDto | null>(null);
   const [selectedCollection, setSelectedCollection] = useState<CatalogCollectionAdminDto | null>(null);
   const [addItemId, setAddItemId] = useState('');
+  const [addItemDescription, setAddItemDescription] = useState('');
   const [form, setForm] = useState<CollectionFormValues>({ name: '', description: '', occasion: '', coverImagePath: '', order: '1', isPublished: false });
   const [collectionImageFile, setCollectionImageFile] = useState<File | null>(null);
   const [errors, setErrors] = useState<FormErrors>({});
   const clearError = (field: string) => { if (errors[field]) setErrors((p) => ({ ...p, [field]: '' })); };
-  const OCCASIONS = Object.entries(OCCASION_LABELS) as [string, string][];
+  const occasionPairs = occasions.map((o) => [o.key, o.label] as [string, string]);
 
   const load = () => { setLoading(true); adminGetAllCollections().then(setCollections).catch(() => {}).finally(() => setLoading(false)); };
-  useEffect(() => { load(); adminGetAllItems({ pageSize: 200 }).then((r) => setAllItems(r.items)).catch(() => {}); }, []);
+  useEffect(() => {
+    load();
+    adminGetAllItems({ pageSize: 200 }).then((r) => setAllItems(r.items)).catch(() => {});
+    adminGetOccasions().then(setOccasions).catch(() => {});
+  }, []);
 
   const resetForm = () => { setForm({ name: '', description: '', occasion: '', coverImagePath: '', order: '1', isPublished: false }); setCollectionImageFile(null); setErrors({}); };
   const handleCancel = () => { setShowCreate(false); setEditCollection(null); resetForm(); };
@@ -509,8 +597,8 @@ function CollectionsTab() {
   return (
     <div>
       {!showCreate && !editCollection && <Button className="mb-4" onClick={() => { setShowCreate(true); resetForm(); }}>Создать подборку</Button>}
-      {showCreate && <CollectionForm form={form} setForm={setForm} occasions={OCCASIONS} collectionImageFile={collectionImageFile} setCollectionImageFile={setCollectionImageFile} onSubmit={handleCreate} submitLabel="Создать" onCancel={handleCancel} errors={errors} clearError={clearError} />}
-      {editCollection && <CollectionForm form={form} setForm={setForm} occasions={OCCASIONS} collectionImageFile={collectionImageFile} setCollectionImageFile={setCollectionImageFile} isEdit onSubmit={handleUpdate} submitLabel="Сохранить" onCancel={handleCancel} errors={errors} clearError={clearError} />}
+      {showCreate && <CollectionForm form={form} setForm={setForm} occasions={occasionPairs} collectionImageFile={collectionImageFile} setCollectionImageFile={setCollectionImageFile} onSubmit={handleCreate} submitLabel="Создать" onCancel={handleCancel} errors={errors} clearError={clearError} />}
+      {editCollection && <CollectionForm form={form} setForm={setForm} occasions={occasionPairs} collectionImageFile={collectionImageFile} setCollectionImageFile={setCollectionImageFile} isEdit onSubmit={handleUpdate} submitLabel="Сохранить" onCancel={handleCancel} errors={errors} clearError={clearError} />}
 
       {loading ? <div className="text-muted-foreground text-sm">Загрузка...</div> : collections.length === 0 ? <div className="text-muted-foreground text-sm">Нет подборок</div> : (
         <Card><CardContent className="p-0">
@@ -521,11 +609,12 @@ function CollectionsTab() {
                 <>
                   <tr key={c.id} className="border-b">
                     <td className="p-3 font-medium">{c.name}</td>
-                    <td className="p-3 text-muted-foreground">{c.occasion ? (OCCASION_LABELS[c.occasion] ?? c.occasion) : '—'}</td>
+                    <td className="p-3 text-muted-foreground">{c.occasion ? (occasions.find((o) => o.key === c.occasion)?.label ?? c.occasion) : '—'}</td>
                     <td className="p-3">{c.itemCount}</td>
                     <td className="p-3"><Badge variant={c.isPublished ? 'default' : 'secondary'}>{c.isPublished ? 'Опубликована' : 'Черновик'}</Badge></td>
                     <td className="p-3 text-right">
                       <div className="flex gap-1 justify-end">
+                        <Button size="sm" variant="ghost" onClick={async () => { try { await adminSetCollectionPublished(c.id, !c.isPublished); load(); } catch (e) { toast.error(parseError(e)); } }}>{c.isPublished ? 'Снять' : 'Опубликовать'}</Button>
                         <Button size="sm" variant="ghost" onClick={() => setSelectedCollection(selectedCollection?.id === c.id ? null : c)}>{selectedCollection?.id === c.id ? 'Свернуть' : 'Товары'}</Button>
                         <Button size="sm" variant="ghost" onClick={() => { setEditCollection(c); setShowCreate(false); setForm({ name: c.name, description: c.description ?? '', occasion: c.occasion ?? '', coverImagePath: c.coverImagePath ?? '', order: String(c.order), isPublished: c.isPublished }); setErrors({}); }}>Изменить</Button>
                         <Button size="sm" variant="ghost" className="text-destructive" onClick={async () => { if (!confirm('Удалить подборку?')) return; try { await adminDeleteCollection(c.id); if (selectedCollection?.id === c.id) setSelectedCollection(null); load(); } catch (e) { toast.error(parseError(e)); } }}>Удалить</Button>
@@ -535,18 +624,26 @@ function CollectionsTab() {
                   {selectedCollection?.id === c.id && (
                     <tr key={`${c.id}-items`}>
                       <td colSpan={5} className="p-4 bg-muted/30 border-b">
-                        <div className="flex gap-2 mb-3">
-                          <Select value={addItemId} onValueChange={(v) => setAddItemId(v ?? '')}>
-                            <SelectTrigger className="flex-1">
-                              <SelectValue>
-                                {addItemId
-                                  ? (allItems.find((i) => i.id === addItemId)?.name ?? addItemId)
-                                  : <span className="text-muted-foreground">Выберите товар...</span>}
-                              </SelectValue>
-                            </SelectTrigger>
-                            <SelectContent>{allItems.map((i) => <SelectItem key={i.id} value={i.id}>{i.name} ({i.categoryName})</SelectItem>)}</SelectContent>
-                          </Select>
-                          <Button size="sm" disabled={!addItemId} onClick={async () => { try { await adminAddItemToCollection(c.id, addItemId); setAddItemId(''); load(); toast.success('Товар добавлен'); } catch (e) { toast.error(parseError(e)); } }}>Добавить</Button>
+                        <div className="flex flex-col gap-2 mb-3">
+                          <div className="flex gap-2">
+                            <Select value={addItemId} onValueChange={(v) => setAddItemId(v ?? '')}>
+                              <SelectTrigger className="flex-1">
+                                <SelectValue>
+                                  {addItemId
+                                    ? (allItems.find((i) => i.id === addItemId)?.name ?? addItemId)
+                                    : <span className="text-muted-foreground">Выберите товар...</span>}
+                                </SelectValue>
+                              </SelectTrigger>
+                              <SelectContent>{allItems.map((i) => <SelectItem key={i.id} value={i.id}>{i.name} ({i.categoryName})</SelectItem>)}</SelectContent>
+                            </Select>
+                            <Button size="sm" disabled={!addItemId} onClick={async () => { try { await adminAddItemToCollection(c.id, addItemId, addItemDescription || undefined); setAddItemId(''); setAddItemDescription(''); load(); toast.success('Товар добавлен'); } catch (e) { toast.error(parseError(e)); } }}>Добавить</Button>
+                          </div>
+                          <input
+                            className="border rounded px-3 py-1.5 text-sm w-full bg-background"
+                            placeholder="Описание товара в подборке (необязательно)"
+                            value={addItemDescription}
+                            onChange={(e) => setAddItemDescription(e.target.value)}
+                          />
                         </div>
                         <CollectionItemsList collectionId={c.id} onRemove={load} />
                       </td>
@@ -558,6 +655,165 @@ function CollectionsTab() {
           </table>
         </CardContent></Card>
       )}
+    </div>
+  );
+}
+
+function OccasionsTab() {
+  const toast = useToast();
+  const [occasions, setOccasions] = useState<OccasionDto[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [newKey, setNewKey] = useState('');
+  const [newLabel, setNewLabel] = useState('');
+  const [newOrder, setNewOrder] = useState('1');
+  const [editId, setEditId] = useState<string | null>(null);
+  const [editKey, setEditKey] = useState('');
+  const [editLabel, setEditLabel] = useState('');
+  const [editOrder, setEditOrder] = useState('1');
+
+  const load = () => { setLoading(true); adminGetOccasions().then(setOccasions).catch((e) => toast.error(parseError(e))).finally(() => setLoading(false)); };
+  useEffect(() => { load(); }, []);
+
+  const handleCreate = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!newKey.trim() || !newLabel.trim()) return;
+    try {
+      await adminCreateOccasion({ key: newKey.trim(), label: newLabel.trim(), order: Number(newOrder) });
+      setNewKey(''); setNewLabel(''); setNewOrder('1'); load();
+    } catch (e) { toast.error(parseError(e)); }
+  };
+
+  const handleUpdate = async (id: string) => {
+    if (!editKey.trim() || !editLabel.trim()) return;
+    try {
+      await adminUpdateOccasion(id, { key: editKey.trim(), label: editLabel.trim(), order: Number(editOrder) });
+      setEditId(null); load();
+    } catch (e) { toast.error(parseError(e)); }
+  };
+
+  return (
+    <div>
+      <form onSubmit={handleCreate} className="flex gap-3 mb-6 items-start flex-wrap">
+        <div className="flex flex-col gap-1.5 flex-1 min-w-32">
+          <Label>Ключ *</Label>
+          <Input placeholder="birthday" value={newKey} onChange={(e) => setNewKey(e.target.value)} />
+        </div>
+        <div className="flex flex-col gap-1.5 flex-1 min-w-40">
+          <Label>Название *</Label>
+          <Input placeholder="🎂 День рождения" value={newLabel} onChange={(e) => setNewLabel(e.target.value)} />
+        </div>
+        <div className="flex flex-col gap-1.5 w-24">
+          <Label>Порядок *</Label>
+          <Input type="number" min={1} value={newOrder} onChange={(e) => setNewOrder(e.target.value)} />
+        </div>
+        <Button type="submit" className="mt-6" disabled={!newKey.trim() || !newLabel.trim()}>Создать</Button>
+      </form>
+      {loading ? <div className="text-muted-foreground text-sm">Загрузка...</div> : (
+        <Card>
+          <CardContent className="p-0">
+            <table className="w-full border-collapse text-sm">
+              <thead><tr className="border-b"><th className="p-3 text-left text-xs font-semibold text-muted-foreground uppercase">Ключ</th><th className="p-3 text-left text-xs font-semibold text-muted-foreground uppercase">Название</th><th className="p-3 text-left text-xs font-semibold text-muted-foreground uppercase">Порядок</th><th className="p-3"></th></tr></thead>
+              <tbody>
+                {occasions.map((o) => (
+                  <tr key={o.id} className="border-b last:border-0">
+                    <td className="p-3 font-mono text-xs">
+                      {editId === o.id
+                        ? <Input value={editKey} onChange={(e) => setEditKey(e.target.value)} className="h-7 font-mono text-xs" />
+                        : o.key}
+                    </td>
+                    <td className="p-3">
+                      {editId === o.id
+                        ? <Input value={editLabel} onChange={(e) => setEditLabel(e.target.value)} className="h-7" />
+                        : o.label}
+                    </td>
+                    <td className="p-3">
+                      {editId === o.id
+                        ? <Input type="number" min={1} value={editOrder} onChange={(e) => setEditOrder(e.target.value)} className="h-7 w-20" />
+                        : o.order}
+                    </td>
+                    <td className="p-3 text-right">
+                      {editId === o.id ? (
+                        <div className="flex gap-2 justify-end">
+                          <Button size="sm" onClick={() => handleUpdate(o.id)}>Сохранить</Button>
+                          <Button size="sm" variant="ghost" onClick={() => setEditId(null)}>Отмена</Button>
+                        </div>
+                      ) : (
+                        <div className="flex gap-2 justify-end">
+                          <Button size="sm" variant="ghost" onClick={() => { setEditId(o.id); setEditKey(o.key); setEditLabel(o.label); setEditOrder(String(o.order)); }}>Изменить</Button>
+                          <Button size="sm" variant="ghost" className="text-destructive" onClick={async () => { if (!confirm('Удалить повод?')) return; try { await adminDeleteOccasion(o.id); load(); } catch (e) { toast.error(parseError(e)); } }}>Удалить</Button>
+                        </div>
+                      )}
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </CardContent>
+        </Card>
+      )}
+    </div>
+  );
+}
+
+const MISSING_FIELD_LABELS: Record<string, string> = {
+  Description: 'Описание',
+  Price: 'Цена',
+  Image: 'Изображение',
+};
+
+function BatchImportResults({ results, onEdit }: { results: BatchImportItemResult[]; onEdit: (itemId: string) => void }) {
+  const successCount = results.filter((r) => r.status === 'Success').length;
+  const partialCount = results.filter((r) => r.status === 'Partial').length;
+  const failedCount = results.filter((r) => r.status === 'Failed').length;
+
+  return (
+    <div className="flex flex-col gap-2">
+      <p className="text-sm text-muted-foreground">
+        Результат: {successCount} успешно, {partialCount} частично, {failedCount} ошибок
+      </p>
+      <div className="flex flex-col gap-1.5">
+        {results.map((result, index) => (
+          <div
+            key={index}
+            className={[
+              'flex flex-col gap-1 rounded-md border p-3 text-sm',
+              result.status === 'Partial' ? 'border-yellow-300 bg-yellow-50' :
+              result.status === 'Failed'  ? 'border-red-200 bg-red-50' :
+                                            'border-green-200 bg-green-50',
+            ].join(' ')}
+          >
+            <div className="flex items-center gap-2 flex-wrap">
+              {result.status === 'Success' && <Badge className="bg-green-100 text-green-800 border border-green-200 shadow-none">Успех</Badge>}
+              {result.status === 'Partial' && <Badge className="bg-yellow-100 text-yellow-800 border border-yellow-300 shadow-none">Частично</Badge>}
+              {result.status === 'Failed'  && <Badge variant="destructive">Ошибка</Badge>}
+              <span className="text-xs text-muted-foreground truncate max-w-sm" title={result.url}>{result.url}</span>
+              {result.itemId && (
+                <Button
+                  size="sm"
+                  variant="ghost"
+                  className="h-5 px-2 text-xs ml-auto"
+                  onClick={() => onEdit(result.itemId!)}
+                >
+                  Редактировать
+                </Button>
+              )}
+            </div>
+            {result.status === 'Partial' && result.missingFields.length > 0 && (
+              <div className="flex gap-1 flex-wrap mt-0.5">
+                <span className="text-xs text-yellow-700 font-medium">Не заполнено:</span>
+                {result.missingFields.map((field) => (
+                  <span key={field} className="text-xs bg-yellow-200 text-yellow-900 rounded px-1.5 py-0.5">
+                    {MISSING_FIELD_LABELS[field] ?? field}
+                  </span>
+                ))}
+              </div>
+            )}
+            {result.status === 'Failed' && result.errorMessage && (
+              <p className="text-xs text-red-700 mt-0.5">{result.errorMessage}</p>
+            )}
+          </div>
+        ))}
+      </div>
     </div>
   );
 }

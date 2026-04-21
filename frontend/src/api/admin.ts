@@ -7,6 +7,7 @@ import type {
   CreateCatalogCategoryRequest,
   CreateCatalogItemRequest,
   CreateCollectionRequest,
+  OccasionDto,
   PagedResponse,
   ParsedWishData,
   UpdateCatalogCategoryRequest,
@@ -116,6 +117,30 @@ export function adminSetItemPublished(id: string, isPublished: boolean): Promise
   return adminRequest<void>('PATCH', `/admin/catalog/items/${id}/published`, { isPublished });
 }
 
+export function adminSetCategoryPublished(id: string, isPublished: boolean): Promise<void> {
+  return adminRequest<void>('PATCH', `/admin/catalog/categories/${id}/published`, { isPublished });
+}
+
+export function adminSetCollectionPublished(id: string, isPublished: boolean): Promise<void> {
+  return adminRequest<void>('PATCH', `/admin/catalog/collections/${id}/published`, { isPublished });
+}
+
+export function adminGetOccasions(): Promise<OccasionDto[]> {
+  return adminRequest<OccasionDto[]>('GET', '/admin/catalog/occasions');
+}
+
+export function adminCreateOccasion(data: { key: string; label: string; order: number }): Promise<string> {
+  return adminRequest<string>('POST', '/admin/catalog/occasions', data);
+}
+
+export function adminUpdateOccasion(id: string, data: { key: string; label: string; order: number }): Promise<void> {
+  return adminRequest<void>('PUT', `/admin/catalog/occasions/${id}`, data);
+}
+
+export function adminDeleteOccasion(id: string): Promise<void> {
+  return adminRequest<void>('DELETE', `/admin/catalog/occasions/${id}`);
+}
+
 export function adminGetAllCollections(): Promise<CatalogCollectionAdminDto[]> {
   return adminRequest<CatalogCollectionAdminDto[]>('GET', '/admin/catalog/collections');
 }
@@ -132,8 +157,8 @@ export function adminDeleteCollection(id: string): Promise<void> {
   return adminRequest<void>('DELETE', `/admin/catalog/collections/${id}`);
 }
 
-export function adminAddItemToCollection(collectionId: string, itemId: string): Promise<void> {
-  return adminRequest<void>('POST', `/admin/catalog/collections/${collectionId}/items/${itemId}`);
+export function adminAddItemToCollection(collectionId: string, itemId: string, description?: string): Promise<void> {
+  return adminRequest<void>('POST', `/admin/catalog/collections/${collectionId}/items/${itemId}`, { description: description || null });
 }
 
 export function adminRemoveItemFromCollection(collectionId: string, itemId: string): Promise<void> {
@@ -192,4 +217,19 @@ export function adminUploadCollectionImage(collectionId: string, file: File): Pr
   const fd = new FormData();
   fd.append('file', file);
   return adminRequestForm<{ coverImagePath: string }>(`/admin/catalog/collections/${collectionId}/image`, fd);
+}
+
+export interface BatchImportItemResult {
+  url: string;
+  status: 'Success' | 'Partial' | 'Failed';
+  itemId: string | null;
+  missingFields: string[];
+  errorMessage: string | null;
+}
+
+export function adminBatchImportItems(data: {
+  urls: string[];
+  categoryId: string;
+}): Promise<BatchImportItemResult[]> {
+  return adminRequest<BatchImportItemResult[]>('POST', '/admin/catalog/items/batch-import', data);
 }
