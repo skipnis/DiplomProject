@@ -5,6 +5,7 @@ public sealed class CatalogCategory
     public Guid Id { get; private set; }
     public string Name { get; private set; } = null!;
     public int Order { get; private set; }
+    public bool IsPublished { get; private set; }
     public DateTimeOffset CreatedAt { get; private set; }
 
     private CatalogCategory() { }
@@ -16,6 +17,7 @@ public sealed class CatalogCategory
             Id = Guid.CreateVersion7(),
             Name = name,
             Order = order,
+            IsPublished = true,
             CreatedAt = DateTimeOffset.UtcNow
         };
     }
@@ -24,5 +26,10 @@ public sealed class CatalogCategory
     {
         Name = name;
         Order = order;
+    }
+
+    public void SetPublished(bool isPublished)
+    {
+        IsPublished = isPublished;
     }
 }

@@ -15,4 +15,6 @@ public record CatalogItemDto(
     DateTimeOffset UpdatedAt,
     double? AverageRating,
     int RatingCount,
-    int? MyRating);
+    int? MyRating,
+    int WishCount,
+    string? CollectionItemDescription);

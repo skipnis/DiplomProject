@@ -14,6 +14,7 @@ public sealed class CatalogItem
     public Guid CategoryId { get; private set; }
     public CatalogCategory Category { get; private set; } = null!;
     public bool IsPublished { get; private set; }
+    public int WishCount { get; private set; }
     public DateTimeOffset CreatedAt { get; private set; }
     public DateTimeOffset UpdatedAt { get; private set; }
 
@@ -71,6 +72,11 @@ public sealed class CatalogItem
     {
         IsPublished = isPublished;
         UpdatedAt = DateTimeOffset.UtcNow;
+    }
+
+    public void IncrementWishCount()
+    {
+        WishCount++;
     }
 
     public void SetImage(string? imagePath)

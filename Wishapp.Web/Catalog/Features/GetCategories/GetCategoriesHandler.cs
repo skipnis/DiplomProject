@@ -17,8 +17,9 @@ public sealed class GetCategoriesHandler(ApplicationDbContext db, IFusionCache c
         return await cache.GetOrSetAsync("catalog:categories",
             async token => await db.CatalogCategories
                 .AsNoTracking()
+                .Where(c => c.IsPublished)
                 .OrderBy(c => c.Order)
-                .Select(c => new CatalogCategoryDto(c.Id, c.Name, c.Order))
+                .Select(c => new CatalogCategoryDto(c.Id, c.Name, c.Order, c.IsPublished))
                 .ToListAsync(token),
             new FusionCacheEntryOptions
             {

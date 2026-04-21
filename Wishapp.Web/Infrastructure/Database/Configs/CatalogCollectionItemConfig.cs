@@ -10,6 +10,10 @@ public class CatalogCollectionItemConfig : IEntityTypeConfiguration<CatalogColle
     {
         builder.HasKey(i => new { i.CollectionId, i.CatalogItemId });
 
+        builder.Property(i => i.Description)
+            .HasMaxLength(1000)
+            .HasColumnType("text");
+
         builder.HasOne(i => i.CatalogItem)
             .WithMany()
             .HasForeignKey(i => i.CatalogItemId)

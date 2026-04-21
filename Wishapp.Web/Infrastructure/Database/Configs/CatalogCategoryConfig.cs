@@ -18,6 +18,7 @@ public class CatalogCategoryConfig : IEntityTypeConfiguration<CatalogCategory>
         builder.HasIndex(c => c.Name)
             .IsUnique();
 
+        builder.HasIndex(c => c.IsPublished);
         builder.HasIndex(c => c.Order);
 
         builder.ToTable("catalog_categories", "catalog", t =>

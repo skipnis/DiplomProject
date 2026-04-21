@@ -40,7 +40,9 @@ public sealed class GetCollectionHandler(ApplicationDbContext db)
                         i.CatalogItem.UpdatedAt,
                         i.CatalogItem.Ratings.Any() ? i.CatalogItem.Ratings.Average(r => (double)r.Value) : (double?)null,
                         i.CatalogItem.Ratings.Count,
-                        null))
+                        null,
+                        i.CatalogItem.WishCount,
+                        i.Description))
                     .ToList()))
             .FirstOrDefaultAsync(ct);
 

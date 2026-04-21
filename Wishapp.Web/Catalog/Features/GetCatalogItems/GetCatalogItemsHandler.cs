@@ -34,7 +34,9 @@ public sealed class GetCatalogItemsHandler(ApplicationDbContext db)
                 i.IsPublished, i.CreatedAt, i.UpdatedAt,
                 i.Ratings.Any() ? i.Ratings.Average(r => (double)r.Value) : (double?)null,
                 i.Ratings.Count,
-                query.UserId.HasValue ? i.Ratings.Where(r => r.UserId == query.UserId.Value).Select(r => (int?)r.Value).FirstOrDefault() : null))
+                query.UserId.HasValue ? i.Ratings.Where(r => r.UserId == query.UserId.Value).Select(r => (int?)r.Value).FirstOrDefault() : null,
+                i.WishCount,
+                null))
             .ToPagedResponseAsync(query.Request, ct);
 
         return result;

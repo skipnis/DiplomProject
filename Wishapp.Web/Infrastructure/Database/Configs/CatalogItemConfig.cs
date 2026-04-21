@@ -51,6 +51,7 @@ public class CatalogItemConfig : IEntityTypeConfiguration<CatalogItem>
         builder.HasIndex(i => i.CategoryId);
         builder.HasIndex(i => i.IsPublished);
         builder.HasIndex(i => i.CreatedAt);
+        builder.HasIndex(i => i.WishCount);
 
         builder.ToTable("catalog_items", "catalog", t =>
         {
