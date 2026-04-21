@@ -3,6 +3,7 @@ using System;
 using System.Text.Json;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 using NpgsqlTypes;
@@ -13,9 +14,11 @@ using Wishapp.Web.Infrastructure.Database;
 namespace Wishapp.Web.Infrastructure.Database.Migrations
 {
     [DbContext(typeof(ApplicationDbContext))]
-    partial class ApplicationDbContextModelSnapshot : ModelSnapshot
+    [Migration("20260419093616_AddCatalogOccasions")]
+    partial class AddCatalogOccasions
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -68,10 +71,6 @@ namespace Wishapp.Web.Infrastructure.Database.Migrations
                         .HasColumnType("timestamp with time zone")
                         .HasColumnName("created_at");
 
-                    b.Property<bool>("IsPublished")
-                        .HasColumnType("boolean")
-                        .HasColumnName("is_published");
-
                     b.Property<string>("Name")
                         .IsRequired()
                         .HasMaxLength(100)
@@ -84,9 +83,6 @@ namespace Wishapp.Web.Infrastructure.Database.Migrations
 
                     b.HasKey("Id")
                         .HasName("pk_catalog_categories");
-
-                    b.HasIndex("IsPublished")
-                        .HasDatabaseName("ix_catalog_categories_is_published");
 
                     b.HasIndex("Name")
                         .IsUnique()
@@ -169,11 +165,6 @@ namespace Wishapp.Web.Infrastructure.Database.Migrations
                     b.Property<Guid>("CatalogItemId")
                         .HasColumnType("uuid")
                         .HasColumnName("catalog_item_id");
-
-                    b.Property<string>("Description")
-                        .HasMaxLength(1000)
-                        .HasColumnType("text")
-                        .HasColumnName("description");
 
                     b.HasKey("CollectionId", "CatalogItemId")
                         .HasName("pk_catalog_collection_items");

@@ -20,6 +20,7 @@ public static partial class CatalogEndpoints
             .AddEndpointFilter<ValidationFilter<RateCatalogItemRequest>>();
         catalog.MapDelete("/items/{id:guid}/rate", UnrateCatalogItem)
             .RequireAuthorization();
+        catalog.MapGet("/occasions", GetOccasions);
         catalog.MapGet("/collections", GetCollections);
         catalog.MapGet("/collections/{id:guid}", GetCollection);
 
