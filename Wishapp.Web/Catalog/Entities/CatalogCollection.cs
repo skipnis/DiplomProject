@@ -52,6 +52,11 @@ public sealed class CatalogCollection
         IsPublished = isPublished;
     }
 
+    public void SetPublished(bool isPublished)
+    {
+        IsPublished = isPublished;
+    }
+
     public void SetCoverImage(string? coverImagePath)
     {
         CoverImagePath = coverImagePath;
