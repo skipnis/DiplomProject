@@ -5,10 +5,14 @@ using Wishapp.Web.Friendships.Entities;
 using Wishapp.Web.Infrastructure.Database;
 using Wishapp.Web.Notifications;
 using Wishapp.Web.Notifications.Entities;
+using Wishapp.Web.Users;
 
 namespace Wishapp.Web.Friendships.Features.AcceptFriend;
 
-public sealed class AcceptFriendHandler(ApplicationDbContext db, INotificationsApi notificationsApi)
+public sealed class AcceptFriendHandler(
+    ApplicationDbContext db,
+    INotificationsApi notificationsApi,
+    IUsersApi usersApi)
     : ICommandHandler<AcceptFriendCommand>
 {
     public async Task<Result> HandleAsync(
@@ -32,10 +36,8 @@ public sealed class AcceptFriendHandler(ApplicationDbContext db, INotificationsA
 
         await db.SaveChangesAsync(ct);
 
-        var accepter = await db.Users.AsNoTracking()
-            .Where(u => u.Id == command.UserId)
-            .Select(u => new { u.DisplayName, u.AvatarUrl })
-            .FirstOrDefaultAsync(ct);
+        var userInfos = await usersApi.GetUsersPublicInfoAsync([command.UserId], ct);
+        var accepter = userInfos.GetValueOrDefault(command.UserId);
 
         await notificationsApi.EnqueueAsync(command.RequesterId, NotificationType.FriendRequestAccepted, new
         {

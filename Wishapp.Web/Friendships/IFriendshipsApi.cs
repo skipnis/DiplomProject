@@ -4,4 +4,5 @@ public interface IFriendshipsApi
 {
     Task<bool> AreFriendsAsync(Guid userId, Guid targetId, CancellationToken ct = default);
     Task<List<Guid>> GetFriendIdsAsync(Guid userId, List<Guid> candidates, CancellationToken ct = default);
+    Task DeleteUserDataAsync(Guid userId, CancellationToken ct = default);
 }

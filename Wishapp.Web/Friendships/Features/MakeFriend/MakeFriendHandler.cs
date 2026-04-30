@@ -45,10 +45,8 @@ public sealed class MakeFriendHandler(
 
         await db.SaveChangesAsync(ct);
 
-        var requester = await db.Users.AsNoTracking()
-            .Where(u => u.Id == command.RequesterId)
-            .Select(u => new { u.DisplayName, u.AvatarUrl })
-            .FirstOrDefaultAsync(ct);
+        var userInfos = await usersApi.GetUsersPublicInfoAsync([command.RequesterId], ct);
+        var requester = userInfos.GetValueOrDefault(command.RequesterId);
 
         await notificationsApi.EnqueueAsync(command.AddresseeId, NotificationType.FriendRequestReceived, new
         {

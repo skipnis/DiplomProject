@@ -25,6 +25,25 @@ public class UsersApi(ApplicationDbContext dbContext) : IUsersApi
             .ToDictionaryAsync(u => u.Id, u => u.DisplayName, ct);
     }
 
+    public async Task<List<Guid>> FilterExistingIdsAsync(List<Guid> userIds, CancellationToken ct = default)
+    {
+        return await dbContext.Users
+            .AsNoTracking()
+            .Where(u => userIds.Contains(u.Id))
+            .Select(u => u.Id)
+            .ToListAsync(ct);
+    }
+
+    public async Task<Dictionary<Guid, UserPublicInfo>> GetUsersPublicInfoAsync(
+        List<Guid> userIds,
+        CancellationToken ct = default)
+    {
+        return await dbContext.Users
+            .AsNoTracking()
+            .Where(u => userIds.Contains(u.Id))
+            .ToDictionaryAsync(u => u.Id, u => new UserPublicInfo(u.DisplayName, u.AvatarPath ?? u.AvatarUrl), ct);
+    }
+
     public async Task<Result<string>> GetExternalRefreshTokenAsync(
         Guid userId,
         string provider,

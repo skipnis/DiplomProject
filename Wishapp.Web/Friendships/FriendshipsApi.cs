@@ -19,4 +19,11 @@ public sealed class FriendshipsApi(ApplicationDbContext db) : IFriendshipsApi
             .Select(f => f.RequesterId == userId ? f.AddresseeId : f.RequesterId)
             .ToListAsync(ct);
     }
+
+    public async Task DeleteUserDataAsync(Guid userId, CancellationToken ct = default)
+    {
+        await db.Friendships
+            .Where(f => f.RequesterId == userId || f.AddresseeId == userId)
+            .ExecuteDeleteAsync(ct);
+    }
 }
