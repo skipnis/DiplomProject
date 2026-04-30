@@ -4,17 +4,20 @@ import {
   adminGetCategories, adminCreateCategory, adminUpdateCategory, adminDeleteCategory,
   adminGetAllItems, adminCreateItem, adminUpdateItem, adminDeleteItem,
   adminGetAllCollections, adminCreateCollection, adminUpdateCollection, adminDeleteCollection,
-  adminAddItemToCollection, adminRemoveItemFromCollection, adminGetCollectionItems,
+  adminAddItemToCollection, adminRemoveItemFromCollection, adminGetCollectionItems, adminUpdateCollectionItemDescription,
   adminUploadItemImage, adminUploadCollectionImage, adminParseUrl, adminSetItemPublished,
   adminSetCategoryPublished, adminSetCollectionPublished,
   adminBatchImportItems, type BatchImportItemResult,
   adminGetOccasions, adminCreateOccasion, adminUpdateOccasion, adminDeleteOccasion,
+  adminGetCatalogBadgeDefinitions, adminCreateCatalogBadgeDefinition, adminUpdateCatalogBadgeDefinition, adminDeleteCatalogBadgeDefinition,
+  adminGetFulfilledBadgeDefinitions, adminCreateFulfilledBadgeDefinition, adminUpdateFulfilledBadgeDefinition, adminDeleteFulfilledBadgeDefinition,
+  adminGetAchievementDefinitions, adminCreateAchievementDefinition, adminUpdateAchievementDefinition, adminDeleteAchievementDefinition,
 } from '../api/admin';
 import { useToast } from '../components/Toast';
 import { parseError } from '../utils/errors';
 import { catalogItemSchema, catalogCategorySchema, catalogCollectionSchema, parseZodErrors, type FormErrors } from '../lib/schemas';
 import { parseApiFieldErrors } from '../utils/errors';
-import type { CatalogCategoryDto, CatalogCollectionAdminDto, CatalogItemDto, OccasionDto, PagedResponse } from '../types';
+import type { AchievementDefinitionAdminDto, AchievementRuleType, CatalogBadgeDefinitionDto, CatalogCategoryDto, CatalogCollectionAdminDto, CatalogItemDto, FulfilledBadgeDefinitionDto, OccasionDto, PagedResponse } from '../types';
 import { getImageUrl } from '../api/client';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -119,10 +122,10 @@ function ItemForm({ form, setForm, categories, itemImageFile, setItemImageFile, 
   );
 }
 
-function CollectionForm({ form, setForm, occasions, collectionImageFile, setCollectionImageFile, isEdit, onSubmit, submitLabel, onCancel, errors, clearError }: {
+function CollectionForm({ form, setForm, occasions, collectionImageFile, setCollectionImageFile, onSubmit, submitLabel, onCancel, errors, clearError }: {
   form: CollectionFormValues; setForm: (f: CollectionFormValues) => void; occasions: [string, string][];
   collectionImageFile: File | null; setCollectionImageFile: (f: File | null) => void;
-  isEdit?: boolean; onSubmit: (e: React.FormEvent) => void; submitLabel: string; onCancel: () => void;
+  onSubmit: (e: React.FormEvent) => void; submitLabel: string; onCancel: () => void;
   errors: FormErrors; clearError: (field: string) => void;
 }) {
   return (
@@ -208,16 +211,22 @@ export default function AdminPage() {
         <Button variant="ghost" size="sm" onClick={() => { localStorage.removeItem('admin_token'); window.location.href = '/admin/login'; }}>Выйти</Button>
       </div>
       <Tabs value={activeTab} onValueChange={(v) => { setActiveTab(v); if (v !== 'items') setFilterCategoryId(undefined); }}>
-        <TabsList className="mb-6">
+        <TabsList className="mb-6 flex-wrap h-auto gap-1">
           <TabsTrigger value="categories">Категории</TabsTrigger>
           <TabsTrigger value="items">Товары</TabsTrigger>
           <TabsTrigger value="occasions">Поводы</TabsTrigger>
           <TabsTrigger value="collections">Подборки</TabsTrigger>
+          <TabsTrigger value="catalog-badges">Бейджи каталога</TabsTrigger>
+          <TabsTrigger value="fulfilled-badges">Бейджи подарков</TabsTrigger>
+          <TabsTrigger value="achievements">Достижения</TabsTrigger>
         </TabsList>
         <TabsContent value="categories"><CategoriesTab onOpenItems={openItemsByCategory} /></TabsContent>
         <TabsContent value="items"><ItemsTab initialCategoryId={filterCategoryId} /></TabsContent>
         <TabsContent value="occasions"><OccasionsTab /></TabsContent>
         <TabsContent value="collections"><CollectionsTab /></TabsContent>
+        <TabsContent value="catalog-badges"><CatalogBadgesTab /></TabsContent>
+        <TabsContent value="fulfilled-badges"><FulfilledBadgesTab /></TabsContent>
+        <TabsContent value="achievements"><AchievementsTab /></TabsContent>
       </Tabs>
     </div>
   );
@@ -345,10 +354,10 @@ function ItemsTab({ initialCategoryId }: { initialCategoryId?: string }) {
   const [parsing, setParsing] = useState(false);
   const [errors, setErrors] = useState<FormErrors>({});
   const [showBatchImport, setShowBatchImport] = useState(false);
-  const [batchUrls, setBatchUrls] = useState('');
+  const [batchUrls, setBatchUrls] = useState<string[]>(['']);
   const [batchCategoryId, setBatchCategoryId] = useState('');
   const [batchImporting, setBatchImporting] = useState(false);
-  const [batchResults, setBatchResults] = useState<BatchImportItemResult[] | null>(null);
+  const [batchResultMap, setBatchResultMap] = useState<Map<string, BatchImportItemResult> | null>(null);
 
   const clearError = (field: string) => { if (errors[field]) setErrors((p) => ({ ...p, [field]: '' })); };
 
@@ -364,13 +373,13 @@ function ItemsTab({ initialCategoryId }: { initialCategoryId?: string }) {
   const resetForm = () => { setForm({ name: '', description: '', price: '', currency: '0', imagePath: '', url: '', categoryId: '', isPublished: false }); setItemImageFile(null); setExternalImageUrl(null); setErrors({}); };
 
   const handleBatchImport = async () => {
-    const urls = batchUrls.split('\n').map((url) => url.trim()).filter(Boolean);
+    const urls = batchUrls.map((url) => url.trim()).filter(Boolean);
     if (!urls.length || !batchCategoryId) return;
     setBatchImporting(true);
-    setBatchResults(null);
+    setBatchResultMap(null);
     try {
       const results = await adminBatchImportItems({ urls, categoryId: batchCategoryId });
-      setBatchResults(results);
+      setBatchResultMap(new Map(results.map((r) => [r.url, r])));
       load(page, categoryFilter);
     } catch (error) {
       toast.error(parseError(error));
@@ -429,7 +438,7 @@ function ItemsTab({ initialCategoryId }: { initialCategoryId?: string }) {
         <>
           <div className="flex items-center gap-3 mb-4">
             <Button onClick={() => { setShowCreate(true); resetForm(); }}>Добавить товар</Button>
-            <Button variant="outline" onClick={() => { setShowBatchImport((v) => !v); setBatchResults(null); }}>
+            <Button variant="outline" onClick={() => { setShowBatchImport((v) => !v); setBatchResultMap(null); setBatchUrls(['']); }}>
               {showBatchImport ? 'Скрыть импорт' : 'Импортировать по ссылкам'}
             </Button>
             <Select value={categoryFilter} onValueChange={(v) => { setCategoryFilter(v ?? ''); setPage(1); }}>
@@ -450,16 +459,96 @@ function ItemsTab({ initialCategoryId }: { initialCategoryId?: string }) {
           {showBatchImport && (
             <Card className="mb-4">
               <CardContent className="pt-4 flex flex-col gap-3">
-                <div className="flex flex-col gap-1.5">
-                  <Label>Ссылки (по одной на строку, до 50)</Label>
-                  <Textarea
-                    rows={6}
-                    placeholder={'https://example.com/product-1\nhttps://example.com/product-2'}
-                    value={batchUrls}
-                    onChange={(e) => setBatchUrls(e.target.value)}
-                  />
+                <div className="flex flex-col gap-2">
+                  <Label>Ссылки (до 50)</Label>
+                  {batchUrls.map((url, index) => {
+                    const result = batchResultMap?.get(url.trim());
+                    return (
+                      <div key={index} className="flex items-center gap-2">
+                        <Input
+                          placeholder="https://example.com/product"
+                          value={url}
+                          onChange={(e) => {
+                            const next = [...batchUrls];
+                            next[index] = e.target.value;
+                            setBatchUrls(next);
+                            if (batchResultMap) setBatchResultMap(null);
+                          }}
+                          className={
+                            result?.status === 'Success' ? 'border-green-400 focus-visible:ring-green-300' :
+                            result?.status === 'Partial'  ? 'border-yellow-400 focus-visible:ring-yellow-300' :
+                            result?.status === 'Failed'   ? 'border-red-400 focus-visible:ring-red-300' : ''
+                          }
+                        />
+                        {result && (
+                          <div className="shrink-0 flex flex-col items-end gap-1 min-w-[90px]">
+                            {result.status === 'Success' && <Badge className="bg-green-100 text-green-800 border border-green-200 shadow-none">Успех</Badge>}
+                            {result.status === 'Partial' && (
+                              <div className="flex flex-col items-end gap-1">
+                                <Badge className="bg-yellow-100 text-yellow-800 border border-yellow-300 shadow-none">Частично</Badge>
+                                {result.missingFields.length > 0 && (
+                                  <div className="flex gap-1 flex-wrap justify-end">
+                                    {result.missingFields.map((field) => (
+                                      <span key={field} className="text-xs bg-yellow-200 text-yellow-900 rounded px-1.5 py-0.5">
+                                        {MISSING_FIELD_LABELS[field] ?? field}
+                                      </span>
+                                    ))}
+                                  </div>
+                                )}
+                              </div>
+                            )}
+                            {result.status === 'Failed' && (
+                              <div className="flex flex-col items-end gap-1">
+                                <Badge variant="destructive">Ошибка</Badge>
+                                {result.errorMessage && <span className="text-xs text-red-600 text-right max-w-[180px]">{result.errorMessage}</span>}
+                              </div>
+                            )}
+                            {result.itemId && (
+                              <Button
+                                size="sm"
+                                variant="ghost"
+                                className="h-5 px-2 text-xs"
+                                onClick={() => {
+                                  const found = data?.items.find((item) => item.id === result.itemId) ?? null;
+                                  if (found) {
+                                    setEditItem(found);
+                                    setShowCreate(false);
+                                    setForm({ name: found.name, description: found.description ?? '', price: found.price !== null ? String(found.price) : '', currency: '0', imagePath: found.imagePath ?? '', url: found.url ?? '', categoryId: found.categoryId, isPublished: found.isPublished });
+                                    setErrors({});
+                                    setShowBatchImport(false);
+                                  }
+                                }}
+                              >
+                                Редактировать
+                              </Button>
+                            )}
+                          </div>
+                        )}
+                        <Button
+                          type="button"
+                          variant="ghost"
+                          size="sm"
+                          className="shrink-0 h-9 w-9 p-0 text-muted-foreground hover:text-destructive"
+                          onClick={() => setBatchUrls(batchUrls.length > 1 ? batchUrls.filter((_, i) => i !== index) : [''])}
+                        >
+                          ✕
+                        </Button>
+                      </div>
+                    );
+                  })}
+                  {batchUrls.length < 50 && (
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      size="sm"
+                      className="self-start text-muted-foreground"
+                      onClick={() => setBatchUrls([...batchUrls, ''])}
+                    >
+                      + Добавить ссылку
+                    </Button>
+                  )}
                 </div>
-                <div className="flex gap-3 items-end">
+                <div className="flex gap-3 items-center">
                   <div className="flex flex-col gap-1.5 flex-1">
                     <Label>Категория *</Label>
                     <Select value={batchCategoryId} onValueChange={(v) => setBatchCategoryId(v ?? '')}>
@@ -476,26 +565,19 @@ function ItemsTab({ initialCategoryId }: { initialCategoryId?: string }) {
                     </Select>
                   </div>
                   <Button
+                    className="mt-5"
                     onClick={handleBatchImport}
-                    disabled={batchImporting || !batchCategoryId || !batchUrls.trim()}
+                    disabled={batchImporting || !batchCategoryId || !batchUrls.some((u) => u.trim())}
                   >
                     {batchImporting ? 'Импортируем...' : 'Импортировать'}
                   </Button>
                 </div>
-                {batchResults && (
-                  <BatchImportResults
-                    results={batchResults}
-                    onEdit={(itemId) => {
-                      const found = data?.items.find((item) => item.id === itemId) ?? null;
-                      if (found) {
-                        setEditItem(found);
-                        setShowCreate(false);
-                        setForm({ name: found.name, description: found.description ?? '', price: found.price !== null ? String(found.price) : '', currency: '0', imagePath: found.imagePath ?? '', url: found.url ?? '', categoryId: found.categoryId, isPublished: found.isPublished });
-                        setErrors({});
-                        setShowBatchImport(false);
-                      }
-                    }}
-                  />
+                {batchResultMap && (
+                  <p className="text-sm text-muted-foreground">
+                    Результат: {[...batchResultMap.values()].filter((r) => r.status === 'Success').length} успешно,{' '}
+                    {[...batchResultMap.values()].filter((r) => r.status === 'Partial').length} частично,{' '}
+                    {[...batchResultMap.values()].filter((r) => r.status === 'Failed').length} ошибок
+                  </p>
                 )}
               </CardContent>
             </Card>
@@ -598,7 +680,7 @@ function CollectionsTab() {
     <div>
       {!showCreate && !editCollection && <Button className="mb-4" onClick={() => { setShowCreate(true); resetForm(); }}>Создать подборку</Button>}
       {showCreate && <CollectionForm form={form} setForm={setForm} occasions={occasionPairs} collectionImageFile={collectionImageFile} setCollectionImageFile={setCollectionImageFile} onSubmit={handleCreate} submitLabel="Создать" onCancel={handleCancel} errors={errors} clearError={clearError} />}
-      {editCollection && <CollectionForm form={form} setForm={setForm} occasions={occasionPairs} collectionImageFile={collectionImageFile} setCollectionImageFile={setCollectionImageFile} isEdit onSubmit={handleUpdate} submitLabel="Сохранить" onCancel={handleCancel} errors={errors} clearError={clearError} />}
+      {editCollection && <CollectionForm form={form} setForm={setForm} occasions={occasionPairs} collectionImageFile={collectionImageFile} setCollectionImageFile={setCollectionImageFile} onSubmit={handleUpdate} submitLabel="Сохранить" onCancel={handleCancel} errors={errors} clearError={clearError} />}
 
       {loading ? <div className="text-muted-foreground text-sm">Загрузка...</div> : collections.length === 0 ? <div className="text-muted-foreground text-sm">Нет подборок</div> : (
         <Card><CardContent className="p-0">
@@ -608,7 +690,9 @@ function CollectionsTab() {
               {collections.map((c) => (
                 <>
                   <tr key={c.id} className="border-b">
-                    <td className="p-3 font-medium">{c.name}</td>
+                    <td className="p-3 font-medium">
+                      <Link to={`/collections/${c.id}`} className="hover:underline">{c.name}</Link>
+                    </td>
                     <td className="p-3 text-muted-foreground">{c.occasion ? (occasions.find((o) => o.key === c.occasion)?.label ?? c.occasion) : '—'}</td>
                     <td className="p-3">{c.itemCount}</td>
                     <td className="p-3"><Badge variant={c.isPublished ? 'default' : 'secondary'}>{c.isPublished ? 'Опубликована' : 'Черновик'}</Badge></td>
@@ -761,81 +845,330 @@ const MISSING_FIELD_LABELS: Record<string, string> = {
   Image: 'Изображение',
 };
 
-function BatchImportResults({ results, onEdit }: { results: BatchImportItemResult[]; onEdit: (itemId: string) => void }) {
-  const successCount = results.filter((r) => r.status === 'Success').length;
-  const partialCount = results.filter((r) => r.status === 'Partial').length;
-  const failedCount = results.filter((r) => r.status === 'Failed').length;
-
-  return (
-    <div className="flex flex-col gap-2">
-      <p className="text-sm text-muted-foreground">
-        Результат: {successCount} успешно, {partialCount} частично, {failedCount} ошибок
-      </p>
-      <div className="flex flex-col gap-1.5">
-        {results.map((result, index) => (
-          <div
-            key={index}
-            className={[
-              'flex flex-col gap-1 rounded-md border p-3 text-sm',
-              result.status === 'Partial' ? 'border-yellow-300 bg-yellow-50' :
-              result.status === 'Failed'  ? 'border-red-200 bg-red-50' :
-                                            'border-green-200 bg-green-50',
-            ].join(' ')}
-          >
-            <div className="flex items-center gap-2 flex-wrap">
-              {result.status === 'Success' && <Badge className="bg-green-100 text-green-800 border border-green-200 shadow-none">Успех</Badge>}
-              {result.status === 'Partial' && <Badge className="bg-yellow-100 text-yellow-800 border border-yellow-300 shadow-none">Частично</Badge>}
-              {result.status === 'Failed'  && <Badge variant="destructive">Ошибка</Badge>}
-              <span className="text-xs text-muted-foreground truncate max-w-sm" title={result.url}>{result.url}</span>
-              {result.itemId && (
-                <Button
-                  size="sm"
-                  variant="ghost"
-                  className="h-5 px-2 text-xs ml-auto"
-                  onClick={() => onEdit(result.itemId!)}
-                >
-                  Редактировать
-                </Button>
-              )}
-            </div>
-            {result.status === 'Partial' && result.missingFields.length > 0 && (
-              <div className="flex gap-1 flex-wrap mt-0.5">
-                <span className="text-xs text-yellow-700 font-medium">Не заполнено:</span>
-                {result.missingFields.map((field) => (
-                  <span key={field} className="text-xs bg-yellow-200 text-yellow-900 rounded px-1.5 py-0.5">
-                    {MISSING_FIELD_LABELS[field] ?? field}
-                  </span>
-                ))}
-              </div>
-            )}
-            {result.status === 'Failed' && result.errorMessage && (
-              <p className="text-xs text-red-700 mt-0.5">{result.errorMessage}</p>
-            )}
-          </div>
-        ))}
-      </div>
-    </div>
-  );
-}
 
 function CollectionItemsList({ collectionId, onRemove }: { collectionId: string; onRemove: () => void }) {
   const toast = useToast();
   const [items, setItems] = useState<CatalogItemDto[]>([]);
   const [loading, setLoading] = useState(true);
+  const [editingDescId, setEditingDescId] = useState<string | null>(null);
+  const [editingDesc, setEditingDesc] = useState('');
 
   useEffect(() => { setLoading(true); adminGetCollectionItems(collectionId).then(setItems).catch(() => {}).finally(() => setLoading(false)); }, [collectionId]);
+
+  const startEditDesc = (item: CatalogItemDto) => { setEditingDescId(item.id); setEditingDesc(item.collectionItemDescription ?? ''); };
+  const saveDesc = async (itemId: string) => {
+    try {
+      await adminUpdateCollectionItemDescription(collectionId, itemId, editingDesc.trim() || null);
+      setItems((prev) => prev.map((i) => i.id === itemId ? { ...i, collectionItemDescription: editingDesc.trim() || null } : i));
+      setEditingDescId(null);
+      toast.success('Описание сохранено');
+    } catch (e) { toast.error(parseError(e)); }
+  };
 
   if (loading) return <p className="text-sm text-muted-foreground">Загрузка...</p>;
   if (items.length === 0) return <p className="text-sm text-muted-foreground">Нет товаров в подборке</p>;
 
   return (
-    <div className="flex flex-wrap gap-2">
+    <div className="flex flex-col gap-1.5">
       {items.map((item) => (
-        <span key={item.id} className="flex items-center gap-1 bg-background border rounded-full px-3 py-0.5 text-xs">
-          {item.name}
-          <button className="text-destructive hover:text-destructive/70 font-bold" onClick={async () => { try { await adminRemoveItemFromCollection(collectionId, item.id); setItems((p) => p.filter((i) => i.id !== item.id)); onRemove(); toast.success('Товар удалён'); } catch (e) { toast.error(parseError(e)); } }}>×</button>
-        </span>
+        <div key={item.id} className="flex items-center gap-2 bg-background border rounded-lg px-3 py-1.5 text-sm">
+          <span className="flex-1 font-medium truncate">{item.name}</span>
+          {editingDescId === item.id ? (
+            <div className="flex items-center gap-1.5 flex-1">
+              <input
+                autoFocus
+                className="border rounded px-2 py-0.5 text-xs flex-1 bg-background"
+                value={editingDesc}
+                onChange={(e) => setEditingDesc(e.target.value)}
+                onKeyDown={(e) => { if (e.key === 'Enter') saveDesc(item.id); if (e.key === 'Escape') setEditingDescId(null); }}
+                placeholder="Описание в подборке..."
+              />
+              <button className="text-xs text-primary hover:text-primary/70" onClick={() => saveDesc(item.id)}>✓</button>
+              <button className="text-xs text-muted-foreground hover:text-foreground" onClick={() => setEditingDescId(null)}>✕</button>
+            </div>
+          ) : (
+            <button className="text-xs text-muted-foreground hover:text-foreground truncate max-w-48 text-left" onClick={() => startEditDesc(item)}>
+              {item.collectionItemDescription ?? <span className="italic">+ описание</span>}
+            </button>
+          )}
+          <button className="text-destructive hover:text-destructive/70 font-bold text-sm ml-1 shrink-0" onClick={async () => { try { await adminRemoveItemFromCollection(collectionId, item.id); setItems((p) => p.filter((i) => i.id !== item.id)); onRemove(); toast.success('Товар удалён'); } catch (e) { toast.error(parseError(e)); } }}>×</button>
+        </div>
       ))}
+    </div>
+  );
+}
+
+type BadgeDefForm = { label: string; isActive: boolean };
+const emptyBadgeForm: BadgeDefForm = { label: '', isActive: true };
+
+function CatalogBadgesTab() {
+  const toast = useToast();
+  const [items, setItems] = useState<CatalogBadgeDefinitionDto[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [editingItem, setEditingItem] = useState<CatalogBadgeDefinitionDto | null>(null);
+  const [form, setForm] = useState<BadgeDefForm>(emptyBadgeForm);
+  const [showForm, setShowForm] = useState(false);
+
+  const load = () => { setLoading(true); adminGetCatalogBadgeDefinitions().then(setItems).catch(() => {}).finally(() => setLoading(false)); };
+  useEffect(load, []);
+
+  const openCreate = () => { setEditingItem(null); setForm(emptyBadgeForm); setShowForm(true); };
+  const openEdit = (item: CatalogBadgeDefinitionDto) => { setEditingItem(item); setForm({ label: item.label, isActive: item.isActive }); setShowForm(true); };
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    const payload = { label: form.label.trim(), isActive: form.isActive };
+    try {
+      if (editingItem) { await adminUpdateCatalogBadgeDefinition(editingItem.id, payload); toast.success('Бейдж обновлён'); }
+      else { await adminCreateCatalogBadgeDefinition(payload); toast.success('Бейдж создан'); }
+      setShowForm(false); load();
+    } catch (e) { toast.error(parseError(e)); }
+  };
+
+  const handleDelete = async (id: number) => {
+    if (!confirm('Удалить бейдж каталога?')) return;
+    try { await adminDeleteCatalogBadgeDefinition(id); load(); toast.success('Удалено'); }
+    catch (e) { toast.error(parseError(e)); }
+  };
+
+  return (
+    <div>
+      <div className="flex items-center justify-between mb-4">
+        <h2 className="font-bold text-lg">Бейджи каталога</h2>
+        <Button size="sm" onClick={openCreate}>+ Добавить</Button>
+      </div>
+      {showForm && (
+        <Card className="mb-4">
+          <CardContent className="pt-4">
+            <form onSubmit={handleSubmit} className="flex flex-col gap-3">
+              <div className="flex flex-col gap-1"><Label>Метка *</Label><Input value={form.label} onChange={(e) => setForm({ ...form, label: e.target.value })} required /></div>
+              <div className="flex items-center gap-2">
+                <input type="checkbox" id="cb-cat-active" checked={form.isActive} onChange={(e) => setForm({ ...form, isActive: e.target.checked })} />
+                <Label htmlFor="cb-cat-active">Активен</Label>
+              </div>
+              <div className="flex gap-2"><Button type="submit" size="sm">{editingItem ? 'Сохранить' : 'Создать'}</Button><Button type="button" variant="ghost" size="sm" onClick={() => setShowForm(false)}>Отмена</Button></div>
+            </form>
+          </CardContent>
+        </Card>
+      )}
+      {loading ? <p className="text-sm text-muted-foreground">Загрузка...</p> : (
+        <div className="flex flex-col gap-2">
+          {items.map((item) => (
+            <div key={item.id} className="flex items-center justify-between border rounded-lg px-4 py-2 bg-card">
+              <div className="flex items-center gap-3">
+                <span className="text-lg">{item.emoji}</span>
+                <span className="text-sm font-medium">{item.label}</span>
+                {!item.isActive && <Badge variant="secondary" className="text-xs">Неактивен</Badge>}
+              </div>
+              <div className="flex gap-1">
+                <Button size="sm" variant="ghost" onClick={() => openEdit(item)}>✎</Button>
+                <Button size="sm" variant="ghost" className="text-destructive" onClick={() => handleDelete(item.id)}>✕</Button>
+              </div>
+            </div>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+}
+
+function FulfilledBadgesTab() {
+  const toast = useToast();
+  const [items, setItems] = useState<FulfilledBadgeDefinitionDto[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [editingItem, setEditingItem] = useState<FulfilledBadgeDefinitionDto | null>(null);
+  const [form, setForm] = useState<BadgeDefForm>(emptyBadgeForm);
+  const [showForm, setShowForm] = useState(false);
+
+  const load = () => { setLoading(true); adminGetFulfilledBadgeDefinitions().then(setItems).catch(() => {}).finally(() => setLoading(false)); };
+  useEffect(load, []);
+
+  const openCreate = () => { setEditingItem(null); setForm(emptyBadgeForm); setShowForm(true); };
+  const openEdit = (item: FulfilledBadgeDefinitionDto) => { setEditingItem(item); setForm({ label: item.label, isActive: item.isActive }); setShowForm(true); };
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    const payload = { label: form.label.trim(), isActive: form.isActive };
+    try {
+      if (editingItem) { await adminUpdateFulfilledBadgeDefinition(editingItem.id, payload); toast.success('Бейдж обновлён'); }
+      else { await adminCreateFulfilledBadgeDefinition(payload); toast.success('Бейдж создан'); }
+      setShowForm(false); load();
+    } catch (e) { toast.error(parseError(e)); }
+  };
+
+  const handleDelete = async (id: number) => {
+    if (!confirm('Удалить бейдж подарков?')) return;
+    try { await adminDeleteFulfilledBadgeDefinition(id); load(); toast.success('Удалено'); }
+    catch (e) { toast.error(parseError(e)); }
+  };
+
+  return (
+    <div>
+      <div className="flex items-center justify-between mb-4">
+        <h2 className="font-bold text-lg">Бейджи подарков</h2>
+        <Button size="sm" onClick={openCreate}>+ Добавить</Button>
+      </div>
+      {showForm && (
+        <Card className="mb-4">
+          <CardContent className="pt-4">
+            <form onSubmit={handleSubmit} className="flex flex-col gap-3">
+              <div className="flex flex-col gap-1"><Label>Метка *</Label><Input value={form.label} onChange={(e) => setForm({ ...form, label: e.target.value })} required /></div>
+              <div className="flex items-center gap-2">
+                <input type="checkbox" id="cb-ful-active" checked={form.isActive} onChange={(e) => setForm({ ...form, isActive: e.target.checked })} />
+                <Label htmlFor="cb-ful-active">Активен</Label>
+              </div>
+              <div className="flex gap-2"><Button type="submit" size="sm">{editingItem ? 'Сохранить' : 'Создать'}</Button><Button type="button" variant="ghost" size="sm" onClick={() => setShowForm(false)}>Отмена</Button></div>
+            </form>
+          </CardContent>
+        </Card>
+      )}
+      {loading ? <p className="text-sm text-muted-foreground">Загрузка...</p> : (
+        <div className="flex flex-col gap-2">
+          {items.map((item) => (
+            <div key={item.id} className="flex items-center justify-between border rounded-lg px-4 py-2 bg-card">
+              <div className="flex items-center gap-3">
+                <span className="text-lg">{item.emoji}</span>
+                <span className="text-sm font-medium">{item.label}</span>
+                {!item.isActive && <Badge variant="secondary" className="text-xs">Неактивен</Badge>}
+              </div>
+              <div className="flex gap-1">
+                <Button size="sm" variant="ghost" onClick={() => openEdit(item)}>✎</Button>
+                <Button size="sm" variant="ghost" className="text-destructive" onClick={() => handleDelete(item.id)}>✕</Button>
+              </div>
+            </div>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+}
+
+type AchievementForm = { name: string; description: string; emoji: string; ruleType: string; linkedBadgeTypeId: string; threshold: string; order: string; isActive: boolean };
+const emptyAchievementForm: AchievementForm = { name: '', description: '', emoji: '', ruleType: '1', linkedBadgeTypeId: '', threshold: '3', order: '1', isActive: true };
+
+function AchievementsTab() {
+  const toast = useToast();
+  const [items, setItems] = useState<AchievementDefinitionAdminDto[]>([]);
+  const [fulfilledBadges, setFulfilledBadges] = useState<FulfilledBadgeDefinitionDto[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [editingItem, setEditingItem] = useState<AchievementDefinitionAdminDto | null>(null);
+  const [form, setForm] = useState<AchievementForm>(emptyAchievementForm);
+  const [showForm, setShowForm] = useState(false);
+
+  const load = () => {
+    setLoading(true);
+    Promise.all([adminGetAchievementDefinitions(), adminGetFulfilledBadgeDefinitions()])
+      .then(([achievements, badges]) => { setItems(achievements); setFulfilledBadges(badges); })
+      .catch(() => {})
+      .finally(() => setLoading(false));
+  };
+  useEffect(load, []);
+
+  const openCreate = () => { setEditingItem(null); setForm(emptyAchievementForm); setShowForm(true); };
+  const openEdit = (item: AchievementDefinitionAdminDto) => {
+    setEditingItem(item);
+    setForm({ name: item.name, description: item.description, emoji: item.emoji, ruleType: String(item.ruleType), linkedBadgeTypeId: item.linkedBadgeTypeId != null ? String(item.linkedBadgeTypeId) : '', threshold: String(item.threshold), order: String(item.order), isActive: item.isActive });
+    setShowForm(true);
+  };
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    const payload = {
+      name: form.name.trim(), description: form.description.trim(), emoji: form.emoji.trim(),
+      ruleType: Number(form.ruleType) as AchievementRuleType,
+      linkedBadgeTypeId: form.ruleType === '1' && form.linkedBadgeTypeId ? Number(form.linkedBadgeTypeId) : null,
+      threshold: Number(form.threshold), order: Number(form.order), isActive: form.isActive,
+    };
+    try {
+      if (editingItem) { await adminUpdateAchievementDefinition(editingItem.id, payload); toast.success('Достижение обновлено'); }
+      else { await adminCreateAchievementDefinition(payload); toast.success('Достижение создано'); }
+      setShowForm(false); load();
+    } catch (e) { toast.error(parseError(e)); }
+  };
+
+  const handleDelete = async (id: number) => {
+    if (!confirm('Удалить достижение?')) return;
+    try { await adminDeleteAchievementDefinition(id); load(); toast.success('Удалено'); }
+    catch (e) { toast.error(parseError(e)); }
+  };
+
+  const badgeLabelById = new Map(fulfilledBadges.map((b) => [b.id, b.label]));
+
+  return (
+    <div>
+      <div className="flex items-center justify-between mb-4">
+        <h2 className="font-bold text-lg">Достижения</h2>
+        <Button size="sm" onClick={openCreate}>+ Добавить</Button>
+      </div>
+      {showForm && (
+        <Card className="mb-4">
+          <CardContent className="pt-4">
+            <form onSubmit={handleSubmit} className="flex flex-col gap-3">
+              <div className="grid grid-cols-3 gap-3">
+                <div className="flex flex-col gap-1 col-span-2"><Label>Название *</Label><Input value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} required /></div>
+                <div className="flex flex-col gap-1"><Label>Эмодзи</Label><Input value={form.emoji} onChange={(e) => setForm({ ...form, emoji: e.target.value })} /></div>
+              </div>
+              <div className="flex flex-col gap-1"><Label>Описание</Label><Input value={form.description} onChange={(e) => setForm({ ...form, description: e.target.value })} /></div>
+              <div className="grid grid-cols-3 gap-3">
+                <div className="flex flex-col gap-1">
+                  <Label>Правило</Label>
+                  <Select value={form.ruleType} onValueChange={(value) => setForm({ ...form, ruleType: value ?? '1' })}>
+                    <SelectTrigger><SelectValue /></SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="1">Конкретный бейдж</SelectItem>
+                      <SelectItem value="2">Уникальные типы</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+                {form.ruleType === '1' && (
+                  <div className="flex flex-col gap-1">
+                    <Label>Бейдж</Label>
+                    <Select value={form.linkedBadgeTypeId} onValueChange={(value) => setForm({ ...form, linkedBadgeTypeId: value ?? '' })}>
+                      <SelectTrigger><SelectValue placeholder="Выберите..." /></SelectTrigger>
+                      <SelectContent>{fulfilledBadges.map((badge) => <SelectItem key={badge.id} value={String(badge.id)}>{badge.label}</SelectItem>)}</SelectContent>
+                    </Select>
+                  </div>
+                )}
+                <div className="flex flex-col gap-1"><Label>Порог</Label><Input type="number" value={form.threshold} onChange={(e) => setForm({ ...form, threshold: e.target.value })} /></div>
+              </div>
+              <div className="flex items-center gap-4">
+                <div className="flex flex-col gap-1"><Label>Порядок</Label><Input type="number" value={form.order} className="w-24" onChange={(e) => setForm({ ...form, order: e.target.value })} /></div>
+                <div className="flex items-center gap-2 mt-4">
+                  <input type="checkbox" id="cb-ach-active" checked={form.isActive} onChange={(e) => setForm({ ...form, isActive: e.target.checked })} />
+                  <Label htmlFor="cb-ach-active">Активно</Label>
+                </div>
+              </div>
+              <div className="flex gap-2"><Button type="submit" size="sm">{editingItem ? 'Сохранить' : 'Создать'}</Button><Button type="button" variant="ghost" size="sm" onClick={() => setShowForm(false)}>Отмена</Button></div>
+            </form>
+          </CardContent>
+        </Card>
+      )}
+      {loading ? <p className="text-sm text-muted-foreground">Загрузка...</p> : (
+        <div className="flex flex-col gap-2">
+          {items.map((item) => (
+            <div key={item.id} className="flex items-center justify-between border rounded-lg px-4 py-3 bg-card">
+              <div className="flex items-center gap-3">
+                <span className="text-xl">{item.emoji}</span>
+                <div>
+                  <div className="text-sm font-semibold">{item.name}</div>
+                  <div className="text-xs text-muted-foreground">{item.description}</div>
+                  <div className="text-xs text-muted-foreground mt-0.5">
+                    {item.ruleType === 1
+                      ? `Бейдж: ${badgeLabelById.get(item.linkedBadgeTypeId!) ?? `#${item.linkedBadgeTypeId}`}`
+                      : 'Уникальные типы'
+                    } · Порог: {item.threshold}
+                  </div>
+                </div>
+              </div>
+              <div className="flex items-center gap-2">
+                {!item.isActive && <Badge variant="secondary" className="text-xs">Неактивно</Badge>}
+                <Button size="sm" variant="ghost" onClick={() => openEdit(item)}>✎</Button>
+                <Button size="sm" variant="ghost" className="text-destructive" onClick={() => handleDelete(item.id)}>✕</Button>
+              </div>
+            </div>
+          ))}
+        </div>
+      )}
     </div>
   );
 }

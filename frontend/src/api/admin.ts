@@ -1,12 +1,16 @@
 import { API_URL } from './client';
 import { ApiError } from '../utils/errors';
 import type {
+  AchievementDefinitionAdminDto,
+  AchievementRuleType,
+  CatalogBadgeDefinitionDto,
   CatalogCategoryDto,
   CatalogCollectionAdminDto,
   CatalogItemDto,
   CreateCatalogCategoryRequest,
   CreateCatalogItemRequest,
   CreateCollectionRequest,
+  FulfilledBadgeDefinitionDto,
   OccasionDto,
   PagedResponse,
   ParsedWishData,
@@ -161,6 +165,10 @@ export function adminAddItemToCollection(collectionId: string, itemId: string, d
   return adminRequest<void>('POST', `/admin/catalog/collections/${collectionId}/items/${itemId}`, { description: description || null });
 }
 
+export function adminUpdateCollectionItemDescription(collectionId: string, itemId: string, description: string | null): Promise<void> {
+  return adminRequest<void>('PATCH', `/admin/catalog/collections/${collectionId}/items/${itemId}/description`, { description });
+}
+
 export function adminRemoveItemFromCollection(collectionId: string, itemId: string): Promise<void> {
   return adminRequest<void>('DELETE', `/admin/catalog/collections/${collectionId}/items/${itemId}`);
 }
@@ -232,4 +240,60 @@ export function adminBatchImportItems(data: {
   categoryId: string;
 }): Promise<BatchImportItemResult[]> {
   return adminRequest<BatchImportItemResult[]>('POST', '/admin/catalog/items/batch-import', data);
+}
+
+export function adminGetCatalogBadgeDefinitions(): Promise<CatalogBadgeDefinitionDto[]> {
+  return adminRequest<CatalogBadgeDefinitionDto[]>('GET', '/admin/catalog/badge-definitions/catalog');
+}
+
+export function adminCreateCatalogBadgeDefinition(data: { label: string; isActive: boolean }): Promise<number> {
+  return adminRequest<number>('POST', '/admin/catalog/badge-definitions/catalog', data);
+}
+
+export function adminUpdateCatalogBadgeDefinition(id: number, data: { label: string; isActive: boolean }): Promise<void> {
+  return adminRequest<void>('PUT', `/admin/catalog/badge-definitions/catalog/${id}`, data);
+}
+
+export function adminDeleteCatalogBadgeDefinition(id: number): Promise<void> {
+  return adminRequest<void>('DELETE', `/admin/catalog/badge-definitions/catalog/${id}`);
+}
+
+export function adminGetFulfilledBadgeDefinitions(): Promise<FulfilledBadgeDefinitionDto[]> {
+  return adminRequest<FulfilledBadgeDefinitionDto[]>('GET', '/admin/catalog/badge-definitions/fulfilled');
+}
+
+export function adminCreateFulfilledBadgeDefinition(data: { label: string; isActive: boolean }): Promise<number> {
+  return adminRequest<number>('POST', '/admin/catalog/badge-definitions/fulfilled', data);
+}
+
+export function adminUpdateFulfilledBadgeDefinition(id: number, data: { label: string; isActive: boolean }): Promise<void> {
+  return adminRequest<void>('PUT', `/admin/catalog/badge-definitions/fulfilled/${id}`, data);
+}
+
+export function adminDeleteFulfilledBadgeDefinition(id: number): Promise<void> {
+  return adminRequest<void>('DELETE', `/admin/catalog/badge-definitions/fulfilled/${id}`);
+}
+
+export function adminGetAchievementDefinitions(): Promise<AchievementDefinitionAdminDto[]> {
+  return adminRequest<AchievementDefinitionAdminDto[]>('GET', '/admin/catalog/achievements');
+}
+
+export function adminCreateAchievementDefinition(data: {
+  name: string; description: string; emoji: string;
+  ruleType: AchievementRuleType; linkedBadgeTypeId: number | null;
+  threshold: number; order: number; isActive: boolean;
+}): Promise<number> {
+  return adminRequest<number>('POST', '/admin/catalog/achievements', data);
+}
+
+export function adminUpdateAchievementDefinition(id: number, data: {
+  name: string; description: string; emoji: string;
+  ruleType: AchievementRuleType; linkedBadgeTypeId: number | null;
+  threshold: number; order: number; isActive: boolean;
+}): Promise<void> {
+  return adminRequest<void>('PUT', `/admin/catalog/achievements/${id}`, data);
+}
+
+export function adminDeleteAchievementDefinition(id: number): Promise<void> {
+  return adminRequest<void>('DELETE', `/admin/catalog/achievements/${id}`);
 }
