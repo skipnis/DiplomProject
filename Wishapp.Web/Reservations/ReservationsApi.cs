@@ -27,4 +27,29 @@ public sealed class ReservationsApi(ApplicationDbContext db) : IReservationsApi
             .Where(r => wishIds.Contains(r.WishId))
             .ToDictionaryAsync(r => r.WishId, r => r.ReservedByUserId, ct);
     }
+
+    public async Task<Guid?> GetReserverForWishAsync(Guid wishId, CancellationToken ct = default)
+    {
+        var reservation = await db.WishReservations
+            .AsNoTracking()
+            .Where(r => r.WishId == wishId)
+            .Select(r => (Guid?)r.ReservedByUserId)
+            .FirstOrDefaultAsync(ct);
+
+        return reservation;
+    }
+
+    public async Task DeleteReservationForWishAsync(Guid wishId, CancellationToken ct = default)
+    {
+        await db.WishReservations
+            .Where(r => r.WishId == wishId)
+            .ExecuteDeleteAsync(ct);
+    }
+
+    public async Task DeleteUserDataAsync(Guid userId, CancellationToken ct = default)
+    {
+        await db.WishReservations
+            .Where(r => r.ReservedByUserId == userId)
+            .ExecuteDeleteAsync(ct);
+    }
 }

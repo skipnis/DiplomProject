@@ -4,11 +4,17 @@ using Wishapp.Web.Common.Types;
 using Wishapp.Web.Infrastructure.Database;
 using Wishapp.Web.Notifications;
 using Wishapp.Web.Notifications.Entities;
+using Wishapp.Web.Reservations;
+using Wishapp.Web.Users;
 using Wishapp.Web.Wishlists.Entities;
 
 namespace Wishapp.Web.Wishlists.Features.Wishes.FulfillWish;
 
-public sealed class FulfillWishHandler(ApplicationDbContext db, INotificationsApi notificationsApi)
+public sealed class FulfillWishHandler(
+    ApplicationDbContext db,
+    INotificationsApi notificationsApi,
+    IReservationsApi reservationsApi,
+    IUsersApi usersApi)
     : ICommandHandler<FulfillWishCommand>
 {
     public async Task<Result> HandleAsync(
@@ -29,10 +35,7 @@ public sealed class FulfillWishHandler(ApplicationDbContext db, INotificationsAp
             return Error.Forbidden("Wishes.BlacklistWishlist", "Cannot fulfill wishes from a blacklist wishlist");
         }
 
-        var reserverId = await db.WishReservations
-            .Where(r => r.WishId == command.WishId)
-            .Select(r => (Guid?)r.ReservedByUserId)
-            .FirstOrDefaultAsync(ct);
+        var reserverId = await reservationsApi.GetReserverForWishAsync(command.WishId, ct);
 
         var result = wishlist.FulfillWish(command.WishId, command.UserId, reserverId);
 
@@ -43,17 +46,14 @@ public sealed class FulfillWishHandler(ApplicationDbContext db, INotificationsAp
 
         await db.SaveChangesAsync(ct);
 
-        await db.WishReservations
-            .Where(r => r.WishId == command.WishId)
-            .ExecuteDeleteAsync(ct);
+        await reservationsApi.DeleteReservationForWishAsync(command.WishId, ct);
 
         if (reserverId.HasValue)
         {
             var wish = wishlist.Wishes.FirstOrDefault(w => w.Id == command.WishId);
-            var ownerName = await db.Users.AsNoTracking()
-                .Where(u => u.Id == wishlist.OwnerId)
-                .Select(u => u.DisplayName)
-                .FirstOrDefaultAsync(ct);
+
+            var ownerUsernames = await usersApi.GetUsernamesAsync([wishlist.OwnerId], ct);
+            var ownerName = ownerUsernames.GetValueOrDefault(wishlist.OwnerId);
 
             await notificationsApi.EnqueueAsync(reserverId.Value, NotificationType.WishFulfilled, new
             {

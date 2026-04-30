@@ -3,6 +3,19 @@ using Wishapp.Web.Wishlists.Dtos;
 
 namespace Wishapp.Web.Wishlists;
 
+public record WishNotificationData(
+    string WishName,
+    Guid WishlistId,
+    string WishlistName,
+    Guid OwnerId,
+    bool IsSurpriseModeEnabled);
+
+public record GiftBadgeEligibilityData(
+    Guid WishlistOwnerId,
+    bool WishExists,
+    bool IsFulfilled,
+    Guid? FulfilledByReserverId);
+
 public interface IWishlistsApi
 {
     Task CreateSystemWishlistsAsync(Guid userId, CancellationToken ct = default);
@@ -13,6 +26,9 @@ public interface IWishlistsApi
     Task<List<WishSummary>> GetWishesSummaryAsync(List<Guid> wishIds, CancellationToken ct = default);
     Task<Result> CanLinkWishlistAsync(Guid userId, Guid wishlistId, CancellationToken ct = default);
     Task<UserWishStats> GetUserWishStatsAsync(Guid userId, CancellationToken ct = default);
+    Task<WishNotificationData?> GetWishNotificationDataAsync(Guid wishId, CancellationToken ct = default);
+    Task<GiftBadgeEligibilityData?> GetGiftBadgeEligibilityAsync(Guid wishlistId, Guid wishId, CancellationToken ct = default);
+    Task DeleteUserDataAsync(Guid userId, CancellationToken ct = default);
 }
 
 public record UserWishStats(int ReceivedCount, int GiftedCount);

@@ -6,7 +6,9 @@ using Wishapp.Web.Infrastructure.Database;
 using Wishapp.Web.Notifications;
 using Wishapp.Web.Notifications.Entities;
 using Wishapp.Web.Reservations.Entities;
+using Wishapp.Web.Users;
 using Wishapp.Web.Wishlists;
+using Wishapp.Web.Wishlists.Dtos;
 using Wishapp.Web.Wishlists.Entities;
 
 namespace Wishapp.Web.Reservations.Features.ReserveWish;
@@ -15,7 +17,8 @@ public sealed class ReserveWishHandler(
     ApplicationDbContext db,
     IWishlistsApi wishlistsApi,
     IFriendshipsApi friendshipsApi,
-    INotificationsApi notificationsApi)
+    INotificationsApi notificationsApi,
+    IUsersApi usersApi)
     : ICommandHandler<ReserveWishCommand>
 {
     public async Task<Result> HandleAsync(
@@ -37,7 +40,7 @@ public sealed class ReserveWishHandler(
             return Error.NotFound("Wishlists.NotFound", "Wishlist not found");
         }
 
-        if (accessData.SystemType == Wishlists.Entities.SystemWishlistType.Blacklist)
+        if (accessData.SystemType == SystemWishlistType.Blacklist)
         {
             return Error.Forbidden("Reservations.BlacklistWishlist", "Cannot reserve wishes from a blacklist wishlist");
         }
@@ -74,31 +77,20 @@ public sealed class ReserveWishHandler(
 
         await db.SaveChangesAsync(ct);
 
-        var wishName = await db.Wishes.AsNoTracking()
-            .Where(w => w.Id == command.WishId)
-            .Select(w => w.Name)
-            .FirstOrDefaultAsync(ct);
-
-        var wishlistName = await db.Wishlists.AsNoTracking()
-            .Where(wl => wl.Id == command.WishlistId)
-            .Select(wl => wl.Name)
-            .FirstOrDefaultAsync(ct);
-
-        var reserverName = await db.Users.AsNoTracking()
-            .Where(u => u.Id == command.UserId)
-            .Select(u => u.DisplayName)
-            .FirstOrDefaultAsync(ct);
-
         if (!accessData.IsSurpriseModeEnabled)
         {
+            var notificationData = await wishlistsApi.GetWishNotificationDataAsync(command.WishId, ct);
+            var reserverUsernames = await usersApi.GetUsernamesAsync([command.UserId], ct);
+            var reserverName = reserverUsernames.GetValueOrDefault(command.UserId);
+
             await notificationsApi.EnqueueAsync(accessData.OwnerId, NotificationType.WishReserved, new
             {
                 wishId = command.WishId,
-                wishName,
+                wishName = notificationData?.WishName,
                 reservedByUserId = command.UserId,
                 reservedByDisplayName = reserverName,
                 wishlistId = command.WishlistId,
-                wishlistName,
+                wishlistName = notificationData?.WishlistName,
             }, ct);
         }
 
@@ -107,7 +99,7 @@ public sealed class ReserveWishHandler(
 
     private async Task<bool> CheckAccessAsync(
         Guid userId,
-        Wishlists.Dtos.WishlistAccessData accessData,
+        WishlistAccessData accessData,
         CancellationToken ct)
     {
         return accessData.Visibility switch

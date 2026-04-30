@@ -139,4 +139,61 @@ public sealed class WishlistsApi(ApplicationDbContext db) : IWishlistsApi
                     x.Wishlist.OwnerId))
             .ToListAsync(ct);
     }
+
+    public async Task<WishNotificationData?> GetWishNotificationDataAsync(
+        Guid wishId,
+        CancellationToken ct = default)
+    {
+        return await db.Wishlists
+            .AsNoTracking()
+            .Where(wl => wl.Wishes.Any(w => w.Id == wishId))
+            .Select(wl => new WishNotificationData(
+                wl.Wishes.First(w => w.Id == wishId).Name,
+                wl.Id,
+                wl.Name,
+                wl.OwnerId,
+                wl.IsSurpriseModeEnabled))
+            .FirstOrDefaultAsync(ct);
+    }
+
+    public async Task<GiftBadgeEligibilityData?> GetGiftBadgeEligibilityAsync(
+        Guid wishlistId,
+        Guid wishId,
+        CancellationToken ct = default)
+    {
+        var wishlist = await db.Wishlists
+            .AsNoTracking()
+            .Where(wl => wl.Id == wishlistId)
+            .Select(wl => new
+            {
+                wl.OwnerId,
+                Wish = wl.Wishes.Where(w => w.Id == wishId).Select(w => new { w.IsFulfilled, w.FulfilledByReserverId }).FirstOrDefault()
+            })
+            .FirstOrDefaultAsync(ct);
+
+        if (wishlist is null)
+            return null;
+
+        return new GiftBadgeEligibilityData(
+            wishlist.OwnerId,
+            wishlist.Wish is not null,
+            wishlist.Wish?.IsFulfilled ?? false,
+            wishlist.Wish?.FulfilledByReserverId);
+    }
+
+    public async Task DeleteUserDataAsync(Guid userId, CancellationToken ct = default)
+    {
+        var ownedWishlistIds = await db.Wishlists
+            .Where(wl => wl.OwnerId == userId)
+            .Select(wl => wl.Id)
+            .ToListAsync(ct);
+
+        await db.Wishlists
+            .Where(wl => wl.OwnerId == userId)
+            .ExecuteDeleteAsync(ct);
+
+        await db.WishlistMembers
+            .Where(m => m.UserId == userId)
+            .ExecuteDeleteAsync(ct);
+    }
 }
