@@ -2,4 +2,4 @@ using Wishapp.Web.Common.Interfaces;
 
 namespace Wishapp.Web.Wishlists.Features.Wishlists.GetWishlistQr;
 
-public record GetWishlistQrQuery(Guid WishlistId) : IQuery<byte[]>;
+public record GetWishlistQrQuery(Guid WishlistId, string FrontendOrigin) : IQuery<byte[]>;

@@ -1,21 +1,16 @@
 using Microsoft.EntityFrameworkCore;
-using Microsoft.Extensions.Options;
 using Wishapp.Web.Common.Interfaces;
 using Wishapp.Web.Common.Types;
 using Wishapp.Web.Infrastructure.Database;
 using Wishapp.Web.Infrastructure.QrCode;
-using Wishapp.Web.Wishlists.Entities;
 
 namespace Wishapp.Web.Wishlists.Features.Wishes.GetWishQr;
 
 public sealed class GetWishQrHandler(
     ApplicationDbContext db,
-    IQrCodeService qrCodeService,
-    IOptions<QrCodeOptions> options)
+    IQrCodeService qrCodeService)
     : IQueryHandler<GetWishQrQuery, byte[]>
 {
-    private readonly QrCodeOptions _options = options.Value;
-
     public async Task<Result<byte[]>> HandleAsync(
         GetWishQrQuery query,
         CancellationToken ct = default)
@@ -37,10 +32,8 @@ public sealed class GetWishQrHandler(
             return Error.NotFound("Wishes.NotFound", "Wish not found");
         }
 
-        var url = $"{_options.FrontendUrl}/share/{wish.ShareToken}";
+        var url = $"{query.FrontendOrigin}/share/{wish.ShareToken}";
 
-        var qrBytes = qrCodeService.Generate(url);
-
-        return qrBytes;
+        return qrCodeService.Generate(url);
     }
 }

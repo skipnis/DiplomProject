@@ -11,10 +11,12 @@ public static partial class WishlistsEndpoints
     private static async Task<Results<FileContentHttpResult, NotFound<Error>, BadRequest<Error>>> GetWishQr(
         [FromRoute] Guid id,
         [FromRoute] Guid wishId,
+        HttpContext httpContext,
         IQueryHandler<GetWishQrQuery, byte[]> handler,
         CancellationToken ct)
     {
-        var result = await handler.HandleAsync(new GetWishQrQuery(id, wishId), ct);
+        var origin = httpContext.Request.Headers.Origin.ToString();
+        var result = await handler.HandleAsync(new GetWishQrQuery(id, wishId, origin), ct);
 
         if (!result.IsSuccess)
         {

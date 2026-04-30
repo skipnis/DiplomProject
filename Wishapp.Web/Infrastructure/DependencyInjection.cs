@@ -213,11 +213,6 @@ public static class DependencyInjection
 
         private IServiceCollection AddQrCodeGeneration()
         {
-            services.AddOptions<QrCodeOptions>()
-                .BindConfiguration(QrCodeOptions.SectionName)
-                .ValidateDataAnnotations()
-                .ValidateOnStart();
-
             services.AddSingleton<IQrCodeService, QrCodeService>();
 
             return services;
