@@ -1,5 +1,14 @@
 import { apiGet, apiPost, apiDelete } from './client';
-import type { CatalogCategoryDto, CatalogCollectionDto, CatalogCollectionSummaryDto, CatalogItemDto, OccasionDto, PagedResponse } from '../types';
+import type {
+  CatalogBadgeDefinitionDto,
+  CatalogCategoryDto,
+  CatalogCollectionDto,
+  CatalogCollectionSummaryDto,
+  CatalogItemDto,
+  FulfilledBadgeDefinitionDto,
+  OccasionDto,
+  PagedResponse,
+} from '../types';
 
 export function getCatalogCategories(): Promise<CatalogCategoryDto[]> {
   return apiGet<CatalogCategoryDto[]>('/catalog/categories');
@@ -35,14 +44,6 @@ export function addWishFromCatalog(wishlistId: string, catalogItemId: string): P
   return apiPost<string>(`/wishlists/${wishlistId}/wishes/from-catalog`, { catalogItemId });
 }
 
-export function rateCatalogItem(id: string, value: number): Promise<void> {
-  return apiPost<void>(`/catalog/items/${id}/rate`, { value });
-}
-
-export function unrateCatalogItem(id: string): Promise<void> {
-  return apiDelete<void>(`/catalog/items/${id}/rate`);
-}
-
 export function getCatalogOccasions(): Promise<OccasionDto[]> {
   return apiGet<OccasionDto[]>('/catalog/occasions');
 }
@@ -53,4 +54,20 @@ export function getCatalogCollections(): Promise<CatalogCollectionSummaryDto[]> 
 
 export function getCatalogCollection(id: string): Promise<CatalogCollectionDto> {
   return apiGet<CatalogCollectionDto>(`/catalog/collections/${id}`);
+}
+
+export function voteCatalogItemBadge(id: string, badgeType: number): Promise<void> {
+  return apiPost<void>(`/catalog/items/${id}/badges/${badgeType}`, {});
+}
+
+export function unvoteCatalogItemBadge(id: string, badgeType: number): Promise<void> {
+  return apiDelete<void>(`/catalog/items/${id}/badges/${badgeType}`);
+}
+
+export function getCatalogBadgeDefinitions(): Promise<CatalogBadgeDefinitionDto[]> {
+  return apiGet<CatalogBadgeDefinitionDto[]>('/catalog/badge-definitions');
+}
+
+export function getFulfilledBadgeDefinitions(): Promise<FulfilledBadgeDefinitionDto[]> {
+  return apiGet<FulfilledBadgeDefinitionDto[]>('/catalog/fulfilled-badge-definitions');
 }

@@ -1,39 +1,90 @@
 import { useEffect, useState } from 'react';
 import { useParams, Link, useNavigate } from 'react-router-dom';
-import { getCatalogItem, addWishFromCatalog, rateCatalogItem, unrateCatalogItem } from '../api/catalog';
+import { getCatalogItem, addWishFromCatalog, voteCatalogItemBadge, unvoteCatalogItemBadge, getCatalogBadgeDefinitions } from '../api/catalog';
 import { getMyWishlists } from '../api/wishlists';
 import { getImageUrl } from '../api/client';
 import { useAuth } from '../context/AuthContext';
 import { useToast } from '../components/Toast';
 import { parseError } from '../utils/errors';
-import type { CatalogItemDto, WishlistSummaryDto } from '../types';
+import type { CatalogItemDto, CatalogItemBadgeDto, WishlistSummaryDto, CatalogBadgeDefinitionDto } from '../types';
 import { Button, buttonVariants } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { Dialog, DialogContent, DialogTitle } from '@/components/ui/dialog';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Separator } from '@/components/ui/separator';
 
-function StarRating({ item, onRate }: { item: CatalogItemDto; onRate: (value: number | null) => void }) {
-  const [hover, setHover] = useState<number | null>(null);
-  const displayed = hover ?? item.myRating ?? 0;
+function BadgeButton({ def, myVote, voteCount, isLoggedIn, onToggle }: {
+  def: CatalogBadgeDefinitionDto;
+  myVote: boolean;
+  voteCount: number;
+  isLoggedIn: boolean;
+  onToggle: () => void;
+}) {
+  const [hovered, setHovered] = useState(false);
 
   return (
-    <div className="flex items-center gap-1">
-      {[1, 2, 3, 4, 5].map((star) => (
-        <button
-          key={star}
-          className={`text-2xl leading-none transition-colors ${displayed >= star ? 'text-yellow-400' : 'text-muted-foreground/30'}`}
-          onMouseEnter={() => setHover(star)}
-          onMouseLeave={() => setHover(null)}
-          onClick={() => onRate(item.myRating === star ? null : star)}
-        >
-          ★
-        </button>
-      ))}
-      {item.ratingCount > 0 && (
-        <span className="text-sm text-muted-foreground ml-1">
-          {item.averageRating?.toFixed(1)} ({item.ratingCount})
-        </span>
+    <div className="relative" onMouseEnter={() => setHovered(true)} onMouseLeave={() => setHovered(false)}>
+      <button
+        onClick={() => isLoggedIn ? onToggle() : undefined}
+        className={[
+          'flex items-center gap-1.5 px-3 py-1.5 rounded-full text-sm border transition-all',
+          myVote
+            ? 'border-primary bg-primary/10 text-primary font-semibold'
+            : 'border-border bg-background text-muted-foreground',
+          isLoggedIn && !myVote ? 'cursor-pointer hover:border-primary/50 hover:text-foreground hover:bg-muted/50' : '',
+          !isLoggedIn ? 'cursor-default opacity-60' : '',
+          myVote ? 'cursor-pointer' : '',
+        ].join(' ')}
+      >
+        <span>{def.emoji}</span>
+        <span>{def.label}</span>
+        {voteCount > 0 && (
+          <span className={`text-xs font-bold ${myVote ? 'text-primary' : 'text-muted-foreground'}`}>{voteCount}</span>
+        )}
+      </button>
+      {hovered && def.description && (
+        <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 z-10 pointer-events-none animate-in fade-in zoom-in-95 duration-150">
+          <div className="bg-popover text-popover-foreground text-xs rounded-xl px-3 py-2 shadow-md max-w-48 text-center whitespace-normal border border-border/50">
+            {def.description}
+          </div>
+          <div className="w-2 h-2 bg-popover border-r border-b border-border/50 rotate-45 mx-auto -mt-1" />
+        </div>
+      )}
+    </div>
+  );
+}
+
+function BadgeVoting({ badges, definitions, onToggle, isLoggedIn }: {
+  badges: CatalogItemBadgeDto[];
+  definitions: CatalogBadgeDefinitionDto[];
+  onToggle: (badgeType: number) => void;
+  isLoggedIn: boolean;
+}) {
+  const badgeMap = new Map(badges.map((badge) => [badge.badgeType, badge]));
+  const activeDefinitions = definitions.filter((def) => def.isActive);
+
+  if (activeDefinitions.length === 0) return null;
+
+  return (
+    <div>
+      <div className="text-sm font-semibold mb-3">Как подарок эта вещь...</div>
+      <div className="flex flex-wrap gap-2">
+        {activeDefinitions.map((def) => {
+          const badge = badgeMap.get(def.id);
+          return (
+            <BadgeButton
+              key={def.id}
+              def={def}
+              myVote={badge?.myVote ?? false}
+              voteCount={badge?.voteCount ?? 0}
+              isLoggedIn={isLoggedIn}
+              onToggle={() => onToggle(def.id)}
+            />
+          );
+        })}
+      </div>
+      {!isLoggedIn && (
+        <p className="text-xs text-muted-foreground mt-2">Войдите в аккаунт, чтобы оценить идею подарка</p>
       )}
     </div>
   );
@@ -46,6 +97,7 @@ export default function CatalogItemPage() {
   const toast = useToast();
 
   const [item, setItem] = useState<CatalogItemDto | null>(null);
+  const [badgeDefinitions, setBadgeDefinitions] = useState<CatalogBadgeDefinitionDto[]>([]);
   const [loading, setLoading] = useState(true);
   const [addModal, setAddModal] = useState(false);
   const [wishlists, setWishlists] = useState<WishlistSummaryDto[]>([]);
@@ -54,22 +106,56 @@ export default function CatalogItemPage() {
 
   useEffect(() => {
     if (!id) return;
-    getCatalogItem(id)
-      .then(setItem)
+    Promise.all([getCatalogItem(id), getCatalogBadgeDefinitions()])
+      .then(([fetchedItem, definitions]) => {
+        setItem(fetchedItem);
+        setBadgeDefinitions(definitions);
+      })
       .catch((e) => { toast.error(parseError(e)); navigate('/catalog'); })
       .finally(() => setLoading(false));
   }, [id]);
 
-  const handleRate = async (value: number | null) => {
-    if (!user) { toast.error('Войдите в аккаунт'); return; }
-    if (!item) return;
+  const handleToggleBadge = async (badgeType: number) => {
+    if (!user || !item) return;
+    const existingBadge = item.badges.find((badge) => badge.badgeType === badgeType);
+    const myVote = existingBadge?.myVote ?? false;
     try {
-      if (value === null) {
-        await unrateCatalogItem(item.id);
+      if (myVote) {
+        await unvoteCatalogItemBadge(item.id, badgeType);
+        setItem((prev) => {
+          if (!prev) return prev;
+          return {
+            ...prev,
+            badges: prev.badges.map((badge) =>
+              badge.badgeType === badgeType
+                ? { ...badge, myVote: false, voteCount: badge.voteCount - 1 }
+                : badge
+            ),
+          };
+        });
       } else {
-        await rateCatalogItem(item.id, value);
+        await voteCatalogItemBadge(item.id, badgeType);
+        setItem((prev) => {
+          if (!prev) return prev;
+          const definition = badgeDefinitions.find((def) => def.id === badgeType);
+          const updated = prev.badges.map((badge) =>
+            badge.badgeType === badgeType
+              ? { ...badge, myVote: true, voteCount: badge.voteCount + 1 }
+              : badge
+          );
+          if (!prev.badges.find((badge) => badge.badgeType === badgeType)) {
+            updated.push({
+              badgeType,
+              emoji: definition?.emoji ?? '',
+              slug: definition?.slug ?? '',
+              label: definition?.label ?? '',
+              myVote: true,
+              voteCount: 1,
+            });
+          }
+          return { ...prev, badges: updated };
+        });
       }
-      setItem((prev) => prev ? { ...prev, myRating: value } : prev);
     } catch (e) {
       toast.error(parseError(e));
     }
@@ -128,10 +214,18 @@ export default function CatalogItemPage() {
             <p className="text-muted-foreground text-sm mb-5 leading-relaxed">{item.description}</p>
           )}
 
-          <StarRating item={item} onRate={handleRate} />
           {item.wishCount > 0 && (
-            <div className="text-sm text-muted-foreground mt-1">{item.wishCount} в вишлистах</div>
+            <div className="text-sm text-muted-foreground mb-4">{item.wishCount} в вишлистах</div>
           )}
+
+          <Separator className="my-5" />
+
+          <BadgeVoting
+            badges={item.badges}
+            definitions={badgeDefinitions}
+            onToggle={handleToggleBadge}
+            isLoggedIn={!!user}
+          />
 
           <Separator className="my-5" />
 

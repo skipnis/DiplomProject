@@ -1,16 +1,16 @@
 import { useEffect, useState } from 'react';
 import { useParams, Link, useNavigate } from 'react-router-dom';
-import { getWish, deleteWish, fulfillWish, unfulfillWish, duplicateWish, copyWish, regenerateWishShareToken } from '../api/wishes';
+import { getWish, deleteWish, fulfillWish, unfulfillWish, duplicateWish, copyWish, regenerateWishShareToken, addGiftBadges, getGiftBadges } from '../api/wishes';
+import { getFulfilledBadgeDefinitions } from '../api/catalog';
 import { reserveWish, cancelReservation, getMyReservations } from '../api/reservations';
 import { getWishlist, getMyWishlists } from '../api/wishlists';
 import { getImageUrl, API_URL } from '../api/client';
 
-const FRONTEND_URL = import.meta.env.VITE_FRONTEND_URL || 'http://localhost:5173';
 import { useAuth } from '../context/AuthContext';
 import { useToast } from '../components/Toast';
 import { parseError } from '../utils/errors';
 import { PRIORITY_LABELS, CURRENCY_LABELS } from '../types';
-import type { WishDto, WishlistDto, WishlistSummaryDto } from '../types';
+import type { WishDto, WishlistDto, WishlistSummaryDto, FulfilledWishBadgeDto, FulfilledBadgeDefinitionDto } from '../types';
 import { Button, buttonVariants } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { Separator } from '@/components/ui/separator';
@@ -74,6 +74,76 @@ function CopyModal({ wishlists, onSelect, open, onClose }: { wishlists: Wishlist
   );
 }
 
+function GiftBadgesModal({ open, onClose, onSubmit, definitions }: {
+  open: boolean;
+  onClose: () => void;
+  onSubmit: (badges: number[]) => Promise<void>;
+  definitions: FulfilledBadgeDefinitionDto[];
+}) {
+  const [selected, setSelected] = useState<number[]>([]);
+  const [submitting, setSubmitting] = useState(false);
+
+  const toggleBadge = (badgeType: number) => {
+    setSelected((prev) => {
+      if (prev.includes(badgeType)) return prev.filter((b) => b !== badgeType);
+      if (prev.length >= 3) return prev;
+      return [...prev, badgeType];
+    });
+  };
+
+  const handleSubmit = async () => {
+    if (selected.length === 0) return;
+    setSubmitting(true);
+    try {
+      await onSubmit(selected);
+    } finally {
+      setSubmitting(false);
+    }
+  };
+
+  const activeDefinitions = definitions.filter((def) => def.isActive);
+
+  return (
+    <Dialog open={open} onOpenChange={onClose}>
+      <DialogContent className="max-w-sm">
+        <DialogTitle>Оцените подарок</DialogTitle>
+        <p className="text-sm text-muted-foreground">Отметьте до 3 характеристик, которые лучше всего описывают впечатление от этого подарка.</p>
+        <div className="flex flex-wrap gap-2 mt-1">
+          {activeDefinitions.map((def) => {
+            const isSelected = selected.includes(def.id);
+            const isDisabled = !isSelected && selected.length >= 3;
+            return (
+              <button
+                key={def.id}
+                onClick={() => !isDisabled && toggleBadge(def.id)}
+                className={[
+                  'px-3 py-1.5 rounded-full text-sm border transition-all',
+                  isSelected
+                    ? 'border-primary bg-primary/10 text-primary font-semibold'
+                    : isDisabled
+                      ? 'border-border bg-background text-muted-foreground opacity-40 cursor-not-allowed'
+                      : 'border-border bg-background text-foreground cursor-pointer hover:border-primary/60',
+                ].join(' ')}
+              >
+                {def.emoji} {def.label}
+              </button>
+            );
+          })}
+        </div>
+        {selected.length >= 3 && (
+          <p className="text-xs text-muted-foreground">Максимум 3 бейджа</p>
+        )}
+        <div className="flex gap-2 justify-end mt-2">
+          <Button variant="ghost" onClick={onClose}>Пропустить</Button>
+          <Button disabled={selected.length === 0 || submitting} onClick={handleSubmit}>
+            {submitting ? 'Отправка...' : 'Отправить'}
+          </Button>
+        </div>
+      </DialogContent>
+    </Dialog>
+  );
+}
+
 export default function WishPage() {
   const { id: wishlistId, wishId } = useParams<{ id: string; wishId: string }>();
   const navigate = useNavigate();
@@ -88,20 +158,32 @@ export default function WishPage() {
   const [showQr, setShowQr] = useState(false);
   const [showCopy, setShowCopy] = useState(false);
   const [copyWishlists, setCopyWishlists] = useState<WishlistSummaryDto[]>([]);
+  const [showGiftBadgesModal, setShowGiftBadgesModal] = useState(false);
+  const [existingGiftBadges, setExistingGiftBadges] = useState<FulfilledWishBadgeDto[] | null>(null);
+  const [fulfilledBadgeDefinitions, setFulfilledBadgeDefinitions] = useState<FulfilledBadgeDefinitionDto[]>([]);
 
-  const myRole = wishlist?.members.find((m) => m.userId === me?.id)?.role ?? null;
+  const myRole = wishlist?.members.find((member) => member.userId === me?.id)?.role ?? null;
   const isOwner = myRole === 2;
   const canEdit = myRole !== null && myRole >= 1;
 
   useEffect(() => {
     if (!wishlistId || !wishId) return;
-    Promise.all([getWish(wishlistId, wishId), getWishlist(wishlistId)])
-      .then(async ([w, wl]) => {
-        setWish(w);
-        setWishlist(wl);
+    Promise.all([getWish(wishlistId, wishId), getWishlist(wishlistId), getFulfilledBadgeDefinitions()])
+      .then(async ([fetchedWish, fetchedWishlist, definitions]) => {
+        setWish(fetchedWish);
+        setWishlist(fetchedWishlist);
+        setFulfilledBadgeDefinitions(definitions);
         if (me) {
-          try { const res = await getMyReservations(1, 100); setIsMineReserved(res.items.some((r) => r.wishId === wishId)); }
+          try { const reservations = await getMyReservations(1, 100); setIsMineReserved(reservations.items.some((reservation) => reservation.wishId === wishId)); }
           catch { /* ignore */ }
+        }
+        if (fetchedWish.isFulfilled && fetchedWish.fulfilledByReserverId && !fetchedWish.hasGiftBadges) {
+          try {
+            const badges = await getGiftBadges(wishlistId, wishId);
+            setExistingGiftBadges(badges);
+          } catch {
+            setExistingGiftBadges([]);
+          }
         }
       })
       .catch((e) => toast.error(parseError(e)))
@@ -111,34 +193,56 @@ export default function WishPage() {
   const handleReserve = async () => {
     if (!wishlistId || !wishId || !wish) return;
     try {
-      if (isMineReserved) { await cancelReservation(wishId); setIsMineReserved(false); setWish((p) => p ? { ...p, isReserved: false } : p); }
-      else { await reserveWish(wishId, wishlistId); setIsMineReserved(true); setWish((p) => p ? { ...p, isReserved: true } : p); }
+      if (isMineReserved) { await cancelReservation(wishId); setIsMineReserved(false); setWish((prev) => prev ? { ...prev, isReserved: false } : prev); }
+      else { await reserveWish(wishId, wishlistId); setIsMineReserved(true); setWish((prev) => prev ? { ...prev, isReserved: true } : prev); }
     } catch (e) { toast.error(parseError(e)); }
   };
 
   const handleFulfill = async () => {
     if (!wishlistId || !wishId || !wish) return;
     try {
-      if (wish.isFulfilled) { await unfulfillWish(wishlistId, wishId); setWish((p) => p ? { ...p, isFulfilled: false } : p); }
-      else { await fulfillWish(wishlistId, wishId); setWish((p) => p ? { ...p, isFulfilled: true } : p); }
+      if (wish.isFulfilled) {
+        await unfulfillWish(wishlistId, wishId);
+        setWish((prev) => prev ? { ...prev, isFulfilled: false } : prev);
+      } else {
+        await fulfillWish(wishlistId, wishId);
+        const refreshedWish = await getWish(wishlistId, wishId);
+        setWish(refreshedWish);
+        if (refreshedWish.fulfilledByReserverId && !refreshedWish.hasGiftBadges) {
+          setShowGiftBadgesModal(true);
+        }
+      }
     } catch (e) { toast.error(parseError(e)); }
+  };
+
+  const handleGiftBadgesSubmit = async (badgeTypes: number[]) => {
+    if (!wishlistId || !wishId) return;
+    try {
+      await addGiftBadges(wishlistId, wishId, badgeTypes);
+      setWish((prev) => prev ? { ...prev, hasGiftBadges: true } : prev);
+      toast.success('Спасибо за оценку!');
+    } catch (e) {
+      toast.error(parseError(e));
+    } finally {
+      setShowGiftBadgesModal(false);
+    }
   };
 
   const handleDuplicate = async () => {
     if (!wishlistId || !wishId) return;
-    try { const r = await duplicateWish(wishlistId, wishId); toast.success('Желание продублировано'); navigate(`/wishlists/${wishlistId}/wishes/${r.wishId}`); }
+    try { const result = await duplicateWish(wishlistId, wishId); toast.success('Желание продублировано'); navigate(`/wishlists/${wishlistId}/wishes/${result.wishId}`); }
     catch (e) { toast.error(parseError(e)); }
   };
 
   const handleOpenCopy = async () => {
-    try { const wls = await getMyWishlists(); setCopyWishlists(wls.filter((wl) => wl.id !== wishlistId)); setShowCopy(true); }
+    try { const wishlists = await getMyWishlists(); setCopyWishlists(wishlists.filter((wl) => wl.id !== wishlistId)); setShowCopy(true); }
     catch (e) { toast.error(parseError(e)); }
   };
 
   const handleCopy = async (targetId: string) => {
     if (!wishlistId || !wishId) return;
     setShowCopy(false);
-    try { const r = await copyWish(wishlistId, wishId, targetId); toast.success('Желание скопировано'); navigate(`/wishlists/${targetId}/wishes/${r.wishId}`); }
+    try { const result = await copyWish(wishlistId, wishId, targetId); toast.success('Желание скопировано'); navigate(`/wishlists/${targetId}/wishes/${result.wishId}`); }
     catch (e) { toast.error(parseError(e)); }
   };
 
@@ -153,7 +257,7 @@ export default function WishPage() {
     setShareLoading(true);
     try {
       const { token } = await regenerateWishShareToken(wishlistId, wishId);
-      setWish((p) => p ? { ...p, shareToken: token } : p);
+      setWish((prev) => prev ? { ...prev, shareToken: token } : prev);
       toast.success('Ссылка обновлена');
     } catch (e) {
       toast.error(parseError(e));
@@ -164,7 +268,7 @@ export default function WishPage() {
 
   const copyShareLink = () => {
     if (!wish?.shareToken) return;
-    navigator.clipboard.writeText(`${FRONTEND_URL}/share/${wish.shareToken}`);
+    navigator.clipboard.writeText(`${window.location.origin}/share/${wish.shareToken}`);
     toast.success('Ссылка скопирована');
   };
 
@@ -216,7 +320,26 @@ export default function WishPage() {
             <a href={wish.url} target="_blank" rel="noopener noreferrer" className={`${buttonVariants({ variant: 'ghost', size: 'sm' })} mb-4`}>🔗 Перейти к товару</a>
           )}
 
-          <Separator className="mb-4" />
+          {existingGiftBadges && existingGiftBadges.length > 0 && (
+            <>
+              <Separator className="mb-4" />
+              <div>
+                <div className="text-xs text-muted-foreground mb-2">Впечатление от подарка</div>
+                <div className="flex flex-wrap gap-1.5">
+                  {existingGiftBadges.map((badge) => {
+                    const def = fulfilledBadgeDefinitions.find((d) => d.id === badge.badgeType);
+                    return (
+                      <span key={badge.badgeType} className="text-sm px-3 py-1 rounded-full bg-primary/10 text-primary border border-primary/20">
+                        {def ? `${def.emoji} ${def.label}` : `Бейдж #${badge.badgeType}`}
+                      </span>
+                    );
+                  })}
+                </div>
+              </div>
+            </>
+          )}
+
+          <Separator className="mb-4 mt-4" />
 
           <div className="flex flex-wrap gap-2">
             {isOwner && (
@@ -243,7 +366,7 @@ export default function WishPage() {
                 <div className="flex items-center gap-2 flex-wrap">
                   <input
                     readOnly
-                    value={`${FRONTEND_URL}/share/${wish.shareToken}`}
+                    value={`${window.location.origin}/share/${wish.shareToken}`}
                     className="flex-1 min-w-0 text-xs bg-muted rounded px-2 py-1.5 border text-muted-foreground"
                   />
                   <Button size="sm" variant="secondary" onClick={copyShareLink}>Копировать</Button>
@@ -259,6 +382,14 @@ export default function WishPage() {
 
       <CopyModal wishlists={copyWishlists} onSelect={handleCopy} open={showCopy} onClose={() => setShowCopy(false)} />
       {wishId && <QrModal url={`${API_URL}/wishlists/${wishlistId}/wishes/${wishId}/qr`} open={showQr} onClose={() => setShowQr(false)} />}
+      {wishlistId && wishId && (
+        <GiftBadgesModal
+          open={showGiftBadgesModal}
+          onClose={() => setShowGiftBadgesModal(false)}
+          onSubmit={handleGiftBadgesSubmit}
+          definitions={fulfilledBadgeDefinitions}
+        />
+      )}
     </div>
   );
 }

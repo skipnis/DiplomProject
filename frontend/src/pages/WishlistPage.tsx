@@ -7,7 +7,7 @@ import { getUserProfile } from '../api/users';
 import { getImageUrl, API_URL } from '../api/client';
 import { useAuth } from '../context/AuthContext';
 import { useToast } from '../components/Toast';
-import { parseError } from '../utils/errors';
+import { parseError, ApiError } from '../utils/errors';
 import { VISIBILITY_LABELS, ROLE_LABELS, PRIORITY_LABELS, getWishlistEmoji } from '../types';
 import type { WishlistDto, WishDto, WishlistMemberRole, UserProfile } from '../types';
 import { Button, buttonVariants } from '@/components/ui/button';
@@ -70,6 +70,8 @@ export default function WishlistPage() {
   const [loading, setLoading] = useState(true);
   const [wishesLoading, setWishesLoading] = useState(false);
   const [showQr, setShowQr] = useState(false);
+  const [accessDenied, setAccessDenied] = useState(false);
+  const [notFound, setNotFound] = useState(false);
   const PAGE_SIZE = 12;
 
   const myRole: WishlistMemberRole | null = wishlist?.members.find((m) => m.userId === me?.id)?.role ?? null;
@@ -109,7 +111,13 @@ export default function WishlistPage() {
         } catch { /* ignore */ }
       }
     } catch (e) {
-      toast.error(parseError(e));
+      if (e instanceof ApiError && (e.status === 403 || e.status === 401)) {
+        setAccessDenied(true);
+      } else if (e instanceof ApiError && e.status === 404) {
+        setNotFound(true);
+      } else {
+        toast.error(parseError(e));
+      }
     } finally {
       setLoading(false);
     }
@@ -180,7 +188,36 @@ export default function WishlistPage() {
   };
 
   if (loading) return <div className="flex items-center justify-center min-h-[200px] text-muted-foreground">Загрузка...</div>;
-  if (!wishlist) return <div className="text-center py-12 text-muted-foreground">Вишлист не найден</div>;
+
+  if (accessDenied) {
+    return (
+      <div className="flex flex-col items-center justify-center min-h-[60vh] text-center px-4">
+        <div className="text-6xl mb-5">🔒</div>
+        <h1 className="text-2xl font-extrabold tracking-tight mb-2">Доступ ограничен</h1>
+        <p className="text-muted-foreground max-w-sm mb-1">
+          Вишлист недоступен. Возможно, вы не в списке друзей владельца или доступ ограничен только для выбранных участников.
+        </p>
+        <p className="text-muted-foreground text-sm mb-6">
+          Попробуйте добавить владельца в друзья или попросите его открыть доступ.
+        </p>
+        <div className="flex gap-3">
+          <Button variant="secondary" onClick={() => navigate(-1)}>← Назад</Button>
+          <Link to="/wishlists" className={buttonVariants()}>Мои вишлисты</Link>
+        </div>
+      </div>
+    );
+  }
+
+  if (notFound || !wishlist) {
+    return (
+      <div className="flex flex-col items-center justify-center min-h-[60vh] text-center px-4">
+        <div className="text-6xl mb-5">🎁</div>
+        <h1 className="text-2xl font-extrabold tracking-tight mb-2">Вишлист не найден</h1>
+        <p className="text-muted-foreground mb-6">Такого вишлиста не существует или он был удалён.</p>
+        <Link to="/wishlists" className={buttonVariants()}>Мои вишлисты</Link>
+      </div>
+    );
+  }
 
   return (
     <div>

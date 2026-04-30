@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
-import { getCatalogCategories, getCatalogItems, getCatalogPriceRange, addWishFromCatalog, rateCatalogItem, unrateCatalogItem } from '../api/catalog';
+import { getCatalogCategories, getCatalogItems, getCatalogPriceRange, addWishFromCatalog } from '../api/catalog';
 import { getMyWishlists } from '../api/wishlists';
 import { getImageUrl } from '../api/client';
 import { useToast } from '../components/Toast';
@@ -13,28 +13,21 @@ import { Dialog, DialogContent, DialogTitle } from '@/components/ui/dialog';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Slider } from '@/components/ui/slider';
 
-function StarRating({ item, onRate }: { item: CatalogItemDto; onRate: (id: string, value: number | null) => void }) {
-  const [hover, setHover] = useState<number | null>(null);
-  const displayed = hover ?? item.myRating ?? 0;
+function ItemBadges({ item }: { item: CatalogItemDto }) {
+  const topBadges = item.badges
+    .filter((badge) => badge.voteCount > 0)
+    .sort((a, b) => b.voteCount - a.voteCount)
+    .slice(0, 3);
+
+  if (topBadges.length === 0) return null;
 
   return (
-    <div className="flex items-center gap-0.5">
-      {[1, 2, 3, 4, 5].map((star) => (
-        <button
-          key={star}
-          className={`text-base leading-none transition-colors ${displayed >= star ? 'text-yellow-400' : 'text-muted-foreground/30'}`}
-          onMouseEnter={() => setHover(star)}
-          onMouseLeave={() => setHover(null)}
-          onClick={() => onRate(item.id, item.myRating === star ? null : star)}
-        >
-          ★
-        </button>
-      ))}
-      {item.ratingCount > 0 && (
-        <span className="text-xs text-muted-foreground ml-1">
-          {item.averageRating?.toFixed(1)} ({item.ratingCount})
+    <div className="flex flex-wrap gap-1 mt-1">
+      {topBadges.map((badge) => (
+        <span key={badge.badgeType} className="text-xs px-1.5 py-0.5 rounded-full bg-primary/8 text-primary border border-primary/20 leading-tight">
+          {badge.emoji} {badge.label}
         </span>
-      )}
+      ))}
     </div>
   );
 }
@@ -82,23 +75,6 @@ export default function CatalogPage() {
   useEffect(() => { if (page > 1) load(page); }, [page]);
 
   const handleSearch = (e: React.FormEvent) => { e.preventDefault(); setSearch(searchInput); };
-
-  const handleRate = async (id: string, value: number | null) => {
-    if (!user) { toast.error('Войдите в аккаунт'); return; }
-    try {
-      if (value === null) {
-        await unrateCatalogItem(id);
-      } else {
-        await rateCatalogItem(id, value);
-      }
-      setData((prev) => prev ? {
-        ...prev,
-        items: prev.items.map((i) => i.id === id ? { ...i, myRating: value } : i),
-      } : prev);
-    } catch (e) {
-      toast.error(parseError(e));
-    }
-  };
 
   const openAddModal = async (item: CatalogItemDto) => {
     if (!user) { toast.error('Войдите в аккаунт'); return; }
@@ -185,10 +161,10 @@ export default function CatalogPage() {
                         <div className="font-semibold text-sm leading-snug line-clamp-2 min-h-[2.5rem]">{item.name}</div>
                         <div className="text-xs text-muted-foreground">{item.categoryName}</div>
                         {item.price !== null && <div className="font-bold text-primary text-sm">{item.price} {item.currency}</div>}
+                        <ItemBadges item={item} />
                       </div>
                     </Link>
                     <div className="px-3 pb-3 flex flex-col gap-1 flex-1">
-                      <StarRating item={item} onRate={handleRate} />
                       {item.wishCount > 0 && (
                         <div className="text-xs text-muted-foreground">{item.wishCount} в вишлистах</div>
                       )}
@@ -227,7 +203,6 @@ export default function CatalogPage() {
                   {wishlists.map((w) => <SelectItem key={w.id} value={w.id}>{w.name}</SelectItem>)}
                 </SelectContent>
               </Select>
-
           }
           <div className="flex gap-2 justify-end">
             <Button variant="ghost" onClick={() => setAddModal(null)}>Отмена</Button>

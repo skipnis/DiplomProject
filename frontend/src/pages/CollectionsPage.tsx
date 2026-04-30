@@ -67,28 +67,6 @@ export default function CollectionsPage() {
     finally { setAdding(false); }
   };
 
-  const ItemGrid = ({ items }: { items: CatalogItemDto[] }) => (
-    <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-4">
-      {items.map((item) => (
-        <div key={item.id} className="rounded-xl border bg-card overflow-hidden flex flex-col hover:shadow-md transition-shadow">
-          {item.imagePath
-            ? <img src={getImageUrl(item.imagePath) ?? ''} alt={item.name} className="w-full h-36 object-contain bg-muted" />
-            : <div className="w-full h-36 bg-muted flex items-center justify-center text-4xl">🛍️</div>
-          }
-          <div className="p-3 flex flex-col flex-1">
-            <div className="font-semibold text-sm leading-snug line-clamp-2 min-h-[2.5rem] mb-1">{item.name}</div>
-            <div className="text-xs text-muted-foreground mb-1">{item.categoryName}</div>
-            <div className="text-xs text-muted-foreground mb-1 min-h-[1rem]">
-              {item.price !== null ? <span className="font-bold text-primary text-sm">{item.price} {item.currency}</span> : null}
-            </div>
-            {item.url && <a href={item.url} target="_blank" rel="noopener noreferrer" className="text-xs text-muted-foreground hover:underline mb-1" onClick={(e) => e.stopPropagation()}>Перейти →</a>}
-            <Button size="sm" className="mt-auto" onClick={() => openAddModal(item)}>В вишлист</Button>
-          </div>
-        </div>
-      ))}
-    </div>
-  );
-
   const AddModal = () => (
     <Dialog open={!!addModal} onOpenChange={() => setAddModal(null)}>
       <DialogContent className="max-w-sm">

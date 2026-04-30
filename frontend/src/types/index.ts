@@ -15,16 +15,8 @@ export const VISIBILITY_LABELS: Record<number, string> = {
   3: '🔒 Приватный',
 };
 
-export const VISIBILITY_ICONS: Record<number, string> = {
-  0: '🌍', 1: '👥', 2: '👤', 3: '🔒',
-};
-
 export const PRIORITY_LABELS: Record<number, string> = {
   0: '—', 1: 'Неплохо бы', 2: 'Хочу', 3: 'Очень хочу', 4: 'Мечта',
-};
-
-export const PRIORITY_CLASS: Record<number, string> = {
-  0: 'priority-None', 1: 'priority-NiceToHave', 2: 'priority-Want', 3: 'priority-ReallyWant', 4: 'priority-Dream',
 };
 
 export const CURRENCY_LABELS: Record<number, string> = {
@@ -123,6 +115,8 @@ export interface WishDto {
   fulfilledAt: string | null;
   isReserved: boolean;
   shareToken: string | null;
+  fulfilledByReserverId: string | null;
+  hasGiftBadges: boolean;
 }
 
 export interface SharedWishResponse {
@@ -207,6 +201,83 @@ export interface CatalogCategoryDto {
   isPublished: boolean;
 }
 
+export type AchievementRuleType = 1 | 2; // SpecificBadgeCount | UniqueBadgeTypes
+
+export interface CatalogBadgeDefinitionDto {
+  id: number;
+  emoji: string;
+  slug: string;
+  label: string;
+  description: string;
+  isActive: boolean;
+}
+
+export interface FulfilledBadgeDefinitionDto {
+  id: number;
+  emoji: string;
+  slug: string;
+  label: string;
+  description: string;
+  isActive: boolean;
+}
+
+export interface AchievementDefinitionAdminDto {
+  id: number;
+  name: string;
+  description: string;
+  emoji: string;
+  ruleType: AchievementRuleType;
+  linkedBadgeTypeId: number | null;
+  threshold: number;
+  order: number;
+  isActive: boolean;
+}
+
+export interface CatalogItemBadgeDto {
+  badgeType: number;
+  emoji: string;
+  slug: string;
+  label: string;
+  voteCount: number;
+  myVote: boolean;
+}
+
+export interface FulfilledWishBadgeDto {
+  badgeType: number;
+  createdAt: string;
+}
+
+export interface UserAchievementDto {
+  definitionId: number;
+  name: string;
+  description: string;
+  emoji: string;
+  progress: number;
+  threshold: number;
+  isEarned: boolean;
+  earnedAt: string | null;
+}
+
+export interface BadgeCountDto {
+  badgeType: number;
+  emoji: string;
+  label: string;
+  count: number;
+}
+
+export interface GiftProfileDto {
+  giftsGiven: number;
+  giftsWithBadges: number;
+  hitRate: number;
+  level: number;
+  levelName: string;
+  nextLevelThreshold: number;
+  achievements: UserAchievementDto[];
+  badgesReceived: BadgeCountDto[];
+}
+
+
+
 export interface CatalogItemDto {
   id: string;
   name: string;
@@ -220,11 +291,9 @@ export interface CatalogItemDto {
   isPublished: boolean;
   createdAt: string;
   updatedAt: string;
-  averageRating: number | null;
-  ratingCount: number;
-  myRating: number | null;
   wishCount: number;
   collectionItemDescription: string | null;
+  badges: CatalogItemBadgeDto[];
 }
 
 export interface CreateCatalogItemRequest {
@@ -304,20 +373,6 @@ export function getWishlistEmoji(w: { emoji: string | null; isSystem: boolean; n
   }
   return '📋';
 }
-
-export const OCCASION_LABELS: Record<string, string> = {
-  birthday: '🎂 День рождения',
-  new_year: '🎆 Новый год',
-  valentine: '💝 День влюблённых',
-  wedding: '💍 Свадьба',
-  anniversary: '🥂 Юбилей',
-  graduation: '🎓 Выпускной',
-  baby_shower: '👶 Рождение ребёнка',
-  housewarming: '🏠 Новоселье',
-  christmas: '🎄 Рождество',
-  easter: '🐣 Пасха',
-  other: '🎁 Другое',
-};
 
 export interface OccasionDto {
   id: string;

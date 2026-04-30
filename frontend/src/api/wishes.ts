@@ -1,5 +1,5 @@
 import { apiGet, apiPost, apiPut, apiDelete, apiPatch, apiPostForm } from './client';
-import type { WishDto, WishPriority, Currency, ParsedWishData, PagedResponse } from '../types';
+import type { WishDto, WishPriority, Currency, ParsedWishData, PagedResponse, FulfilledWishBadgeDto } from '../types';
 
 export function getWishes(wishlistId: string, page = 1, pageSize = 20): Promise<PagedResponse<WishDto>> {
   return apiGet<PagedResponse<WishDto>>(`/wishlists/${wishlistId}/wishes?page=${page}&pageSize=${pageSize}`);
@@ -85,4 +85,12 @@ export function copyWish(wishlistId: string, wishId: string, targetWishlistId: s
 
 export function regenerateWishShareToken(wishlistId: string, wishId: string): Promise<{ token: string }> {
   return apiPost<{ token: string }>(`/wishlists/${wishlistId}/wishes/${wishId}/share/regenerate`, {});
+}
+
+export function addGiftBadges(wishlistId: string, wishId: string, badgeTypes: number[]): Promise<void> {
+  return apiPost<void>(`/wishlists/${wishlistId}/wishes/${wishId}/gift-badges`, { badgeTypes });
+}
+
+export function getGiftBadges(wishlistId: string, wishId: string): Promise<FulfilledWishBadgeDto[]> {
+  return apiGet<FulfilledWishBadgeDto[]>(`/wishlists/${wishlistId}/wishes/${wishId}/gift-badges`);
 }
