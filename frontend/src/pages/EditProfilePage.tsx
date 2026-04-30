@@ -1,17 +1,19 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
-import { updateMyProfile } from '../api/users';
+import { updateMyProfile, uploadAvatar, deleteAvatar } from '../api/users';
 import { useToast } from '../components/Toast';
 import { parseError } from '../utils/errors';
 import { profileSchema, parseZodErrors, type FormErrors } from '../lib/schemas';
 import { parseApiFieldErrors, ApiError } from '../utils/errors';
+import { getImageUrl } from '../api/client';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { Label } from '@/components/ui/label';
 import { Card, CardContent } from '@/components/ui/card';
 import { FieldError } from '@/components/ui/field-error';
+import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 
 export default function EditProfilePage() {
   const { user, refreshUser } = useAuth();
@@ -23,7 +25,10 @@ export default function EditProfilePage() {
   const [bio, setBio] = useState('');
   const [birthDate, setBirthDate] = useState('');
   const [saving, setSaving] = useState(false);
+  const [avatarUploading, setAvatarUploading] = useState(false);
+  const [previewAvatarUrl, setPreviewAvatarUrl] = useState<string | null>(null);
   const [errors, setErrors] = useState<FormErrors>({});
+  const avatarInputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
     if (user) {
@@ -36,6 +41,42 @@ export default function EditProfilePage() {
 
   const clearError = (field: string) => {
     if (errors[field]) setErrors((prev) => ({ ...prev, [field]: '' }));
+  };
+
+  const handleAvatarChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    const localPreview = URL.createObjectURL(file);
+    setPreviewAvatarUrl(localPreview);
+    setAvatarUploading(true);
+
+    try {
+      await uploadAvatar(file);
+      await refreshUser();
+      toast.success('Аватар обновлён');
+    } catch (err) {
+      setPreviewAvatarUrl(null);
+      toast.error(parseError(err));
+    } finally {
+      setAvatarUploading(false);
+      URL.revokeObjectURL(localPreview);
+      if (avatarInputRef.current) avatarInputRef.current.value = '';
+    }
+  };
+
+  const handleDeleteAvatar = async () => {
+    setAvatarUploading(true);
+    try {
+      await deleteAvatar();
+      await refreshUser();
+      setPreviewAvatarUrl(null);
+      toast.success('Аватар удалён');
+    } catch {
+      toast.error('Не удалось удалить аватар');
+    } finally {
+      setAvatarUploading(false);
+    }
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -70,6 +111,49 @@ export default function EditProfilePage() {
       <Card>
         <CardContent className="pt-6">
           <form onSubmit={handleSubmit} className="flex flex-col gap-4">
+            <div className="flex flex-col gap-1.5">
+              <Label>Фото профиля</Label>
+              <div className="flex items-center gap-4">
+                <Avatar className="h-16 w-16">
+                  <AvatarImage
+                    src={previewAvatarUrl ?? getImageUrl(user?.avatarUrl) ?? user?.avatarUrl ?? undefined}
+                    alt={user?.displayName}
+                  />
+                  <AvatarFallback className="bg-primary text-primary-foreground text-xl font-bold">
+                    {user?.displayName[0].toUpperCase()}
+                  </AvatarFallback>
+                </Avatar>
+                <div className="flex gap-2 flex-wrap">
+                  <input
+                    ref={avatarInputRef}
+                    type="file"
+                    accept="image/*"
+                    className="hidden"
+                    onChange={handleAvatarChange}
+                  />
+                  <Button
+                    type="button"
+                    variant="secondary"
+                    size="sm"
+                    disabled={avatarUploading}
+                    onClick={() => avatarInputRef.current?.click()}
+                  >
+                    {avatarUploading ? 'Загрузка...' : 'Загрузить фото'}
+                  </Button>
+                  {user?.avatarUrl && (
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      size="sm"
+                      disabled={avatarUploading}
+                      onClick={handleDeleteAvatar}
+                    >
+                      Удалить
+                    </Button>
+                  )}
+                </div>
+              </div>
+            </div>
             <div className="flex flex-col gap-1.5">
               <Label htmlFor="displayName">Имя</Label>
               <Input

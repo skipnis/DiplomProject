@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { useParams, Link } from 'react-router-dom';
-import { getUserProfile } from '../api/users';
+import { getUserProfile, getUserGiftProfile } from '../api/users';
 import { getUserWishlists } from '../api/wishlists';
 import { sendFriendRequest, acceptFriendRequest, removeFriend, getFriends, getFriendshipRequests } from '../api/friends';
 import { getImageUrl } from '../api/client';
@@ -8,12 +8,84 @@ import { useAuth } from '../context/AuthContext';
 import { useToast } from '../components/Toast';
 import { parseError } from '../utils/errors';
 import { VISIBILITY_LABELS, getWishlistEmoji } from '../types';
-import type { UserProfile, WishlistSummaryDto } from '../types';
+import type { UserProfile, WishlistSummaryDto, GiftProfileDto } from '../types';
 import { Button, buttonVariants } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 
 type FriendStatus = 'none' | 'friends' | 'request_sent' | 'request_received';
+
+const LEVEL_COLORS: Record<number, string> = {
+  1: 'bg-muted text-muted-foreground',
+  2: 'bg-green-100 text-green-700',
+  3: 'bg-blue-100 text-blue-700',
+  4: 'bg-purple-100 text-purple-700',
+  5: 'bg-orange-100 text-orange-700',
+  6: 'bg-yellow-100 text-yellow-800',
+};
+
+function GiftProfileSection({ giftProfile }: { giftProfile: GiftProfileDto }) {
+  const earnedAchievements = giftProfile.achievements.filter((achievement) => achievement.isEarned);
+
+  if (giftProfile.giftsGiven === 0) return null;
+
+  return (
+    <Card className="mb-6">
+      <CardContent className="pt-6 space-y-4">
+        <div className="text-base font-bold">Подарочный профиль</div>
+
+        <div className="flex items-center gap-3 flex-wrap">
+          <span className={`px-3 py-1 rounded-full text-sm font-bold ${LEVEL_COLORS[giftProfile.level] ?? 'bg-muted text-muted-foreground'}`}>
+            {giftProfile.levelName}
+          </span>
+          <div className="flex gap-4 text-sm">
+            <span><span className="font-bold">{giftProfile.giftsGiven}</span> <span className="text-muted-foreground">подарено</span></span>
+            {giftProfile.hitRate > 0 && (
+              <span><span className="font-bold">{Math.round(giftProfile.hitRate * 100)}%</span> <span className="text-muted-foreground">с бейджем</span></span>
+            )}
+            {earnedAchievements.length > 0 && (
+              <span><span className="font-bold">{earnedAchievements.length}</span> <span className="text-muted-foreground">достижений</span></span>
+            )}
+          </div>
+        </div>
+
+        {earnedAchievements.length > 0 && (
+          <div>
+            <div className="text-sm font-semibold mb-2">Достижения</div>
+            <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
+              {earnedAchievements.map((achievement) => (
+                <div key={achievement.definitionId} className="flex items-start gap-2 p-2.5 rounded-lg border bg-card">
+                  <span className="text-xl">{achievement.emoji}</span>
+                  <div>
+                    <div className="text-xs font-semibold">{achievement.name}</div>
+                    <div className="text-xs text-muted-foreground">{achievement.description}</div>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
+
+        {giftProfile.badgesReceived.length > 0 && (
+          <div>
+            <div className="text-sm font-semibold mb-2">Полученные бейджи</div>
+            <div className="flex flex-wrap gap-2">
+              {giftProfile.badgesReceived.map((badgeCount) => (
+                <span
+                  key={badgeCount.badgeType}
+                  className="flex items-center gap-1.5 px-3 py-1 rounded-full text-sm border border-primary/20 bg-primary/5 text-primary"
+                >
+                  {badgeCount.emoji} {badgeCount.label}
+                  <span className="font-bold text-xs">×{badgeCount.count}</span>
+                </span>
+              ))}
+            </div>
+          </div>
+        )}
+      </CardContent>
+    </Card>
+  );
+}
 
 export default function UserProfilePage() {
   const { id } = useParams<{ id: string }>();
@@ -22,22 +94,27 @@ export default function UserProfilePage() {
 
   const [profile, setProfile] = useState<UserProfile | null>(null);
   const [wishlists, setWishlists] = useState<WishlistSummaryDto[]>([]);
+  const [giftProfile, setGiftProfile] = useState<GiftProfileDto | null>(null);
   const [friendStatus, setFriendStatus] = useState<FriendStatus>('none');
   const [loading, setLoading] = useState(true);
   const [actionLoading, setActionLoading] = useState(false);
 
   useEffect(() => {
     if (!id) return;
-    Promise.all([getUserProfile(id), getUserWishlists(id)])
-      .then(([p, wl]) => { setProfile(p); setWishlists(wl); })
+    Promise.all([getUserProfile(id), getUserWishlists(id), getUserGiftProfile(id)])
+      .then(([fetchedProfile, fetchedWishlists, fetchedGiftProfile]) => {
+        setProfile(fetchedProfile);
+        setWishlists(fetchedWishlists);
+        setGiftProfile(fetchedGiftProfile);
+      })
       .catch((e) => toast.error(parseError(e)))
       .finally(() => setLoading(false));
 
     if (me && id !== me.id) {
       Promise.all([getFriends(), getFriendshipRequests()])
         .then(([friends, requests]) => {
-          if (friends.items.some((f) => f.userId === id)) setFriendStatus('friends');
-          else if (requests.items.some((r) => r.userId === id)) setFriendStatus('request_received');
+          if (friends.items.some((friend) => friend.userId === id)) setFriendStatus('friends');
+          else if (requests.items.some((request) => request.userId === id)) setFriendStatus('request_received');
         })
         .catch(() => {});
     }
@@ -82,6 +159,13 @@ export default function UserProfilePage() {
                 <span><span className="font-bold">{profile.receivedCount}</span> <span className="text-muted-foreground">получено</span></span>
                 <span><span className="font-bold">{profile.giftedCount}</span> <span className="text-muted-foreground">подарено</span></span>
               </div>
+              {giftProfile && giftProfile.giftsGiven > 0 && (
+                <div className="mt-2">
+                  <span className={`px-2.5 py-0.5 rounded-full text-xs font-semibold ${LEVEL_COLORS[giftProfile.level] ?? 'bg-muted text-muted-foreground'}`}>
+                    {giftProfile.levelName}
+                  </span>
+                </div>
+              )}
             </div>
             {me && !isMe && (
               <Button
@@ -100,6 +184,8 @@ export default function UserProfilePage() {
         </CardContent>
       </Card>
 
+      {giftProfile && <GiftProfileSection giftProfile={giftProfile} />}
+
       <div className="flex items-center justify-between mb-5">
         <h2 className="text-lg font-bold">Вишлисты</h2>
       </div>
@@ -111,14 +197,14 @@ export default function UserProfilePage() {
         </div>
       ) : (
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-          {wishlists.map((w) => (
-            <Link key={w.id} to={`/wishlists/${w.id}`} className="block rounded-xl border bg-card p-5 hover:shadow-md hover:-translate-y-0.5 transition-all">
-              <div className="text-3xl mb-2">{getWishlistEmoji(w)}</div>
-              <div className="font-bold text-sm">{w.name}</div>
+          {wishlists.map((wishlist) => (
+            <Link key={wishlist.id} to={`/wishlists/${wishlist.id}`} className="block rounded-xl border bg-card p-5 hover:shadow-md hover:-translate-y-0.5 transition-all">
+              <div className="text-3xl mb-2">{getWishlistEmoji(wishlist)}</div>
+              <div className="font-bold text-sm">{wishlist.name}</div>
               <div className="flex gap-3 mt-2 text-xs text-muted-foreground">
-                <span>{w.wishCount} желаний</span>
-                {w.fulfilledWishCount > 0 && <span className="text-green-600 font-medium">✓ {w.fulfilledWishCount} исполнено</span>}
-                <span>{VISIBILITY_LABELS[w.visibility]}</span>
+                <span>{wishlist.wishCount} желаний</span>
+                {wishlist.fulfilledWishCount > 0 && <span className="text-green-600 font-medium">✓ {wishlist.fulfilledWishCount} исполнено</span>}
+                <span>{VISIBILITY_LABELS[wishlist.visibility]}</span>
               </div>
             </Link>
           ))}

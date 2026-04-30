@@ -1,5 +1,5 @@
-import { apiGet, apiPut, apiPost, apiDelete } from './client';
-import type { MyProfile, UserProfile, UserSearchResult } from '../types';
+import { apiGet, apiPut, apiPost, apiDelete, apiPostForm } from './client';
+import type { MyProfile, UserProfile, UserSearchResult, GiftProfileDto } from '../types';
 
 export function getMyProfile(): Promise<MyProfile> {
   return apiGet<MyProfile>('/users/me');
@@ -30,6 +30,24 @@ export function disconnectGoogleCalendar(): Promise<void> {
   return apiDelete<void>('/users/me/google-calendar');
 }
 
+export function uploadAvatar(file: File): Promise<{ avatarUrl: string }> {
+  const formData = new FormData();
+  formData.append('file', file);
+  return apiPostForm<{ avatarUrl: string }>('/users/me/avatar', formData);
+}
+
+export function deleteAvatar(): Promise<void> {
+  return apiDelete<void>('/users/me/avatar');
+}
+
 export function deleteMyAccount(): Promise<void> {
   return apiDelete<void>('/users/me');
+}
+
+export function getMyGiftProfile(): Promise<GiftProfileDto> {
+  return apiGet<GiftProfileDto>('/users/me/gift-profile');
+}
+
+export function getUserGiftProfile(id: string): Promise<GiftProfileDto> {
+  return apiGet<GiftProfileDto>(`/users/${id}/gift-profile`);
 }
