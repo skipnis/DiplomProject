@@ -1,8 +1,10 @@
 using Wishapp.Web.Infrastructure.Validation;
 using Wishapp.Web.Users.Features.ConnectGoogleCalendar;
+using Wishapp.Web.Users.Features.DeleteAvatar;
 using Wishapp.Web.Users.Features.DeleteMyAccount;
 using Wishapp.Web.Users.Features.UpdateProfile;
 using Wishapp.Web.Users.Features.SendOtp;
+using Wishapp.Web.Users.Features.UploadAvatar;
 using Wishapp.Web.Users.Features.VerifyOtp;
 
 namespace Wishapp.Web.Users;
@@ -37,6 +39,11 @@ public static partial class UsersEndpoints
             .AddEndpointFilter<ValidationFilter<ConnectGoogleCalendarRequest>>();
 
         usersEndpoints.MapDelete("/me/google-calendar", DisconnectGoogleCalendar).Produces(401);
+
+        usersEndpoints.MapPost("/me/avatar", UploadAvatar).Produces(401)
+            .DisableAntiforgery();
+
+        usersEndpoints.MapDelete("/me/avatar", DeleteAvatar).Produces(401);
 
         usersEndpoints.MapDelete("/me", DeleteMyAccount).Produces(401);
 

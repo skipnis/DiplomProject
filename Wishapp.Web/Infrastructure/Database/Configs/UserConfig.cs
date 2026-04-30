@@ -28,6 +28,10 @@ public class UserConfig : IEntityTypeConfiguration<User>
             .HasMaxLength(500)
             .HasColumnType("text");
 
+        builder.Property(u => u.AvatarPath)
+            .HasMaxLength(200)
+            .HasColumnType("text");
+
         builder.Property(u => u.Bio)
             .HasMaxLength(500)
             .HasColumnType("text");

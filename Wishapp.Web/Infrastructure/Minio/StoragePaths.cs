@@ -10,4 +10,7 @@ public static class StoragePaths
 
     public static string CatalogCollectionCover(Guid collectionId) =>
         $"catalog/collections/{collectionId}/cover";
+
+    public static string UserAvatar(Guid userId) =>
+        $"users/{userId}/avatar";
 }

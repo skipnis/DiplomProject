@@ -7,6 +7,7 @@ public class User
     public required string DisplayName { get; set; }
     public string? Username { get; set; }
     public string? AvatarUrl { get; set; }
+    public string? AvatarPath { get; set; }
     public string? Bio { get; set; }
     public DateOnly? BirthDate { get; set; }
     public DateTimeOffset CreatedAt { get; set; }
