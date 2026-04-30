@@ -2,6 +2,7 @@ using Wishapp.Web.Infrastructure.Validation;
 using Wishapp.Web.Users.Features.ConnectGoogleCalendar;
 using Wishapp.Web.Users.Features.DeleteAvatar;
 using Wishapp.Web.Users.Features.DeleteMyAccount;
+using Wishapp.Web.Users.Features.RequestDeleteMyAccount;
 using Wishapp.Web.Users.Features.UpdateProfile;
 using Wishapp.Web.Users.Features.SendOtp;
 using Wishapp.Web.Users.Features.UploadAvatar;
@@ -44,6 +45,8 @@ public static partial class UsersEndpoints
             .DisableAntiforgery();
 
         usersEndpoints.MapDelete("/me/avatar", DeleteAvatar).Produces(401);
+
+        usersEndpoints.MapPost("/me/delete-confirmation", RequestAccountDeletion).Produces(401);
 
         usersEndpoints.MapDelete("/me", DeleteMyAccount).Produces(401);
 

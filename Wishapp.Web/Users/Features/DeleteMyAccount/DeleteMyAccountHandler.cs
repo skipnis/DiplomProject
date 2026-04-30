@@ -1,3 +1,5 @@
+using System.Security.Cryptography;
+using System.Text;
 using Microsoft.EntityFrameworkCore;
 using Wishapp.Web.Common.Interfaces;
 using Wishapp.Web.Common.Types;
@@ -19,6 +21,9 @@ public sealed class DeleteMyAccountHandler(
     IStorageService storageService)
     : ICommandHandler<DeleteMyAccountCommand>
 {
+    private static readonly Error InvalidCode =
+        Error.Unauthorized("Otp.InvalidCode", "Invalid or expired code.");
+
     public async Task<Result> HandleAsync(DeleteMyAccountCommand command, CancellationToken ct = default)
     {
         var user = await db.Users.FirstOrDefaultAsync(u => u.Id == command.UserId, ct);
@@ -26,10 +31,32 @@ public sealed class DeleteMyAccountHandler(
         if (user is null)
             return Error.NotFound("Users.NotFound", "User not found");
 
-        if (user.AvatarPath is not null)
+        var email = user.Email.Trim().ToLowerInvariant();
+        var codeHash = HashCode(command.Code);
+
+        var otp = await db.EmailOtps
+            .Where(o => o.Email == email && !o.UsedAt.HasValue)
+            .OrderByDescending(o => o.CreatedAt)
+            .FirstOrDefaultAsync(ct);
+
+        if (otp is null || otp.IsExpired)
+            return InvalidCode;
+
+        if (otp.CodeHash != codeHash)
         {
-            await storageService.DeleteAsync(user.AvatarPath, ct);
+            otp.AttemptCount++;
+            await db.SaveChangesAsync(ct);
+            return InvalidCode;
         }
+
+        if (!otp.IsValid)
+            return InvalidCode;
+
+        otp.UsedAt = DateTime.UtcNow;
+        await db.SaveChangesAsync(ct);
+
+        if (user.AvatarPath is not null)
+            await storageService.DeleteAsync(user.AvatarPath, ct);
 
         await reservationsApi.DeleteUserDataAsync(command.UserId, ct);
         await gamificationApi.DeleteUserDataAsync(command.UserId, ct);
@@ -56,5 +83,11 @@ public sealed class DeleteMyAccountHandler(
         await db.SaveChangesAsync(ct);
 
         return Result.Success();
+    }
+
+    private static string HashCode(string code)
+    {
+        var hash = SHA256.HashData(Encoding.UTF8.GetBytes(code));
+        return Convert.ToBase64String(hash);
     }
 }

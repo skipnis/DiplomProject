@@ -40,8 +40,12 @@ export function deleteAvatar(): Promise<void> {
   return apiDelete<void>('/users/me/avatar');
 }
 
-export function deleteMyAccount(): Promise<void> {
-  return apiDelete<void>('/users/me');
+export function requestAccountDeletion(): Promise<void> {
+  return apiPost<void>('/users/me/delete-confirmation');
+}
+
+export function deleteMyAccount(code: string): Promise<void> {
+  return apiDelete<void>('/users/me', { code });
 }
 
 export function getMyGiftProfile(): Promise<GiftProfileDto> {

@@ -2,30 +2,28 @@ import { useEffect, useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useGoogleLogin } from '@react-oauth/google';
 import { useAuth } from '../context/AuthContext';
-import { getMyWishlists } from '../api/wishlists';
-import { connectGoogleCalendar, disconnectGoogleCalendar, deleteMyAccount, getUserProfile, getMyGiftProfile } from '../api/users';
+import { getMyWishlists, getMyFulfilledWishes } from '../api/wishlists';
+import { connectGoogleCalendar, disconnectGoogleCalendar, deleteMyAccount, requestAccountDeletion, getUserProfile, getMyGiftProfile } from '../api/users';
 import { syncAllEvents } from '../api/events';
 import { getImageUrl } from '../api/client';
 import { useToast } from '../components/Toast';
 import { parseError } from '../utils/errors';
-import { VISIBILITY_LABELS, getWishlistEmoji } from '../types';
-import type { WishlistSummaryDto, UserProfile, GiftProfileDto } from '../types';
+import { VISIBILITY_LABELS, CURRENCY_LABELS, getWishlistEmoji } from '../types';
+import type { WishlistSummaryDto, UserProfile, GiftProfileDto, FulfilledWishRecordDto } from '../types';
 import { Button, buttonVariants } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { Input } from '@/components/ui/input';
 import {
-  AlertDialog,
-  AlertDialogAction,
-  AlertDialogCancel,
-  AlertDialogContent,
-  AlertDialogDescription,
-  AlertDialogFooter,
-  AlertDialogHeader,
-  AlertDialogTitle,
-  AlertDialogTrigger,
-} from '@/components/ui/alert-dialog';
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from '@/components/ui/dialog';
 
 const LEVEL_COLORS: Record<number, string> = {
   1: 'bg-muted text-muted-foreground',
@@ -121,17 +119,22 @@ export default function ProfilePage() {
   const [wishlists, setWishlists] = useState<WishlistSummaryDto[]>([]);
   const [stats, setStats] = useState<Pick<UserProfile, 'receivedCount' | 'giftedCount'> | null>(null);
   const [giftProfile, setGiftProfile] = useState<GiftProfileDto | null>(null);
+  const [fulfilledWishes, setFulfilledWishes] = useState<FulfilledWishRecordDto[]>([]);
   const [loading, setLoading] = useState(true);
   const [calendarLoading, setCalendarLoading] = useState(false);
   const [deleteLoading, setDeleteLoading] = useState(false);
+  const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
+  const [deleteStep, setDeleteStep] = useState<'confirm' | 'code'>('confirm');
+  const [deleteCode, setDeleteCode] = useState('');
 
   useEffect(() => {
     if (!user) return;
-    Promise.all([getMyWishlists(), getUserProfile(user.id), getMyGiftProfile()])
-      .then(([fetchedWishlists, profile, fetchedGiftProfile]) => {
+    Promise.all([getMyWishlists(), getUserProfile(user.id), getMyGiftProfile(), getMyFulfilledWishes()])
+      .then(([fetchedWishlists, profile, fetchedGiftProfile, fetchedFulfilledWishes]) => {
         setWishlists(fetchedWishlists);
         setStats({ receivedCount: profile.receivedCount, giftedCount: profile.giftedCount });
         setGiftProfile(fetchedGiftProfile);
+        setFulfilledWishes(fetchedFulfilledWishes);
       })
       .finally(() => setLoading(false));
   }, [user?.id]);
@@ -155,15 +158,36 @@ export default function ProfilePage() {
     onError: () => toast.error('Не удалось подключить Google Calendar'),
   });
 
-  async function handleDeleteAccount() {
+  async function handleRequestDeletion() {
     setDeleteLoading(true);
     try {
-      await deleteMyAccount();
+      await requestAccountDeletion();
+      setDeleteStep('code');
+    } catch (e) {
+      toast.error(parseError(e));
+    } finally {
+      setDeleteLoading(false);
+    }
+  }
+
+  async function handleConfirmDelete() {
+    if (deleteCode.length !== 6) return;
+    setDeleteLoading(true);
+    try {
+      await deleteMyAccount(deleteCode);
       await logout();
       navigate('/');
     } catch (e) {
       toast.error(parseError(e));
       setDeleteLoading(false);
+    }
+  }
+
+  function handleDeleteDialogOpenChange(open: boolean) {
+    setDeleteDialogOpen(open);
+    if (!open) {
+      setDeleteStep('confirm');
+      setDeleteCode('');
     }
   }
 
@@ -217,6 +241,7 @@ export default function ProfilePage() {
       <Tabs defaultValue="profile">
         <TabsList className="mb-5 w-full">
           <TabsTrigger value="profile" className="flex-1">Профиль</TabsTrigger>
+          <TabsTrigger value="history" className="flex-1">История</TabsTrigger>
           <TabsTrigger value="settings" className="flex-1">Настройки</TabsTrigger>
         </TabsList>
 
@@ -265,6 +290,59 @@ export default function ProfilePage() {
           )}
         </TabsContent>
 
+        <TabsContent value="history">
+          {loading ? (
+            <p className="text-sm text-muted-foreground">Загрузка...</p>
+          ) : fulfilledWishes.length === 0 ? (
+            <div className="text-center py-16">
+              <div className="text-4xl mb-3">🎁</div>
+              <p className="font-semibold mb-1">История пуста</p>
+              <p className="text-sm text-muted-foreground">Здесь будут появляться исполненные желания — даже если вишлист удалят.</p>
+            </div>
+          ) : (
+            <div className="space-y-3">
+              {fulfilledWishes.map((record) => {
+                const imageUrl = getImageUrl(record.imagePath);
+                return (
+                  <Card key={record.id}>
+                    <CardContent className="pt-5">
+                      <div className="flex gap-4">
+                        {imageUrl && (
+                          <img
+                            src={imageUrl}
+                            alt={record.wishName}
+                            className="w-16 h-16 rounded-lg object-cover flex-shrink-0 bg-muted"
+                          />
+                        )}
+                        <div className="flex-1 min-w-0">
+                          <div className="font-semibold text-sm truncate">{record.wishName}</div>
+                          {record.wishDescription && (
+                            <div className="text-xs text-muted-foreground mt-0.5 line-clamp-2">{record.wishDescription}</div>
+                          )}
+                          <div className="flex flex-wrap gap-x-4 gap-y-1 mt-2 text-xs text-muted-foreground">
+                            {record.price != null && record.currency != null && (
+                              <span className="font-semibold text-primary">
+                                {record.price} {CURRENCY_LABELS[record.currency]}
+                              </span>
+                            )}
+                            <span>из «{record.wishlistName}»</span>
+                            {record.gifterDisplayName && (
+                              <span>подарил <span className="font-medium text-foreground">{record.gifterDisplayName}</span></span>
+                            )}
+                          </div>
+                          <div className="text-xs text-muted-foreground mt-1">
+                            {new Date(record.fulfilledAt).toLocaleDateString('ru-RU', { day: 'numeric', month: 'long', year: 'numeric' })}
+                          </div>
+                        </div>
+                      </div>
+                    </CardContent>
+                  </Card>
+                );
+              })}
+            </div>
+          )}
+        </TabsContent>
+
         <TabsContent value="settings" className="space-y-4">
           <Card>
             <CardContent className="pt-6 space-y-3">
@@ -301,23 +379,61 @@ export default function ProfilePage() {
 
           <Card>
             <CardContent className="pt-6">
-              <AlertDialog>
-                <AlertDialogTrigger render={<Button variant="destructive" size="sm" disabled={deleteLoading}>Удалить аккаунт</Button>} />
-                <AlertDialogContent>
-                  <AlertDialogHeader>
-                    <AlertDialogTitle>Удалить аккаунт?</AlertDialogTitle>
-                    <AlertDialogDescription>
-                      Это действие необратимо. Все ваши вишлисты, желания и данные будут удалены навсегда.
-                    </AlertDialogDescription>
-                  </AlertDialogHeader>
-                  <AlertDialogFooter>
-                    <AlertDialogCancel>Отмена</AlertDialogCancel>
-                    <AlertDialogAction onClick={handleDeleteAccount} className="bg-destructive text-destructive-foreground hover:bg-destructive/90">
-                      Удалить
-                    </AlertDialogAction>
-                  </AlertDialogFooter>
-                </AlertDialogContent>
-              </AlertDialog>
+              <Button variant="destructive" size="sm" onClick={() => setDeleteDialogOpen(true)}>
+                Удалить аккаунт
+              </Button>
+              <Dialog open={deleteDialogOpen} onOpenChange={handleDeleteDialogOpenChange}>
+                <DialogContent>
+                  {deleteStep === 'confirm' ? (
+                    <>
+                      <DialogHeader>
+                        <DialogTitle>Удалить аккаунт?</DialogTitle>
+                        <DialogDescription>
+                          Это действие необратимо. Все вишлисты, желания и данные будут удалены навсегда.
+                          На ваш email придёт код подтверждения.
+                        </DialogDescription>
+                      </DialogHeader>
+                      <DialogFooter>
+                        <Button variant="outline" onClick={() => handleDeleteDialogOpenChange(false)}>
+                          Отмена
+                        </Button>
+                        <Button variant="destructive" onClick={handleRequestDeletion} disabled={deleteLoading}>
+                          {deleteLoading ? 'Отправка...' : 'Получить код'}
+                        </Button>
+                      </DialogFooter>
+                    </>
+                  ) : (
+                    <>
+                      <DialogHeader>
+                        <DialogTitle>Введите код подтверждения</DialogTitle>
+                        <DialogDescription>
+                          Код отправлен на {user.email}. Введите его, чтобы подтвердить удаление.
+                        </DialogDescription>
+                      </DialogHeader>
+                      <Input
+                        value={deleteCode}
+                        onChange={(e) => setDeleteCode(e.target.value)}
+                        placeholder="000000"
+                        maxLength={6}
+                        inputMode="numeric"
+                        autoFocus
+                      />
+                      <DialogFooter>
+                        <Button variant="outline" onClick={() => handleDeleteDialogOpenChange(false)}>
+                          Отмена
+                        </Button>
+                        <Button
+                          variant="destructive"
+                          onClick={handleConfirmDelete}
+                          disabled={deleteLoading || deleteCode.length !== 6}
+                        >
+                          {deleteLoading ? 'Удаление...' : 'Удалить аккаунт'}
+                        </Button>
+                      </DialogFooter>
+                    </>
+                  )}
+                </DialogContent>
+              </Dialog>
             </CardContent>
           </Card>
         </TabsContent>
