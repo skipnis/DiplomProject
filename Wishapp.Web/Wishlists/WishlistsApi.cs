@@ -195,5 +195,9 @@ public sealed class WishlistsApi(ApplicationDbContext db) : IWishlistsApi
         await db.WishlistMembers
             .Where(m => m.UserId == userId)
             .ExecuteDeleteAsync(ct);
+
+        await db.FulfilledWishRecords
+            .Where(r => r.OwnerId == userId)
+            .ExecuteDeleteAsync(ct);
     }
 }

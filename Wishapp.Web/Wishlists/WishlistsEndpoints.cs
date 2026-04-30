@@ -85,6 +85,8 @@ public static partial class WishlistsEndpoints
 
         wishlists.MapPost("/{id:guid}/wishes/{wishId:guid}/share/regenerate", RegenerateWishShareToken);
 
+        wishlists.MapGet("/fulfilled", GetMyFulfilledWishes);
+
         return app;
     }
 }

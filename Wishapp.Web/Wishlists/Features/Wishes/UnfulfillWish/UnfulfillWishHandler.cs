@@ -34,6 +34,10 @@ public sealed class UnfulfillWishHandler(ApplicationDbContext db)
             return result.Error;
         }
 
+        await db.FulfilledWishRecords
+            .Where(r => r.WishId == command.WishId)
+            .ExecuteDeleteAsync(ct);
+
         await db.SaveChangesAsync(ct);
 
         return Result.Success();

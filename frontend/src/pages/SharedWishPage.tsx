@@ -1,14 +1,10 @@
 import { useEffect, useState } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import { getSharedWish } from '../api/share';
-import { reserveWish, cancelReservation, getMyReservations } from '../api/reservations';
 import { getImageUrl } from '../api/client';
-import { useAuth } from '../context/AuthContext';
-import { useToast } from '../components/Toast';
-import { parseError } from '../utils/errors';
 import { PRIORITY_LABELS, CURRENCY_LABELS } from '../types';
 import type { SharedWishResponse } from '../types';
-import { Button, buttonVariants } from '@/components/ui/button';
+import { buttonVariants } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { Separator } from '@/components/ui/separator';
 
@@ -22,46 +18,18 @@ const PRIORITY_BADGE: Record<number, string> = {
 
 export default function SharedWishPage() {
   const { token } = useParams<{ token: string }>();
-  const { user: me } = useAuth();
-  const toast = useToast();
 
   const [wish, setWish] = useState<SharedWishResponse | null>(null);
-  const [isMineReserved, setIsMineReserved] = useState(false);
   const [loading, setLoading] = useState(true);
   const [notFound, setNotFound] = useState(false);
 
   useEffect(() => {
     if (!token) return;
     getSharedWish(token)
-      .then(async (w) => {
-        setWish(w);
-        if (me) {
-          try {
-            const res = await getMyReservations(1, 100);
-            setIsMineReserved(res.items.some((r) => r.wishId === w.id));
-          } catch { /* ignore */ }
-        }
-      })
+      .then((w) => setWish(w))
       .catch(() => setNotFound(true))
       .finally(() => setLoading(false));
-  }, [token, me]);
-
-  const handleReserve = async () => {
-    if (!wish) return;
-    try {
-      if (isMineReserved) {
-        await cancelReservation(wish.id);
-        setIsMineReserved(false);
-        setWish((p) => p ? { ...p, isReserved: false } : p);
-      } else {
-        await reserveWish(wish.id, wish.wishlistId);
-        setIsMineReserved(true);
-        setWish((p) => p ? { ...p, isReserved: true } : p);
-      }
-    } catch (e) {
-      toast.error(parseError(e));
-    }
-  };
+  }, [token]);
 
   if (loading) return <div className="flex items-center justify-center min-h-[200px] text-muted-foreground">Загрузка...</div>;
 
@@ -134,21 +102,9 @@ export default function SharedWishPage() {
 
           <Separator className="mb-4" />
 
-          {me && !wish.isFulfilled && (
-            <Button
-              variant={isMineReserved ? 'destructive' : wish.isReserved ? 'ghost' : 'default'}
-              onClick={handleReserve}
-              disabled={wish.isReserved && !isMineReserved}
-            >
-              {isMineReserved ? 'Отменить бронирование' : wish.isReserved ? 'Уже забронировано' : 'Забронировать'}
-            </Button>
-          )}
-
-          {!me && !wish.isFulfilled && (
-            <Link to="/login" className={buttonVariants()}>
-              Войти чтобы забронировать
-            </Link>
-          )}
+          <Link to={`/wishlists/${wish.wishlistId}`} className={buttonVariants({ variant: 'secondary' })}>
+            Открыть вишлист
+          </Link>
         </CardContent>
       </Card>
     </div>

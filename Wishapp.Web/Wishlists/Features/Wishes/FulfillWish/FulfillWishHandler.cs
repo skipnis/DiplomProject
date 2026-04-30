@@ -44,21 +44,35 @@ public sealed class FulfillWishHandler(
             return result.Error;
         }
 
+        var fulfilledWish = wishlist.Wishes.First(w => w.Id == command.WishId);
+
+        var record = FulfilledWishRecord.Create(
+            command.WishId,
+            wishlist.OwnerId,
+            reserverId,
+            fulfilledWish.Name,
+            fulfilledWish.Description,
+            fulfilledWish.Price,
+            fulfilledWish.Currency,
+            fulfilledWish.ImagePath,
+            wishlist.Name,
+            fulfilledWish.FulfilledAt!.Value);
+
+        db.FulfilledWishRecords.Add(record);
+
         await db.SaveChangesAsync(ct);
 
         await reservationsApi.DeleteReservationForWishAsync(command.WishId, ct);
 
         if (reserverId.HasValue)
         {
-            var wish = wishlist.Wishes.FirstOrDefault(w => w.Id == command.WishId);
-
             var ownerUsernames = await usersApi.GetUsernamesAsync([wishlist.OwnerId], ct);
             var ownerName = ownerUsernames.GetValueOrDefault(wishlist.OwnerId);
 
             await notificationsApi.EnqueueAsync(reserverId.Value, NotificationType.WishFulfilled, new
             {
                 wishId = command.WishId,
-                wishName = wish?.Name,
+                wishName = fulfilledWish.Name,
                 wishlistOwnerId = wishlist.OwnerId,
                 wishlistOwnerDisplayName = ownerName,
                 wishlistId = command.WishlistId,

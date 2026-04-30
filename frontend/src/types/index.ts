@@ -388,3 +388,17 @@ export interface NotificationDto {
   isRead: boolean;
   createdAt: string;
 }
+
+export interface FulfilledWishRecordDto {
+  id: string;
+  wishId: string;
+  gifterId: string | null;
+  gifterDisplayName: string | null;
+  wishName: string;
+  wishDescription: string | null;
+  price: number | null;
+  currency: Currency | null;
+  imagePath: string | null;
+  wishlistName: string;
+  fulfilledAt: string;
+}

@@ -7,6 +7,7 @@ import type {
   WishlistMemberDto,
   WishlistMemberRole,
   PagedResponse,
+  FulfilledWishRecordDto,
 } from '../types';
 
 export async function getMyWishlists(): Promise<WishlistSummaryDto[]> {
@@ -72,4 +73,8 @@ export function updateMemberRole(
   customRoleName: string | null,
 ): Promise<void> {
   return apiPut<void>(`/wishlists/${id}/members/${userId}/role`, { role, customRoleName });
+}
+
+export function getMyFulfilledWishes(): Promise<FulfilledWishRecordDto[]> {
+  return apiGet<FulfilledWishRecordDto[]>('/wishlists/fulfilled');
 }

@@ -25,6 +25,7 @@ public class ApplicationDbContext(
     public DbSet<Wishlist> Wishlists { get; set; }
     public DbSet<WishlistMember> WishlistMembers { get; set; }
     public DbSet<Wish> Wishes { get; set; }
+    public DbSet<FulfilledWishRecord> FulfilledWishRecords { get; set; }
 
     public DbSet<WishReservation> WishReservations { get; set; }
 
