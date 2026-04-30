@@ -5,13 +5,15 @@ using Wishapp.Web.Friendships;
 using Wishapp.Web.Infrastructure.Database;
 using Wishapp.Web.Notifications;
 using Wishapp.Web.Notifications.Entities;
+using Wishapp.Web.Users;
 
 namespace Wishapp.Web.Wishlists.Features.Members.AddMembers;
 
 public sealed class AddMembersHandler(
     ApplicationDbContext db,
     IFriendshipsApi friendshipsApi,
-    INotificationsApi notificationsApi)
+    INotificationsApi notificationsApi,
+    IUsersApi usersApi)
     : ICommandHandler<AddMembersCommand>
 {
     public async Task<Result> HandleAsync(
@@ -30,10 +32,7 @@ public sealed class AddMembersHandler(
 
         var userIds = command.Members.Select(m => m.UserId).ToList();
 
-        var existingIds = await db.Users
-            .Where(u => userIds.Contains(u.Id))
-            .Select(u => u.Id)
-            .ToListAsync(ct);
+        var existingIds = await usersApi.FilterExistingIdsAsync(userIds, ct);
 
         var missingId = userIds.FirstOrDefault(id => !existingIds.Contains(id));
 
@@ -65,10 +64,8 @@ public sealed class AddMembersHandler(
 
         await db.SaveChangesAsync(ct);
 
-        var ownerName = await db.Users.AsNoTracking()
-            .Where(u => u.Id == command.OwnerId)
-            .Select(u => u.DisplayName)
-            .FirstOrDefaultAsync(ct);
+        var ownerUsernames = await usersApi.GetUsernamesAsync([command.OwnerId], ct);
+        var ownerName = ownerUsernames.GetValueOrDefault(command.OwnerId);
 
         foreach (var invite in command.Members)
         {

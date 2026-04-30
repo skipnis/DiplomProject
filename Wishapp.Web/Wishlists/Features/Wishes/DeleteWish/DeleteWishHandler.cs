@@ -1,12 +1,16 @@
 using Microsoft.EntityFrameworkCore;
 using Wishapp.Web.Common.Interfaces;
 using Wishapp.Web.Common.Types;
+using Wishapp.Web.Gamification;
 using Wishapp.Web.Infrastructure.Database;
 using Wishapp.Web.Infrastructure.Interfaces;
 
 namespace Wishapp.Web.Wishlists.Features.Wishes.DeleteWish;
 
-public sealed class DeleteWishHandler(ApplicationDbContext db, IStorageService storageService)
+public sealed class DeleteWishHandler(
+    ApplicationDbContext db,
+    IStorageService storageService,
+    IGamificationApi gamificationApi)
     : ICommandHandler<DeleteWishCommand>
 {
     public async Task<Result> HandleAsync(
@@ -25,9 +29,10 @@ public sealed class DeleteWishHandler(ApplicationDbContext db, IStorageService s
         if (wish is null)
             return Error.NotFound("Wishes.NotFound", "Wish not found");
 
-        // Удаляем картинку из MinIO если есть
         if (wish.ImagePath is not null)
             await storageService.DeleteAsync(wish.ImagePath, ct);
+
+        await gamificationApi.DeleteBadgesForWishAsync(command.WishId, ct);
 
         var result = wishlist.RemoveWish(command.WishId);
 

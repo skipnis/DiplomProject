@@ -18,8 +18,6 @@ public sealed class CatalogItem
     public DateTimeOffset CreatedAt { get; private set; }
     public DateTimeOffset UpdatedAt { get; private set; }
 
-    public ICollection<CatalogItemRating> Ratings { get; private set; } = [];
-
     private CatalogItem() { }
 
     public static CatalogItem Create(

@@ -33,7 +33,7 @@ public sealed class GetMyProfileHandler(
             user.DisplayName,
             user.Username,
             user.Email,
-            user.AvatarUrl,
+            user.AvatarPath ?? user.AvatarUrl,
             user.Bio ?? string.Empty,
             user.BirthDate,
             isGoogleCalendarConnected,

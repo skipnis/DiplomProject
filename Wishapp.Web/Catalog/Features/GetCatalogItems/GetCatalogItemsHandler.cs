@@ -4,18 +4,19 @@ using Wishapp.Web.Catalog.Dtos;
 using Wishapp.Web.Common.Extensions;
 using Wishapp.Web.Common.Interfaces;
 using Wishapp.Web.Common.Types;
+using Wishapp.Web.Gamification;
 using Wishapp.Web.Infrastructure.Database;
 
 namespace Wishapp.Web.Catalog.Features.GetCatalogItems;
 
-public sealed class GetCatalogItemsHandler(ApplicationDbContext db)
+public sealed class GetCatalogItemsHandler(ApplicationDbContext db, IGamificationApi gamification)
     : IQueryHandler<GetCatalogItemsQuery, PagedResponse<CatalogItemDto>>
 {
     public async Task<Result<PagedResponse<CatalogItemDto>>> HandleAsync(
         GetCatalogItemsQuery query,
         CancellationToken ct = default)
     {
-        var result = await db.CatalogItems
+        var itemQuery = db.CatalogItems
             .AsNoTracking()
             .Include(i => i.Category)
             .Where(i => i.IsPublished)
@@ -25,20 +26,38 @@ public sealed class GetCatalogItemsHandler(ApplicationDbContext db)
                     .Matches(EF.Functions.WebSearchToTsQuery("russian", query.Filter.Search!)))
             .WhereIf(query.Filter.MinPrice.HasValue, i => i.Price >= query.Filter.MinPrice!.Value)
             .WhereIf(query.Filter.MaxPrice.HasValue, i => i.Price <= query.Filter.MaxPrice!.Value)
-            .OrderBy(i => i.Name)
+            .OrderByDescending(i => i.WishCount)
+            .ThenBy(i => i.Name)
+            .Select(i => new
+            {
+                i.Id, i.Name, i.Description, i.Price, i.Currency,
+                i.ImagePath, i.Url, i.CategoryId, CategoryName = i.Category.Name,
+                i.IsPublished, i.CreatedAt, i.UpdatedAt, i.WishCount,
+            });
+
+        var totalCount = await itemQuery.CountAsync(ct);
+        var rawItems = await itemQuery
+            .Skip((query.Request.Page - 1) * query.Request.PageSize)
+            .Take(query.Request.PageSize)
+            .ToListAsync(ct);
+
+        if (rawItems.Count == 0)
+            return new PagedResponse<CatalogItemDto>([], query.Request.Page, query.Request.PageSize, totalCount);
+
+        var itemIds = rawItems.Select(i => i.Id).ToList();
+        var badgesByItemId = await gamification.GetBadgesForItemsAsync(itemIds, query.UserId, ct);
+
+        var items = rawItems
             .Select(i => new CatalogItemDto(
                 i.Id, i.Name, i.Description,
-                i.Price, i.Currency != null ? i.Currency.ToString() : null,
+                i.Price, i.Currency?.ToString(),
                 i.ImagePath, i.Url,
-                i.CategoryId, i.Category.Name,
+                i.CategoryId, i.CategoryName,
                 i.IsPublished, i.CreatedAt, i.UpdatedAt,
-                i.Ratings.Any() ? i.Ratings.Average(r => (double)r.Value) : (double?)null,
-                i.Ratings.Count,
-                query.UserId.HasValue ? i.Ratings.Where(r => r.UserId == query.UserId.Value).Select(r => (int?)r.Value).FirstOrDefault() : null,
-                i.WishCount,
-                null))
-            .ToPagedResponseAsync(query.Request, ct);
+                i.WishCount, null,
+                badgesByItemId.GetValueOrDefault(i.Id, [])))
+            .ToList();
 
-        return result;
+        return new PagedResponse<CatalogItemDto>(items, query.Request.Page, query.Request.PageSize, totalCount);
     }
 }

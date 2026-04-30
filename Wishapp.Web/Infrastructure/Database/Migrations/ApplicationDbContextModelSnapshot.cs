@@ -275,45 +275,6 @@ namespace Wishapp.Web.Infrastructure.Database.Migrations
                         });
                 });
 
-            modelBuilder.Entity("Wishapp.Web.Catalog.Entities.CatalogItemRating", b =>
-                {
-                    b.Property<Guid>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("uuid")
-                        .HasColumnName("id");
-
-                    b.Property<Guid>("CatalogItemId")
-                        .HasColumnType("uuid")
-                        .HasColumnName("catalog_item_id");
-
-                    b.Property<DateTimeOffset>("CreatedAt")
-                        .HasColumnType("timestamp with time zone")
-                        .HasColumnName("created_at");
-
-                    b.Property<Guid>("UserId")
-                        .HasColumnType("uuid")
-                        .HasColumnName("user_id");
-
-                    b.Property<int>("Value")
-                        .HasColumnType("integer")
-                        .HasColumnName("value");
-
-                    b.HasKey("Id")
-                        .HasName("pk_catalog_item_ratings");
-
-                    b.HasIndex("CatalogItemId")
-                        .HasDatabaseName("ix_catalog_item_ratings_catalog_item_id");
-
-                    b.HasIndex("UserId", "CatalogItemId")
-                        .IsUnique()
-                        .HasDatabaseName("ix_catalog_item_ratings_user_id_catalog_item_id");
-
-                    b.ToTable("catalog_item_ratings", "catalog", t =>
-                        {
-                            t.HasCheckConstraint("CK_catalog_item_ratings_value", "value BETWEEN 1 AND 5");
-                        });
-                });
-
             modelBuilder.Entity("Wishapp.Web.Catalog.Entities.CatalogOccasion", b =>
                 {
                     b.Property<Guid>("Id")
@@ -454,6 +415,280 @@ namespace Wishapp.Web.Infrastructure.Database.Migrations
                         {
                             t.HasCheckConstraint("CK_friendships_no_self", "requester_id <> addressee_id");
                         });
+                });
+
+            modelBuilder.Entity("Wishapp.Web.Gamification.Entities.AchievementDefinition", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("integer")
+                        .HasColumnName("id");
+
+                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("Id"));
+
+                    b.Property<string>("Description")
+                        .IsRequired()
+                        .HasMaxLength(500)
+                        .HasColumnType("text")
+                        .HasColumnName("description");
+
+                    b.Property<string>("Emoji")
+                        .IsRequired()
+                        .HasMaxLength(10)
+                        .HasColumnType("text")
+                        .HasColumnName("emoji");
+
+                    b.Property<bool>("IsActive")
+                        .HasColumnType("boolean")
+                        .HasColumnName("is_active");
+
+                    b.Property<int?>("LinkedBadgeTypeId")
+                        .HasColumnType("integer")
+                        .HasColumnName("linked_badge_type_id");
+
+                    b.Property<string>("Name")
+                        .IsRequired()
+                        .HasMaxLength(200)
+                        .HasColumnType("text")
+                        .HasColumnName("name");
+
+                    b.Property<int>("Order")
+                        .HasColumnType("integer")
+                        .HasColumnName("order");
+
+                    b.Property<int>("RuleType")
+                        .HasColumnType("integer")
+                        .HasColumnName("rule_type");
+
+                    b.Property<int>("Threshold")
+                        .HasColumnType("integer")
+                        .HasColumnName("threshold");
+
+                    b.HasKey("Id")
+                        .HasName("pk_achievement_definitions");
+
+                    b.ToTable("achievement_definitions", "gamification");
+                });
+
+            modelBuilder.Entity("Wishapp.Web.Gamification.Entities.CatalogBadgeDefinition", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("integer")
+                        .HasColumnName("id");
+
+                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("Id"));
+
+                    b.Property<string>("Description")
+                        .IsRequired()
+                        .HasMaxLength(500)
+                        .HasColumnType("text")
+                        .HasColumnName("description");
+
+                    b.Property<string>("Emoji")
+                        .IsRequired()
+                        .HasMaxLength(10)
+                        .HasColumnType("text")
+                        .HasColumnName("emoji");
+
+                    b.Property<bool>("IsActive")
+                        .HasColumnType("boolean")
+                        .HasColumnName("is_active");
+
+                    b.Property<string>("Label")
+                        .IsRequired()
+                        .HasMaxLength(200)
+                        .HasColumnType("text")
+                        .HasColumnName("label");
+
+                    b.Property<string>("Slug")
+                        .IsRequired()
+                        .HasMaxLength(50)
+                        .HasColumnType("text")
+                        .HasColumnName("slug");
+
+                    b.HasKey("Id")
+                        .HasName("pk_catalog_badge_definitions");
+
+                    b.HasIndex("Slug")
+                        .IsUnique()
+                        .HasDatabaseName("ix_catalog_badge_definitions_slug");
+
+                    b.ToTable("catalog_badge_definitions", "gamification");
+                });
+
+            modelBuilder.Entity("Wishapp.Web.Gamification.Entities.CatalogItemBadgeVote", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid")
+                        .HasColumnName("id");
+
+                    b.Property<int>("BadgeType")
+                        .HasColumnType("integer")
+                        .HasColumnName("badge_type");
+
+                    b.Property<Guid>("CatalogItemId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("catalog_item_id");
+
+                    b.Property<DateTimeOffset>("CreatedAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("created_at");
+
+                    b.Property<Guid>("UserId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("user_id");
+
+                    b.HasKey("Id")
+                        .HasName("pk_catalog_item_badge_votes");
+
+                    b.HasIndex("CatalogItemId")
+                        .HasDatabaseName("ix_catalog_item_badge_votes_catalog_item_id");
+
+                    b.HasIndex("CatalogItemId", "UserId", "BadgeType")
+                        .IsUnique()
+                        .HasDatabaseName("ix_catalog_item_badge_votes_catalog_item_id_user_id_badge_type");
+
+                    b.ToTable("catalog_item_badge_votes", "gamification");
+                });
+
+            modelBuilder.Entity("Wishapp.Web.Gamification.Entities.FulfilledWishBadge", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid")
+                        .HasColumnName("id");
+
+                    b.Property<int>("BadgeType")
+                        .HasColumnType("integer")
+                        .HasColumnName("badge_type");
+
+                    b.Property<DateTimeOffset>("CreatedAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("created_at");
+
+                    b.Property<Guid>("GifterUserId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("gifter_user_id");
+
+                    b.Property<Guid>("RecipientUserId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("recipient_user_id");
+
+                    b.Property<Guid>("WishId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("wish_id");
+
+                    b.HasKey("Id")
+                        .HasName("pk_fulfilled_wish_badges");
+
+                    b.HasIndex("GifterUserId")
+                        .HasDatabaseName("ix_fulfilled_wish_badges_gifter_user_id");
+
+                    b.HasIndex("WishId")
+                        .HasDatabaseName("ix_fulfilled_wish_badges_wish_id");
+
+                    b.HasIndex("WishId", "BadgeType")
+                        .IsUnique()
+                        .HasDatabaseName("ix_fulfilled_wish_badges_wish_id_badge_type");
+
+                    b.ToTable("fulfilled_wish_badges", "gamification");
+                });
+
+            modelBuilder.Entity("Wishapp.Web.Gamification.Entities.FulfilledWishBadgeDefinition", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("integer")
+                        .HasColumnName("id");
+
+                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("Id"));
+
+                    b.Property<string>("Description")
+                        .IsRequired()
+                        .HasMaxLength(500)
+                        .HasColumnType("text")
+                        .HasColumnName("description");
+
+                    b.Property<string>("Emoji")
+                        .IsRequired()
+                        .HasMaxLength(10)
+                        .HasColumnType("text")
+                        .HasColumnName("emoji");
+
+                    b.Property<bool>("IsActive")
+                        .HasColumnType("boolean")
+                        .HasColumnName("is_active");
+
+                    b.Property<string>("Label")
+                        .IsRequired()
+                        .HasMaxLength(200)
+                        .HasColumnType("text")
+                        .HasColumnName("label");
+
+                    b.Property<string>("Slug")
+                        .IsRequired()
+                        .HasMaxLength(50)
+                        .HasColumnType("text")
+                        .HasColumnName("slug");
+
+                    b.HasKey("Id")
+                        .HasName("pk_fulfilled_wish_badge_definitions");
+
+                    b.HasIndex("Slug")
+                        .IsUnique()
+                        .HasDatabaseName("ix_fulfilled_wish_badge_definitions_slug");
+
+                    b.ToTable("fulfilled_wish_badge_definitions", "gamification");
+                });
+
+            modelBuilder.Entity("Wishapp.Web.Gamification.Entities.UserAchievement", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid")
+                        .HasColumnName("id");
+
+                    b.Property<DateTimeOffset>("CreatedAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("created_at");
+
+                    b.Property<int>("DefinitionId")
+                        .HasColumnType("integer")
+                        .HasColumnName("type");
+
+                    b.Property<DateTimeOffset?>("EarnedAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("earned_at");
+
+                    b.Property<bool>("IsEarned")
+                        .HasColumnType("boolean")
+                        .HasColumnName("is_earned");
+
+                    b.Property<int>("Progress")
+                        .HasColumnType("integer")
+                        .HasColumnName("progress");
+
+                    b.Property<DateTimeOffset>("UpdatedAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("updated_at");
+
+                    b.Property<Guid>("UserId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("user_id");
+
+                    b.HasKey("Id")
+                        .HasName("pk_user_achievements");
+
+                    b.HasIndex("UserId")
+                        .HasDatabaseName("ix_user_achievements_user_id");
+
+                    b.HasIndex("UserId", "DefinitionId")
+                        .IsUnique()
+                        .HasDatabaseName("ix_user_achievements_user_id_type");
+
+                    b.ToTable("user_achievements", "gamification");
                 });
 
             modelBuilder.Entity("Wishapp.Web.Notifications.Entities.Notification", b =>
@@ -633,6 +868,11 @@ namespace Wishapp.Web.Infrastructure.Database.Migrations
                         .ValueGeneratedOnAdd()
                         .HasColumnType("uuid")
                         .HasColumnName("id");
+
+                    b.Property<string>("AvatarPath")
+                        .HasMaxLength(200)
+                        .HasColumnType("text")
+                        .HasColumnName("avatar_path");
 
                     b.Property<string>("AvatarUrl")
                         .HasMaxLength(500)
@@ -1020,16 +1260,6 @@ namespace Wishapp.Web.Infrastructure.Database.Migrations
                     b.Navigation("Category");
                 });
 
-            modelBuilder.Entity("Wishapp.Web.Catalog.Entities.CatalogItemRating", b =>
-                {
-                    b.HasOne("Wishapp.Web.Catalog.Entities.CatalogItem", null)
-                        .WithMany("Ratings")
-                        .HasForeignKey("CatalogItemId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired()
-                        .HasConstraintName("fk_catalog_item_ratings_catalog_items_catalog_item_id");
-                });
-
             modelBuilder.Entity("Wishapp.Web.Users.Entities.AuthIdentity", b =>
                 {
                     b.HasOne("Wishapp.Web.Users.Entities.User", null)
@@ -1063,11 +1293,6 @@ namespace Wishapp.Web.Infrastructure.Database.Migrations
             modelBuilder.Entity("Wishapp.Web.Catalog.Entities.CatalogCollection", b =>
                 {
                     b.Navigation("Items");
-                });
-
-            modelBuilder.Entity("Wishapp.Web.Catalog.Entities.CatalogItem", b =>
-                {
-                    b.Navigation("Ratings");
                 });
 
             modelBuilder.Entity("Wishapp.Web.Users.Entities.User", b =>

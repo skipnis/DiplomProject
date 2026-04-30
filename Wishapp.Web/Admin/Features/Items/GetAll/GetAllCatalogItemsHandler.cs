@@ -14,7 +14,7 @@ public sealed class GetAllCatalogItemsHandler(ApplicationDbContext db)
         GetAllCatalogItemsQuery query,
         CancellationToken ct = default)
     {
-        var result = await db.CatalogItems
+        var itemQuery = db.CatalogItems
             .AsNoTracking()
             .Include(i => i.Category)
             .WhereIf(query.Filter.CategoryId.HasValue, i => i.CategoryId == query.Filter.CategoryId!.Value)
@@ -23,19 +23,29 @@ public sealed class GetAllCatalogItemsHandler(ApplicationDbContext db)
             .WhereIf(query.Filter.MinPrice.HasValue, i => i.Price >= query.Filter.MinPrice!.Value)
             .WhereIf(query.Filter.MaxPrice.HasValue, i => i.Price <= query.Filter.MaxPrice!.Value)
             .OrderBy(i => i.Name)
+            .Select(i => new
+            {
+                i.Id, i.Name, i.Description, i.Price, i.Currency,
+                i.ImagePath, i.Url, i.CategoryId, CategoryName = i.Category.Name,
+                i.IsPublished, i.CreatedAt, i.UpdatedAt, i.WishCount,
+            });
+
+        var totalCount = await itemQuery.CountAsync(ct);
+        var rawItems = await itemQuery
+            .Skip((query.Request.Page - 1) * query.Request.PageSize)
+            .Take(query.Request.PageSize)
+            .ToListAsync(ct);
+
+        var items = rawItems
             .Select(i => new CatalogItemDto(
                 i.Id, i.Name, i.Description,
-                i.Price, i.Currency != null ? i.Currency.ToString() : null,
+                i.Price, i.Currency?.ToString(),
                 i.ImagePath, i.Url,
-                i.CategoryId, i.Category.Name,
+                i.CategoryId, i.CategoryName,
                 i.IsPublished, i.CreatedAt, i.UpdatedAt,
-                i.Ratings.Any() ? i.Ratings.Average(r => (double)r.Value) : (double?)null,
-                i.Ratings.Count,
-                null,
-                i.WishCount,
-                null))
-            .ToPagedResponseAsync(query.Request, ct);
+                i.WishCount, null, []))
+            .ToList();
 
-        return result;
+        return new PagedResponse<CatalogItemDto>(items, query.Request.Page, query.Request.PageSize, totalCount);
     }
 }

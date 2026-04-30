@@ -15,4 +15,6 @@ public record WishDto(
     bool IsFulfilled,
     DateTimeOffset? FulfilledAt,
     bool IsReserved,
-    Guid? ShareToken);
+    Guid? ShareToken,
+    Guid? FulfilledByReserverId,
+    bool HasGiftBadges);

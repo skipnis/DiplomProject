@@ -1,4 +1,3 @@
-using Microsoft.EntityFrameworkCore;
 using Wishapp.Web.Common.Interfaces;
 using Wishapp.Web.Common.Types;
 using Wishapp.Web.Friendships;
@@ -10,7 +9,8 @@ namespace Wishapp.Web.Wishlists.Features.Wishlists.CreateWishlist;
 
 public sealed class CreateWishlistHandler(
     ApplicationDbContext db,
-    IFriendshipsApi friendshipsApi)
+    IFriendshipsApi friendshipsApi,
+    IUsersApi usersApi)
     : ICommandHandler<CreateWishlistCommand, CreateWishlistResponse>
 {
     public async Task<Result<CreateWishlistResponse>> HandleAsync(
@@ -29,13 +29,10 @@ public sealed class CreateWishlistHandler(
         {
             var membersIds = command.Members.Select(m => m.UserId).ToList();
 
-            var existingUsersIds = await db.Users
-                .Where(u => membersIds.Contains(u.Id))
-                .Select(u => u.Id)
-                .ToListAsync(ct);
+            var existingUsersIds = await usersApi.FilterExistingIdsAsync(membersIds, ct);
 
             var missingId = membersIds.FirstOrDefault(id => !existingUsersIds.Contains(id));
-            
+
             if (missingId != Guid.Empty)
             {
                 return Error.NotFound("Users.NotFound", $"User {missingId} not found");
@@ -44,7 +41,7 @@ public sealed class CreateWishlistHandler(
             var friendIds = await friendshipsApi.GetFriendIdsAsync(command.OwnerId, membersIds, ct);
 
             var notFriendId = membersIds.FirstOrDefault(id => !friendIds.Contains(id));
-            
+
             if (notFriendId != Guid.Empty)
             {
                 return Error.Failure("Friendships.NotFriend", $"User {notFriendId} is not your friend");
@@ -53,7 +50,7 @@ public sealed class CreateWishlistHandler(
             foreach (var invitedMember in command.Members)
             {
                 var result = wishlist.AddMember(invitedMember.UserId, invitedMember.Role);
-                
+
                 if (result.IsFailure)
                 {
                     return result.Error;
@@ -62,7 +59,7 @@ public sealed class CreateWishlistHandler(
         }
 
         db.Wishlists.Add(wishlist);
-        
+
         await db.SaveChangesAsync(ct);
 
         return new CreateWishlistResponse(

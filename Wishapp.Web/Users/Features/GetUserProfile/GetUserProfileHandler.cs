@@ -28,7 +28,7 @@ public sealed class GetUserProfileHandler(ApplicationDbContext db, IWishlistsApi
             user.Id,
             user.DisplayName,
             user.Username,
-            user.AvatarUrl,
+            user.AvatarPath ?? user.AvatarUrl,
             user.Bio,
             stats.ReceivedCount,
             stats.GiftedCount);

@@ -2,13 +2,17 @@ using Microsoft.EntityFrameworkCore;
 using Wishapp.Web.Common.Extensions;
 using Wishapp.Web.Common.Interfaces;
 using Wishapp.Web.Common.Types;
+using Wishapp.Web.Gamification;
 using Wishapp.Web.Infrastructure.Database;
 using Wishapp.Web.Reservations;
 using Wishapp.Web.Wishlists.Dtos;
 
 namespace Wishapp.Web.Wishlists.Features.Wishes.GetWishes;
 
-public sealed class GetWishesHandler(ApplicationDbContext db, IReservationsApi reservationsApi)
+public sealed class GetWishesHandler(
+    ApplicationDbContext db,
+    IReservationsApi reservationsApi,
+    IGamificationApi gamificationApi)
     : IQueryHandler<GetWishesQuery, PagedResponse<WishDto>>
 {
     public async Task<Result<PagedResponse<WishDto>>> HandleAsync(
@@ -29,6 +33,8 @@ public sealed class GetWishesHandler(ApplicationDbContext db, IReservationsApi r
             reservedIds = (await reservationsApi.GetReservedWishIdsAsync(wishIds, ct)).ToHashSet();
         }
 
+        var wishesWithBadgeIds = await gamificationApi.GetWishIdsWithBadgesAsync(wishIds, ct);
+
         var items = wishes.Items.Select(w => new WishDto(
             w.Id,
             w.Name,
@@ -42,7 +48,9 @@ public sealed class GetWishesHandler(ApplicationDbContext db, IReservationsApi r
             w.IsFulfilled,
             w.FulfilledAt,
             reservedIds.Contains(w.Id),
-            null))
+            null,
+            null,
+            wishesWithBadgeIds.Contains(w.Id)))
             .ToList();
 
         return new PagedResponse<WishDto>(items, wishes.Page, wishes.PageSize, wishes.TotalCount);

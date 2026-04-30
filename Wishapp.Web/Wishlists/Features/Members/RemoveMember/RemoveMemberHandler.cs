@@ -4,10 +4,14 @@ using Wishapp.Web.Common.Types;
 using Wishapp.Web.Infrastructure.Database;
 using Wishapp.Web.Notifications;
 using Wishapp.Web.Notifications.Entities;
+using Wishapp.Web.Users;
 
 namespace Wishapp.Web.Wishlists.Features.Members.RemoveMember;
 
-public sealed class RemoveMemberHandler(ApplicationDbContext db, INotificationsApi notificationsApi)
+public sealed class RemoveMemberHandler(
+    ApplicationDbContext db,
+    INotificationsApi notificationsApi,
+    IUsersApi usersApi)
     : ICommandHandler<RemoveMemberCommand>
 {
     public async Task<Result> HandleAsync(
@@ -32,10 +36,8 @@ public sealed class RemoveMemberHandler(ApplicationDbContext db, INotificationsA
 
         await db.SaveChangesAsync(ct);
 
-        var ownerName = await db.Users.AsNoTracking()
-            .Where(u => u.Id == wishlist.OwnerId)
-            .Select(u => u.DisplayName)
-            .FirstOrDefaultAsync(ct);
+        var ownerUsernames = await usersApi.GetUsernamesAsync([wishlist.OwnerId], ct);
+        var ownerName = ownerUsernames.GetValueOrDefault(wishlist.OwnerId);
 
         await notificationsApi.EnqueueAsync(command.UserId, NotificationType.RemovedFromWishlist, new
         {

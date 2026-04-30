@@ -54,7 +54,23 @@ public static partial class AdminEndpoints
         secured.MapPatch("/collections/{id:guid}/published", SetCollectionPublished);
         secured.MapGet("/collections/{id:guid}/items", GetCollectionItems);
         secured.MapPost("/collections/{id:guid}/items/{itemId:guid}", AddItemToCollection);
+        secured.MapPatch("/collections/{id:guid}/items/{itemId:guid}/description", UpdateCollectionItemDescription);
         secured.MapDelete("/collections/{id:guid}/items/{itemId:guid}", RemoveItemFromCollection);
+
+        secured.MapGet("/badge-definitions/catalog", GetAllCatalogBadgeDefinitions);
+        secured.MapPost("/badge-definitions/catalog", CreateCatalogBadgeDefinition);
+        secured.MapPut("/badge-definitions/catalog/{id:int}", UpdateCatalogBadgeDefinition);
+        secured.MapDelete("/badge-definitions/catalog/{id:int}", DeleteCatalogBadgeDefinition);
+
+        secured.MapGet("/badge-definitions/fulfilled", GetAllFulfilledBadgeDefinitions);
+        secured.MapPost("/badge-definitions/fulfilled", CreateFulfilledBadgeDefinition);
+        secured.MapPut("/badge-definitions/fulfilled/{id:int}", UpdateFulfilledBadgeDefinition);
+        secured.MapDelete("/badge-definitions/fulfilled/{id:int}", DeleteFulfilledBadgeDefinition);
+
+        secured.MapGet("/achievements", GetAllAchievementDefinitions);
+        secured.MapPost("/achievements", CreateAchievementDefinition);
+        secured.MapPut("/achievements/{id:int}", UpdateAchievementDefinition);
+        secured.MapDelete("/achievements/{id:int}", DeleteAchievementDefinition);
 
         return app;
     }

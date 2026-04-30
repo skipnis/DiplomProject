@@ -20,4 +20,7 @@ internal sealed class CatalogApi(ApplicationDbContext db) : ICatalogApi
         item?.IncrementWishCount();
         await db.SaveChangesAsync(ct);
     }
+
+    public Task<bool> ItemExistsAsync(Guid id, CancellationToken ct = default) =>
+        db.CatalogItems.AnyAsync(item => item.Id == id, ct);
 }

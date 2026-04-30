@@ -3,6 +3,7 @@ using Wishapp.Web.Admin.Entities;
 using Wishapp.Web.Catalog.Entities;
 using Wishapp.Web.Events.Entities;
 using Wishapp.Web.Friendships.Entities;
+using Wishapp.Web.Gamification.Entities;
 using Wishapp.Web.Notifications.Entities;
 using Wishapp.Web.Reservations.Entities;
 using Wishapp.Web.Users.Entities;
@@ -36,8 +37,16 @@ public class ApplicationDbContext(
     public DbSet<CatalogItem> CatalogItems { get; set; }
     public DbSet<CatalogCollection> CatalogCollections { get; set; }
     public DbSet<CatalogCollectionItem> CatalogCollectionItems { get; set; }
-    public DbSet<CatalogItemRating> CatalogItemRatings { get; set; }
     public DbSet<CatalogOccasion> CatalogOccasions { get; set; }
+    public DbSet<CatalogItemBadgeVote> CatalogItemBadgeVotes { get; set; }
+    public DbSet<CatalogBadgeDefinition> CatalogBadgeDefinitions { get; set; }
+
+    public DbSet<FulfilledWishBadge> FulfilledWishBadges { get; set; }
+    public DbSet<FulfilledWishBadgeDefinition> FulfilledWishBadgeDefinitions { get; set; }
+
+    public DbSet<UserAchievement> UserAchievements { get; set; }
+    public DbSet<AchievementDefinition> AchievementDefinitions { get; set; }
+
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {

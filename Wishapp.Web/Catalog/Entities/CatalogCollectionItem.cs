@@ -21,4 +21,9 @@ public sealed class CatalogCollectionItem
             Description = description
         };
     }
+
+    public void UpdateDescription(string? description)
+    {
+        Description = description;
+    }
 }

@@ -10,6 +10,8 @@ using Wishapp.Web.Admin;
 using Wishapp.Web.Catalog;
 using Wishapp.Web.Events;
 using Wishapp.Web.Friendships;
+using Wishapp.Web.Gamification;
+using Wishapp.Web.Gamification.Features.AchievementChecker;
 using Wishapp.Web.Infrastructure;
 using Wishapp.Web.Notifications;
 using Wishapp.Web.Notifications.SignalR;
@@ -37,6 +39,7 @@ builder.Services
     .AddUsersModule()
     .AddFriendshipsModule()
     .AddCatalogModule()
+    .AddGamificationModule(builder.Configuration)
     .AddWishlistsModule()
     .AddReservationsModule()
     .AddEventsModule()
@@ -54,6 +57,8 @@ builder.Services.AddRateLimiter(options =>
 });
 
 builder.Services.AddFusionCache();
+
+builder.Services.AddHostedService<AchievementCheckerWorker>();
 
 builder.Services.AddOpenApi();
 
@@ -93,6 +98,7 @@ app.MapUsersEndpoints()
     .MapReservationsEndpoints()
     .MapEventsEndpoints()
     .MapCatalogEndpoints()
+    .MapGamificationEndpoints()
     .MapAdminEndpoints()
     .MapShareEndpoints()
     .MapNotificationsEndpoints();

@@ -13,42 +13,43 @@ public sealed class GetCollectionHandler(ApplicationDbContext db)
         GetCollectionQuery query,
         CancellationToken ct = default)
     {
-        var collection = await db.CatalogCollections
+        var raw = await db.CatalogCollections
             .AsNoTracking()
             .Where(c => c.Id == query.Id && c.IsPublished)
-            .Select(c => new CatalogCollectionDto(
-                c.Id,
-                c.Name,
-                c.Description,
-                c.Occasion,
-                c.CoverImagePath,
-                c.Order,
-                c.Items
+            .Select(c => new
+            {
+                c.Id, c.Name, c.Description, c.Occasion, c.CoverImagePath, c.Order,
+                Items = c.Items
                     .Where(i => i.CatalogItem.IsPublished)
-                    .Select(i => new CatalogItemDto(
-                        i.CatalogItem.Id,
-                        i.CatalogItem.Name,
-                        i.CatalogItem.Description,
-                        i.CatalogItem.Price,
-                        i.CatalogItem.Currency != null ? i.CatalogItem.Currency.ToString() : null,
-                        i.CatalogItem.ImagePath,
-                        i.CatalogItem.Url,
-                        i.CatalogItem.CategoryId,
-                        i.CatalogItem.Category.Name,
-                        i.CatalogItem.IsPublished,
-                        i.CatalogItem.CreatedAt,
-                        i.CatalogItem.UpdatedAt,
-                        i.CatalogItem.Ratings.Any() ? i.CatalogItem.Ratings.Average(r => (double)r.Value) : (double?)null,
-                        i.CatalogItem.Ratings.Count,
-                        null,
+                    .Select(i => new
+                    {
+                        i.CatalogItem.Id, i.CatalogItem.Name, i.CatalogItem.Description,
+                        i.CatalogItem.Price, i.CatalogItem.Currency,
+                        i.CatalogItem.ImagePath, i.CatalogItem.Url,
+                        i.CatalogItem.CategoryId, CategoryName = i.CatalogItem.Category.Name,
+                        i.CatalogItem.IsPublished, i.CatalogItem.CreatedAt, i.CatalogItem.UpdatedAt,
                         i.CatalogItem.WishCount,
-                        i.Description))
-                    .ToList()))
+                        ItemDescription = i.Description
+                    })
+                    .ToList()
+            })
             .FirstOrDefaultAsync(ct);
 
-        if (collection is null)
+        if (raw is null)
             return Error.NotFound("Catalog.CollectionNotFound", "Collection not found");
 
-        return collection;
+        var items = raw.Items
+            .Select(i => new CatalogItemDto(
+                i.Id, i.Name, i.Description,
+                i.Price, i.Currency?.ToString(),
+                i.ImagePath, i.Url,
+                i.CategoryId, i.CategoryName,
+                i.IsPublished, i.CreatedAt, i.UpdatedAt,
+                i.WishCount, i.ItemDescription, []))
+            .ToList();
+
+        return new CatalogCollectionDto(
+            raw.Id, raw.Name, raw.Description,
+            raw.Occasion, raw.CoverImagePath, raw.Order, items);
     }
 }

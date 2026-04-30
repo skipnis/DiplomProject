@@ -1,3 +1,5 @@
+using Wishapp.Web.Gamification.Dtos;
+
 namespace Wishapp.Web.Catalog.Dtos;
 
 public record CatalogItemDto(
@@ -13,8 +15,6 @@ public record CatalogItemDto(
     bool IsPublished,
     DateTimeOffset CreatedAt,
     DateTimeOffset UpdatedAt,
-    double? AverageRating,
-    int RatingCount,
-    int? MyRating,
     int WishCount,
-    string? CollectionItemDescription);
+    string? CollectionItemDescription,
+    IReadOnlyList<CatalogItemBadgeDto> Badges);
