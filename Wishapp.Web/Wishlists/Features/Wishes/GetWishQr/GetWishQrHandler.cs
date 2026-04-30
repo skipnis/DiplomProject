@@ -25,6 +25,11 @@ public sealed class GetWishQrHandler(
             return Error.NotFound("Wishlists.NotFound", "Wishlist not found");
         }
 
+        if (wishlist.IsSystem)
+        {
+            return Error.Forbidden("Wishlists.SystemWishlist", "QR code is not available for system wishlists");
+        }
+
         var wish = wishlist.Wishes.FirstOrDefault();
 
         if (wish is null)

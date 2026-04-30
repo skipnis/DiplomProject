@@ -30,9 +30,9 @@ public sealed class FulfillWishHandler(
             return Error.NotFound("Wishlists.NotFound", "Wishlist not found");
         }
 
-        if (wishlist.SystemType == SystemWishlistType.Blacklist)
+        if (wishlist.IsSystem)
         {
-            return Error.Forbidden("Wishes.BlacklistWishlist", "Cannot fulfill wishes from a blacklist wishlist");
+            return Error.Forbidden("Wishes.SystemWishlist", "Cannot fulfill wishes from a system wishlist");
         }
 
         var reserverId = await reservationsApi.GetReserverForWishAsync(command.WishId, ct);

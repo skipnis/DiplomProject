@@ -12,8 +12,17 @@ public sealed class RegenerateWishShareTokenHandler(ApplicationDbContext db)
         RegenerateWishShareTokenCommand command,
         CancellationToken ct = default)
     {
-        var wish = await db.Wishes
-            .FirstOrDefaultAsync(w => w.Id == command.WishId && w.WishlistId == command.WishlistId, ct);
+        var wishlist = await db.Wishlists
+            .Include(w => w.Wishes.Where(wish => wish.Id == command.WishId))
+            .FirstOrDefaultAsync(w => w.Id == command.WishlistId, ct);
+
+        if (wishlist is null)
+            return Error.NotFound("Wishlists.NotFound", "Wishlist not found");
+
+        if (wishlist.IsSystem)
+            return Error.Forbidden("Wishlists.SystemWishlist", "Cannot share wishes from a system wishlist");
+
+        var wish = wishlist.Wishes.FirstOrDefault();
 
         if (wish is null)
             return Error.NotFound("Wishes.NotFound", "Wish not found");

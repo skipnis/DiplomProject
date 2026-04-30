@@ -27,6 +27,11 @@ public sealed class RemoveMemberHandler(
             return Error.NotFound("Wishlists.NotFound", "Wishlist not found");
         }
 
+        if (wishlist.IsSystem)
+        {
+            return Error.Forbidden("Wishlists.SystemWishlist", "Cannot manage members of a system wishlist");
+        }
+
         var result = wishlist.RemoveMember(command.UserId);
 
         if (result.IsFailure)

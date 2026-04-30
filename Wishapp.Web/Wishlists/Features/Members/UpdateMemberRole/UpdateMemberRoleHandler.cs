@@ -30,6 +30,11 @@ public sealed class UpdateMemberRoleHandler(ApplicationDbContext db, INotificati
             return Error.NotFound("Wishlists.NotFound", "Wishlist not found");
         }
 
+        if (wishlist.IsSystem)
+        {
+            return Error.Forbidden("Wishlists.SystemWishlist", "Cannot manage members of a system wishlist");
+        }
+
         var result = wishlist.UpdateMemberRole(command.UserId, command.Role, command.CustomRoleName);
 
         if (result.IsFailure)

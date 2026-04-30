@@ -30,6 +30,11 @@ public sealed class AddMembersHandler(
             return Error.NotFound("Wishlists.NotFound", "Wishlist not found");
         }
 
+        if (wishlist.IsSystem)
+        {
+            return Error.Forbidden("Wishlists.SystemWishlist", "Cannot manage members of a system wishlist");
+        }
+
         var userIds = command.Members.Select(m => m.UserId).ToList();
 
         var existingIds = await usersApi.FilterExistingIdsAsync(userIds, ct);

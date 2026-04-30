@@ -22,9 +22,9 @@ public sealed class UnfulfillWishHandler(ApplicationDbContext db)
             return Error.NotFound("Wishlists.NotFound", "Wishlist not found");
         }
 
-        if (wishlist.SystemType == SystemWishlistType.Blacklist)
+        if (wishlist.IsSystem)
         {
-            return Error.Forbidden("Wishes.BlacklistWishlist", "Cannot unfulfill wishes from a blacklist wishlist");
+            return Error.Forbidden("Wishes.SystemWishlist", "Cannot unfulfill wishes from a system wishlist");
         }
 
         var result = wishlist.UnfulfillWish(command.WishId);

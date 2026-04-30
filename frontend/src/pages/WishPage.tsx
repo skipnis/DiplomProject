@@ -165,6 +165,7 @@ export default function WishPage() {
   const myRole = wishlist?.members.find((member) => member.userId === me?.id)?.role ?? null;
   const isOwner = myRole === 2;
   const canEdit = myRole !== null && myRole >= 1;
+  const isSystem = !!wishlist?.isSystem;
 
   useEffect(() => {
     if (!wishlistId || !wishId) return;
@@ -282,7 +283,7 @@ export default function WishPage() {
       <div className="flex items-center justify-between mb-7 gap-3 flex-wrap">
         <Link to={`/wishlists/${wishlistId}`} className={buttonVariants({ variant: 'ghost', size: 'sm' })}>← Назад</Link>
         <div className="flex flex-wrap gap-2">
-          <Button variant="ghost" size="sm" onClick={() => setShowQr(true)}>📷 QR</Button>
+          {!isSystem && <Button variant="ghost" size="sm" onClick={() => setShowQr(true)}>📷 QR</Button>}
           {canEdit && <Button variant="ghost" size="sm" onClick={handleDuplicate}>Дублировать</Button>}
           {me && <Button variant="ghost" size="sm" onClick={handleOpenCopy}>Копировать</Button>}
           {canEdit && <Link to={`/wishlists/${wishlistId}/wishes/${wishId}/edit`} className={buttonVariants({ variant: 'secondary', size: 'sm' })}>Изменить</Link>}
@@ -347,7 +348,7 @@ export default function WishPage() {
                 {wish.isFulfilled ? '↩ Отметить не исполненным' : '✓ Отметить исполненным'}
               </Button>
             )}
-            {me && !isOwner && !wish.isFulfilled && wishlist?.systemType !== 'Blacklist' && (
+            {me && !isOwner && !wish.isFulfilled && !isSystem && (
               <Button
                 variant={isMineReserved ? 'destructive' : wish.isReserved ? 'ghost' : 'default'}
                 onClick={handleReserve}
@@ -358,7 +359,7 @@ export default function WishPage() {
             )}
           </div>
 
-          {isOwner && wish.shareToken && (
+          {isOwner && !isSystem && wish.shareToken && (
             <>
               <Separator className="my-4" />
               <div>

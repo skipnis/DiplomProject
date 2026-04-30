@@ -77,7 +77,7 @@ export default function WishlistPage() {
   const myRole: WishlistMemberRole | null = wishlist?.members.find((m) => m.userId === me?.id)?.role ?? null;
   const isOwner = myRole === 2;
   const canEdit = myRole !== null && myRole >= 1;
-  const isBlacklist = wishlist?.systemType === 'Blacklist';
+  const isSystem = !!wishlist?.isSystem;
 
   const loadWishes = useCallback(async (page: number) => {
     if (!id) return;
@@ -235,8 +235,8 @@ export default function WishlistPage() {
               </div>
             </div>
             <div className="flex flex-wrap gap-2">
-              {wishlist.visibility === 0 && <Button variant="ghost" size="sm" onClick={() => setShowQr(true)}>📷 QR</Button>}
-              {(wishlist.visibility === 0 || isOwner) && (
+              {wishlist.visibility === 0 && !isSystem && <Button variant="ghost" size="sm" onClick={() => setShowQr(true)}>📷 QR</Button>}
+              {(wishlist.visibility === 0 || isOwner) && !isSystem && (
                 <Button variant="ghost" size="sm" onClick={handleShare}>Поделиться</Button>
               )}
               {canEdit && <Link to={`/wishlists/${id}/edit`} className={buttonVariants({ variant: 'secondary', size: 'sm' })}>Изменить</Link>}
@@ -291,14 +291,14 @@ export default function WishlistPage() {
                   {wish.isFulfilled && <div className="absolute top-2 right-2 bg-green-500 text-white rounded-full px-2 py-0.5 text-xs font-semibold">✓ Исполнено</div>}
                 </Link>
                 <div className="flex flex-wrap gap-1 mt-2">
-                  {me && !isOwner && !wish.isFulfilled && !isBlacklist && (
+                  {me && !isOwner && !wish.isFulfilled && !isSystem && (
                     <Button size="sm" variant={iMineReserved ? 'destructive' : wish.isReserved ? 'ghost' : 'secondary'} onClick={() => handleReserve(wish)} disabled={wish.isReserved && !iMineReserved}>
                       {iMineReserved ? 'Отменить бронь' : wish.isReserved ? 'Забронировано' : 'Забронировать'}
                     </Button>
                   )}
                   {isOwner && (
                     <>
-                      {!isBlacklist && <Button size="sm" variant="ghost" onClick={() => handleFulfill(wish)}>{wish.isFulfilled ? '↩ Не исполнено' : '✓ Исполнено'}</Button>}
+                      {!isSystem && <Button size="sm" variant="ghost" onClick={() => handleFulfill(wish)}>{wish.isFulfilled ? '↩ Не исполнено' : '✓ Исполнено'}</Button>}
                       <Link to={`/wishlists/${id}/wishes/${wish.id}/edit`} className={buttonVariants({ size: 'sm', variant: 'ghost' })}>Изменить</Link>
                       <Button size="sm" variant="destructive" onClick={() => handleDeleteWish(wish.id)}>Удалить</Button>
                     </>
@@ -319,7 +319,7 @@ export default function WishlistPage() {
         </div>
       )}
 
-      {canEdit && wishlist.members.length > 0 && (
+      {canEdit && !isSystem && wishlist.members.length > 0 && (
         <>
           <Separator className="my-6" />
           <div className="flex items-center justify-between mb-4">
