@@ -1,85 +1,67 @@
 using Microsoft.AspNetCore.Http.HttpResults;
 using Microsoft.AspNetCore.Mvc;
-using Microsoft.EntityFrameworkCore;
 using Wishapp.Web.Admin.Features.AchievementDefinitions;
-using Wishapp.Web.Infrastructure.Database;
-using Wishapp.Web.Gamification.Entities;
+using Wishapp.Web.Admin.Features.AchievementDefinitions.Create;
+using Wishapp.Web.Admin.Features.AchievementDefinitions.Delete;
+using Wishapp.Web.Admin.Features.AchievementDefinitions.GetAll;
+using Wishapp.Web.Admin.Features.AchievementDefinitions.Update;
+using Wishapp.Web.Common.Interfaces;
+using Wishapp.Web.Common.Types;
 
 namespace Wishapp.Web.Admin;
-
-public record AchievementDefinitionAdminDto(
-    int Id,
-    string Name,
-    string Description,
-    string Emoji,
-    AchievementRuleType RuleType,
-    int? LinkedBadgeTypeId,
-    int Threshold,
-    int Order,
-    bool IsActive);
 
 public static partial class AdminEndpoints
 {
     private static async Task<Ok<List<AchievementDefinitionAdminDto>>> GetAllAchievementDefinitions(
-        ApplicationDbContext db,
+        IQueryHandler<GetAllAchievementDefinitionsQuery, List<AchievementDefinitionAdminDto>> handler,
         CancellationToken ct)
     {
-        var items = await db.AchievementDefinitions
-            .AsNoTracking()
-            .OrderBy(a => a.Order)
-            .Select(a => new AchievementDefinitionAdminDto(
-                a.Id, a.Name, a.Description, a.Emoji,
-                a.RuleType, a.LinkedBadgeTypeId, a.Threshold, a.Order, a.IsActive))
-            .ToListAsync(ct);
-
-        return TypedResults.Ok(items);
+        var result = await handler.HandleAsync(new GetAllAchievementDefinitionsQuery(), ct);
+        return TypedResults.Ok(result.Value);
     }
 
     private static async Task<Created<int>> CreateAchievementDefinition(
         [FromBody] AchievementDefinitionRequest request,
-        ApplicationDbContext db,
+        ICommandHandler<CreateAchievementDefinitionCommand, int> handler,
         CancellationToken ct)
     {
-        var definition = AchievementDefinition.Create(
-            request.Name, request.Description, request.Emoji,
-            request.RuleType, request.LinkedBadgeTypeId,
-            request.Threshold, request.Order);
+        var result = await handler.HandleAsync(
+            new CreateAchievementDefinitionCommand(
+                request.Name, request.Description, request.Emoji,
+                request.RuleType, request.LinkedBadgeTypeId,
+                request.Threshold, request.Order), ct);
 
-        db.AchievementDefinitions.Add(definition);
-        await db.SaveChangesAsync(ct);
-        return TypedResults.Created($"/admin/catalog/achievements/{definition.Id}", definition.Id);
+        return TypedResults.Created($"/admin/catalog/achievements/{result.Value}", result.Value);
     }
 
-    private static async Task<Results<Ok, NotFound>> UpdateAchievementDefinition(
+    private static async Task<Results<Ok, NotFound<Error>>> UpdateAchievementDefinition(
         [FromRoute] int id,
         [FromBody] AchievementDefinitionRequest request,
-        ApplicationDbContext db,
+        ICommandHandler<UpdateAchievementDefinitionCommand> handler,
         CancellationToken ct)
     {
-        var definition = await db.AchievementDefinitions.FirstOrDefaultAsync(a => a.Id == id, ct);
-        if (definition is null)
-            return TypedResults.NotFound();
+        var result = await handler.HandleAsync(
+            new UpdateAchievementDefinitionCommand(
+                id, request.Name, request.Description, request.Emoji,
+                request.RuleType, request.LinkedBadgeTypeId,
+                request.Threshold, request.Order, request.IsActive), ct);
 
-        definition.Update(
-            request.Name, request.Description, request.Emoji,
-            request.RuleType, request.LinkedBadgeTypeId,
-            request.Threshold, request.Order, request.IsActive);
+        if (!result.IsSuccess)
+            return TypedResults.NotFound(result.Error);
 
-        await db.SaveChangesAsync(ct);
         return TypedResults.Ok();
     }
 
-    private static async Task<Results<NoContent, NotFound>> DeleteAchievementDefinition(
+    private static async Task<Results<NoContent, NotFound<Error>>> DeleteAchievementDefinition(
         [FromRoute] int id,
-        ApplicationDbContext db,
+        ICommandHandler<DeleteAchievementDefinitionCommand> handler,
         CancellationToken ct)
     {
-        var definition = await db.AchievementDefinitions.FirstOrDefaultAsync(a => a.Id == id, ct);
-        if (definition is null)
-            return TypedResults.NotFound();
+        var result = await handler.HandleAsync(new DeleteAchievementDefinitionCommand(id), ct);
 
-        db.AchievementDefinitions.Remove(definition);
-        await db.SaveChangesAsync(ct);
+        if (!result.IsSuccess)
+            return TypedResults.NotFound(result.Error);
+
         return TypedResults.NoContent();
     }
 }

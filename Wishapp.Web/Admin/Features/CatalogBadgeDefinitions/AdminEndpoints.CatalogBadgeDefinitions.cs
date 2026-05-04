@@ -1,65 +1,62 @@
 using Microsoft.AspNetCore.Http.HttpResults;
 using Microsoft.AspNetCore.Mvc;
-using Microsoft.EntityFrameworkCore;
 using Wishapp.Web.Admin.Features.CatalogBadgeDefinitions;
-using Wishapp.Web.Gamification.Entities;
+using Wishapp.Web.Admin.Features.CatalogBadgeDefinitions.Create;
+using Wishapp.Web.Admin.Features.CatalogBadgeDefinitions.Delete;
+using Wishapp.Web.Admin.Features.CatalogBadgeDefinitions.GetAll;
+using Wishapp.Web.Admin.Features.CatalogBadgeDefinitions.Update;
+using Wishapp.Web.Common.Interfaces;
+using Wishapp.Web.Common.Types;
 using Wishapp.Web.Gamification.Features.GetCatalogBadgeDefinitions;
-using Wishapp.Web.Infrastructure.Database;
 
 namespace Wishapp.Web.Admin;
 
 public static partial class AdminEndpoints
 {
     private static async Task<Ok<List<CatalogBadgeDefinitionDto>>> GetAllCatalogBadgeDefinitions(
-        ApplicationDbContext db,
+        IQueryHandler<GetAllCatalogBadgeDefinitionsQuery, List<CatalogBadgeDefinitionDto>> handler,
         CancellationToken ct)
     {
-        var items = await db.CatalogBadgeDefinitions
-            .AsNoTracking()
-            .OrderBy(b => b.Id)
-            .Select(b => new CatalogBadgeDefinitionDto(b.Id, b.Emoji, b.Slug, b.Label, b.Description, b.IsActive))
-            .ToListAsync(ct);
-
-        return TypedResults.Ok(items);
+        var result = await handler.HandleAsync(new GetAllCatalogBadgeDefinitionsQuery(), ct);
+        return TypedResults.Ok(result.Value);
     }
 
     private static async Task<Created<int>> CreateCatalogBadgeDefinition(
         [FromBody] CatalogBadgeDefinitionRequest request,
-        ApplicationDbContext db,
+        ICommandHandler<CreateCatalogBadgeDefinitionCommand, int> handler,
         CancellationToken ct)
     {
-        var definition = CatalogBadgeDefinition.Create(request.Emoji, request.Slug, request.Label, request.Description);
-        db.CatalogBadgeDefinitions.Add(definition);
-        await db.SaveChangesAsync(ct);
-        return TypedResults.Created($"/admin/catalog/badge-definitions/{definition.Id}", definition.Id);
+        var result = await handler.HandleAsync(
+            new CreateCatalogBadgeDefinitionCommand(request.Emoji, request.Slug, request.Label, request.Description), ct);
+
+        return TypedResults.Created($"/admin/catalog/badge-definitions/{result.Value}", result.Value);
     }
 
-    private static async Task<Results<Ok, NotFound>> UpdateCatalogBadgeDefinition(
+    private static async Task<Results<Ok, NotFound<Error>>> UpdateCatalogBadgeDefinition(
         [FromRoute] int id,
         [FromBody] CatalogBadgeDefinitionRequest request,
-        ApplicationDbContext db,
+        ICommandHandler<UpdateCatalogBadgeDefinitionCommand> handler,
         CancellationToken ct)
     {
-        var definition = await db.CatalogBadgeDefinitions.FirstOrDefaultAsync(b => b.Id == id, ct);
-        if (definition is null)
-            return TypedResults.NotFound();
+        var result = await handler.HandleAsync(
+            new UpdateCatalogBadgeDefinitionCommand(id, request.Emoji, request.Slug, request.Label, request.Description, request.IsActive), ct);
 
-        definition.Update(request.Emoji, request.Slug, request.Label, request.Description, request.IsActive);
-        await db.SaveChangesAsync(ct);
+        if (!result.IsSuccess)
+            return TypedResults.NotFound(result.Error);
+
         return TypedResults.Ok();
     }
 
-    private static async Task<Results<NoContent, NotFound>> DeleteCatalogBadgeDefinition(
+    private static async Task<Results<NoContent, NotFound<Error>>> DeleteCatalogBadgeDefinition(
         [FromRoute] int id,
-        ApplicationDbContext db,
+        ICommandHandler<DeleteCatalogBadgeDefinitionCommand> handler,
         CancellationToken ct)
     {
-        var definition = await db.CatalogBadgeDefinitions.FirstOrDefaultAsync(b => b.Id == id, ct);
-        if (definition is null)
-            return TypedResults.NotFound();
+        var result = await handler.HandleAsync(new DeleteCatalogBadgeDefinitionCommand(id), ct);
 
-        db.CatalogBadgeDefinitions.Remove(definition);
-        await db.SaveChangesAsync(ct);
+        if (!result.IsSuccess)
+            return TypedResults.NotFound(result.Error);
+
         return TypedResults.NoContent();
     }
 }

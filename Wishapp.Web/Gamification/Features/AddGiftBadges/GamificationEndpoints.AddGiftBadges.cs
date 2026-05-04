@@ -10,7 +10,7 @@ namespace Wishapp.Web.Gamification;
 
 public static partial class GamificationEndpoints
 {
-    private static async Task<Results<Ok, UnauthorizedHttpResult, NotFound, Conflict<Error>, BadRequest<Error>>> AddGiftBadges(
+    private static async Task<Results<Ok, UnauthorizedHttpResult, NotFound<Error>, Conflict<Error>, BadRequest<Error>>> AddGiftBadges(
         [FromRoute] Guid id,
         [FromRoute] Guid wishId,
         AddGiftBadgesRequest request,
@@ -30,7 +30,7 @@ public static partial class GamificationEndpoints
 
         return result.Error.Type switch
         {
-            ErrorType.NotFound => TypedResults.NotFound(),
+            ErrorType.NotFound => TypedResults.NotFound(result.Error),
             ErrorType.Conflict => TypedResults.Conflict(result.Error),
             _ => TypedResults.BadRequest(result.Error)
         };

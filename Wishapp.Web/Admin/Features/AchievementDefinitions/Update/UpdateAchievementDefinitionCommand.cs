@@ -1,8 +1,10 @@
+using Wishapp.Web.Common.Interfaces;
 using Wishapp.Web.Gamification.Entities;
 
-namespace Wishapp.Web.Admin.Features.AchievementDefinitions;
+namespace Wishapp.Web.Admin.Features.AchievementDefinitions.Update;
 
-public record AchievementDefinitionRequest(
+public record UpdateAchievementDefinitionCommand(
+    int Id,
     string Name,
     string Description,
     string Emoji,
@@ -10,4 +12,4 @@ public record AchievementDefinitionRequest(
     int? LinkedBadgeTypeId,
     int Threshold,
     int Order,
-    bool IsActive = true);
+    bool IsActive) : ICommand;

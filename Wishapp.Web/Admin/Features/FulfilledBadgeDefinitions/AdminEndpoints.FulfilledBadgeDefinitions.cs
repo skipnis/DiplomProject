@@ -1,65 +1,62 @@
 using Microsoft.AspNetCore.Http.HttpResults;
 using Microsoft.AspNetCore.Mvc;
-using Microsoft.EntityFrameworkCore;
 using Wishapp.Web.Admin.Features.FulfilledBadgeDefinitions;
-using Wishapp.Web.Gamification.Entities;
+using Wishapp.Web.Admin.Features.FulfilledBadgeDefinitions.Create;
+using Wishapp.Web.Admin.Features.FulfilledBadgeDefinitions.Delete;
+using Wishapp.Web.Admin.Features.FulfilledBadgeDefinitions.GetAll;
+using Wishapp.Web.Admin.Features.FulfilledBadgeDefinitions.Update;
+using Wishapp.Web.Common.Interfaces;
+using Wishapp.Web.Common.Types;
 using Wishapp.Web.Gamification.Features.GetFulfilledBadgeDefinitions;
-using Wishapp.Web.Infrastructure.Database;
 
 namespace Wishapp.Web.Admin;
 
 public static partial class AdminEndpoints
 {
     private static async Task<Ok<List<FulfilledBadgeDefinitionDto>>> GetAllFulfilledBadgeDefinitions(
-        ApplicationDbContext db,
+        IQueryHandler<GetAllFulfilledBadgeDefinitionsQuery, List<FulfilledBadgeDefinitionDto>> handler,
         CancellationToken ct)
     {
-        var items = await db.FulfilledWishBadgeDefinitions
-            .AsNoTracking()
-            .OrderBy(b => b.Id)
-            .Select(b => new FulfilledBadgeDefinitionDto(b.Id, b.Emoji, b.Slug, b.Label, b.Description, b.IsActive))
-            .ToListAsync(ct);
-
-        return TypedResults.Ok(items);
+        var result = await handler.HandleAsync(new GetAllFulfilledBadgeDefinitionsQuery(), ct);
+        return TypedResults.Ok(result.Value);
     }
 
     private static async Task<Created<int>> CreateFulfilledBadgeDefinition(
         [FromBody] FulfilledBadgeDefinitionRequest request,
-        ApplicationDbContext db,
+        ICommandHandler<CreateFulfilledBadgeDefinitionCommand, int> handler,
         CancellationToken ct)
     {
-        var definition = FulfilledWishBadgeDefinition.Create(request.Emoji, request.Slug, request.Label, request.Description);
-        db.FulfilledWishBadgeDefinitions.Add(definition);
-        await db.SaveChangesAsync(ct);
-        return TypedResults.Created($"/admin/catalog/fulfilled-badge-definitions/{definition.Id}", definition.Id);
+        var result = await handler.HandleAsync(
+            new CreateFulfilledBadgeDefinitionCommand(request.Emoji, request.Slug, request.Label, request.Description), ct);
+
+        return TypedResults.Created($"/admin/catalog/fulfilled-badge-definitions/{result.Value}", result.Value);
     }
 
-    private static async Task<Results<Ok, NotFound>> UpdateFulfilledBadgeDefinition(
+    private static async Task<Results<Ok, NotFound<Error>>> UpdateFulfilledBadgeDefinition(
         [FromRoute] int id,
         [FromBody] FulfilledBadgeDefinitionRequest request,
-        ApplicationDbContext db,
+        ICommandHandler<UpdateFulfilledBadgeDefinitionCommand> handler,
         CancellationToken ct)
     {
-        var definition = await db.FulfilledWishBadgeDefinitions.FirstOrDefaultAsync(b => b.Id == id, ct);
-        if (definition is null)
-            return TypedResults.NotFound();
+        var result = await handler.HandleAsync(
+            new UpdateFulfilledBadgeDefinitionCommand(id, request.Emoji, request.Slug, request.Label, request.Description, request.IsActive), ct);
 
-        definition.Update(request.Emoji, request.Slug, request.Label, request.Description, request.IsActive);
-        await db.SaveChangesAsync(ct);
+        if (!result.IsSuccess)
+            return TypedResults.NotFound(result.Error);
+
         return TypedResults.Ok();
     }
 
-    private static async Task<Results<NoContent, NotFound>> DeleteFulfilledBadgeDefinition(
+    private static async Task<Results<NoContent, NotFound<Error>>> DeleteFulfilledBadgeDefinition(
         [FromRoute] int id,
-        ApplicationDbContext db,
+        ICommandHandler<DeleteFulfilledBadgeDefinitionCommand> handler,
         CancellationToken ct)
     {
-        var definition = await db.FulfilledWishBadgeDefinitions.FirstOrDefaultAsync(b => b.Id == id, ct);
-        if (definition is null)
-            return TypedResults.NotFound();
+        var result = await handler.HandleAsync(new DeleteFulfilledBadgeDefinitionCommand(id), ct);
 
-        db.FulfilledWishBadgeDefinitions.Remove(definition);
-        await db.SaveChangesAsync(ct);
+        if (!result.IsSuccess)
+            return TypedResults.NotFound(result.Error);
+
         return TypedResults.NoContent();
     }
 }

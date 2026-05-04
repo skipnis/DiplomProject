@@ -10,19 +10,16 @@ namespace Wishapp.Web.Gamification.Features.VoteCatalogItemBadge;
 public sealed class VoteCatalogItemBadgeHandler(ApplicationDbContext db, ICatalogApi catalogApi)
     : ICommandHandler<VoteCatalogItemBadgeCommand>
 {
-    private static readonly Error NotFound = Error.NotFound("Catalog.NotFound", "Catalog item not found.");
-    private static readonly Error BadgeNotFound = Error.NotFound("Catalog.BadgeNotFound", "Badge definition not found.");
-
     public async Task<Result> HandleAsync(VoteCatalogItemBadgeCommand command, CancellationToken ct = default)
     {
         var exists = await catalogApi.ItemExistsAsync(command.CatalogItemId, ct);
         if (!exists)
-            return NotFound;
+            return Error.NotFound("Catalog.NotFound", "Catalog item not found.");
 
         var badgeExists = await db.CatalogBadgeDefinitions
             .AnyAsync(b => b.Id == command.BadgeType && b.IsActive, ct);
         if (!badgeExists)
-            return BadgeNotFound;
+            return Error.NotFound("Catalog.BadgeNotFound", "Badge definition not found.");
 
         var alreadyVoted = await db.CatalogItemBadgeVotes
             .AnyAsync(v => v.CatalogItemId == command.CatalogItemId
