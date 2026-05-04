@@ -44,7 +44,7 @@ public sealed class DeleteMyAccountHandler(
 
         if (otp.CodeHash != codeHash)
         {
-            otp.AttemptCount++;
+            otp.IncrementAttempt();
             await db.SaveChangesAsync(ct);
             return InvalidCode;
         }
@@ -52,7 +52,7 @@ public sealed class DeleteMyAccountHandler(
         if (!otp.IsValid)
             return InvalidCode;
 
-        otp.UsedAt = DateTime.UtcNow;
+        otp.MarkUsed();
         await db.SaveChangesAsync(ct);
 
         if (user.AvatarPath is not null)

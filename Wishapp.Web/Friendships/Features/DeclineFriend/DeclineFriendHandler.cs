@@ -24,9 +24,7 @@ public sealed class DeclineFriendHandler(ApplicationDbContext db)
             return Error.NotFound("Friendships.NotFound", "Friend request not found");
         }
 
-        friendship.Status = FriendshipStatus.Declined;
-        
-        friendship.UpdatedAt = DateTimeOffset.UtcNow;
+        friendship.Decline();
 
         await db.SaveChangesAsync(ct);
 

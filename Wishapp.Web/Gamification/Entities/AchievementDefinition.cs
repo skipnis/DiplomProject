@@ -3,9 +3,9 @@ namespace Wishapp.Web.Gamification.Entities;
 public sealed class AchievementDefinition
 {
     public int Id { get; private set; }
-    public string Name { get; private set; } = string.Empty;
-    public string Description { get; private set; } = string.Empty;
-    public string Emoji { get; private set; } = string.Empty;
+    public string Name { get; private set; } = null!;
+    public string Description { get; private set; } = null!;
+    public string Emoji { get; private set; } = null!;
     public AchievementRuleType RuleType { get; private set; }
     public int? LinkedBadgeTypeId { get; private set; }
     public int Threshold { get; private set; }

@@ -1,15 +1,17 @@
 namespace Wishapp.Web.Events.Entities;
 
-public class Event
+public sealed class Event
 {
-    public Guid Id { get; set; }
-    public Guid OwnerId { get; set; }
-    public required string Title { get; set; }
-    public string? Description { get; set; }
-    public DateOnly Date { get; set; }
-    public string? GoogleCalendarEventId { get; set; }
-    public Guid? LinkedWishlistId { get; set; }
-    public DateTimeOffset CreatedAt { get; set; }
+    public Guid Id { get; private set; }
+    public Guid OwnerId { get; private set; }
+    public string Title { get; private set; } = null!;
+    public string? Description { get; private set; }
+    public DateOnly Date { get; private set; }
+    public string? GoogleCalendarEventId { get; private set; }
+    public Guid? LinkedWishlistId { get; private set; }
+    public DateTimeOffset CreatedAt { get; private set; }
+
+    private Event() { }
 
     public static Event Create(Guid ownerId, string title, string? description, DateOnly date)
     {
@@ -23,4 +25,19 @@ public class Event
             CreatedAt = DateTimeOffset.UtcNow
         };
     }
+
+    public void Update(string title, string? description, DateOnly date)
+    {
+        Title = title;
+        Description = description;
+        Date = date;
+    }
+
+    public void SetGoogleCalendarEventId(string id) => GoogleCalendarEventId = id;
+
+    public void ClearGoogleCalendarSync() => GoogleCalendarEventId = null;
+
+    public void LinkWishlist(Guid wishlistId) => LinkedWishlistId = wishlistId;
+
+    public void UnlinkWishlist() => LinkedWishlistId = null;
 }

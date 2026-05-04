@@ -1,18 +1,20 @@
 namespace Wishapp.Web.Users.Entities;
 
-public class EmailOtp
+public sealed class EmailOtp
 {
-    public Guid Id { get; set; }
-    public required string Email { get; set; }
-    public required string CodeHash { get; set; }
-    public DateTime ExpiresAt { get; set; }
-    public int AttemptCount { get; set; }
-    public DateTime? UsedAt { get; set; }
-    public DateTime CreatedAt { get; set; }
+    public Guid Id { get; private set; }
+    public string Email { get; private set; } = null!;
+    public string CodeHash { get; private set; } = null!;
+    public DateTime ExpiresAt { get; private set; }
+    public int AttemptCount { get; private set; }
+    public DateTime? UsedAt { get; private set; }
+    public DateTime CreatedAt { get; private set; }
 
     public bool IsExpired => DateTime.UtcNow > ExpiresAt;
     public bool IsUsed => UsedAt.HasValue;
     public bool IsValid => !IsExpired && !IsUsed && AttemptCount < 5;
+
+    private EmailOtp() { }
 
     public static EmailOtp Create(string email, string codeHash)
     {
@@ -26,4 +28,8 @@ public class EmailOtp
             CreatedAt = DateTime.UtcNow
         };
     }
+
+    public void IncrementAttempt() => AttemptCount++;
+
+    public void MarkUsed() => UsedAt = DateTime.UtcNow;
 }

@@ -27,9 +27,13 @@ public sealed class LinkWishlistHandler(ApplicationDbContext db, IWishlistsApi w
             var canLink = await wishlistsApi.CanLinkWishlistAsync(command.UserId, command.WishlistId.Value, ct);
             if (canLink.IsFailure)
                 return canLink.Error;
-        }
 
-        @event.LinkedWishlistId = command.WishlistId;
+            @event.LinkWishlist(command.WishlistId.Value);
+        }
+        else
+        {
+            @event.UnlinkWishlist();
+        }
 
         await db.SaveChangesAsync(ct);
 

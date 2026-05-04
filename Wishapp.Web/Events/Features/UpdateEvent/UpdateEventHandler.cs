@@ -25,11 +25,7 @@ public sealed class UpdateEventHandler(ApplicationDbContext db)
             return Error.Forbidden("Events.Forbidden", "Access denied");
         }
 
-        @event.Title = command.Title;
-        
-        @event.Description = command.Description;
-        
-        @event.Date = command.Date;
+        @event.Update(command.Title, command.Description, command.Date);
 
         await db.SaveChangesAsync(ct);
 

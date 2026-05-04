@@ -44,7 +44,7 @@ public sealed class UploadAvatarHandler(
         await using var stream = command.File.OpenReadStream();
         await storageService.UploadAsync(path, stream, command.File.ContentType, command.File.Length, ct);
 
-        user.AvatarPath = path;
+        user.SetAvatar(path);
 
         await db.SaveChangesAsync(ct);
 

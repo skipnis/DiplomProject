@@ -30,9 +30,7 @@ public sealed class AcceptFriendHandler(
             return Error.NotFound("Friendships.NotFound", "Friend request not found");
         }
 
-        friendship.Status = FriendshipStatus.Accepted;
-
-        friendship.UpdatedAt = DateTimeOffset.UtcNow;
+        friendship.Accept();
 
         await db.SaveChangesAsync(ct);
 

@@ -29,19 +29,12 @@ public sealed class ConnectGoogleCalendarHandler(
 
         if (existing is not null)
         {
-            existing.RefreshToken = exchangeResult.Value;
+            existing.UpdateRefreshToken(exchangeResult.Value);
         }
         else
         {
-            db.UserExternalTokens.Add(new UserExternalToken
-            {
-                Id = Guid.CreateVersion7(),
-                UserId = command.UserId,
-                Provider = Provider,
-                Scope = Scope,
-                RefreshToken = exchangeResult.Value,
-                CreatedAt = DateTimeOffset.UtcNow,
-            });
+            db.UserExternalTokens.Add(
+                UserExternalToken.Create(command.UserId, Provider, Scope, exchangeResult.Value));
         }
 
         await db.SaveChangesAsync(ct);

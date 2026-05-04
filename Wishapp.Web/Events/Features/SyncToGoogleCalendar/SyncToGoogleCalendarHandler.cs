@@ -60,7 +60,7 @@ public sealed class SyncToGoogleCalendarHandler(
             if (createResult.IsFailure)
                 return createResult;
 
-            @event.GoogleCalendarEventId = createResult.Value;
+            @event.SetGoogleCalendarEventId(createResult.Value);
         }
 
         await db.SaveChangesAsync(ct);

@@ -3,10 +3,10 @@ namespace Wishapp.Web.Gamification.Entities;
 public sealed class CatalogBadgeDefinition
 {
     public int Id { get; private set; }
-    public string Emoji { get; private set; } = string.Empty;
-    public string Slug { get; private set; } = string.Empty;
-    public string Label { get; private set; } = string.Empty;
-    public string Description { get; private set; } = string.Empty;
+    public string Emoji { get; private set; } = null!;
+    public string Slug { get; private set; } = null!;
+    public string Label { get; private set; } = null!;
+    public string Description { get; private set; } = null!;
     public bool IsActive { get; private set; }
 
     private CatalogBadgeDefinition() { }

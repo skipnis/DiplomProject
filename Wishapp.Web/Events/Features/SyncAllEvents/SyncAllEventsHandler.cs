@@ -44,7 +44,7 @@ public sealed class SyncAllEventsHandler(
             {
                 var createResult = await calendarService.CreateEventAsync(accessToken, data, ct);
                 if (createResult.IsSuccess)
-                    @event.GoogleCalendarEventId = createResult.Value;
+                    @event.SetGoogleCalendarEventId(createResult.Value);
             }
         }
 

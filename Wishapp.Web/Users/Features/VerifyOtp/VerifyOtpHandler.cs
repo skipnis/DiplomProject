@@ -40,7 +40,7 @@ public sealed class VerifyOtpHandler(
 
         if (otp.CodeHash != codeHash)
         {
-            otp.AttemptCount++;
+            otp.IncrementAttempt();
             await db.SaveChangesAsync(ct);
             return InvalidCode;
         }
@@ -48,7 +48,7 @@ public sealed class VerifyOtpHandler(
         if (!otp.IsValid)
             return InvalidCode;
 
-        otp.UsedAt = DateTime.UtcNow;
+        otp.MarkUsed();
 
         var identity = await db.AuthIdentities
             .AsNoTracking()

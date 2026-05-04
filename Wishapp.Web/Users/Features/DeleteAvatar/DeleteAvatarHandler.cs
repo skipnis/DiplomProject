@@ -26,7 +26,7 @@ public sealed class DeleteAvatarHandler(
 
         await storageService.DeleteAsync(user.AvatarPath, ct);
 
-        user.AvatarPath = null;
+        user.RemoveAvatar();
 
         await db.SaveChangesAsync(ct);
 

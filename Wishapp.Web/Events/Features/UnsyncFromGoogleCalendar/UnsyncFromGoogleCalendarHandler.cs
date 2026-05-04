@@ -25,7 +25,7 @@ public sealed class UnsyncFromGoogleCalendarHandler(ApplicationDbContext db)
             return Error.Forbidden("Events.Forbidden", "Access denied");
         }
 
-        @event.GoogleCalendarEventId = null;
+        @event.ClearGoogleCalendarSync();
         
         await db.SaveChangesAsync(ct);
 
