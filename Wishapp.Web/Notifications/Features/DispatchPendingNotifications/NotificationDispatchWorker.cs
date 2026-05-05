@@ -1,7 +1,6 @@
 using Microsoft.EntityFrameworkCore;
 using Wishapp.Web.Infrastructure.Database;
 using Wishapp.Web.Notifications.Entities;
-using Wishapp.Web.Notifications.Interfaces;
 
 namespace Wishapp.Web.Notifications.Features.DispatchPendingNotifications;
 

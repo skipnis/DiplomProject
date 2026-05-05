@@ -1,5 +1,5 @@
 using Microsoft.EntityFrameworkCore;
-using Wishapp.Web.Catalog.Api;
+using Wishapp.Web.Catalog;
 using Wishapp.Web.Common.Interfaces;
 using Wishapp.Web.Common.Types;
 using Wishapp.Web.Gamification.Entities;

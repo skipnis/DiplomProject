@@ -1,5 +1,3 @@
-using Wishapp.Web.Catalog.Api;
-
 namespace Wishapp.Web.Catalog;
 
 public static class CatalogModule

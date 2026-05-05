@@ -1,7 +1,7 @@
 using Microsoft.EntityFrameworkCore;
 using Wishapp.Web.Infrastructure.Database;
 
-namespace Wishapp.Web.Catalog.Api;
+namespace Wishapp.Web.Catalog;
 
 internal sealed class CatalogApi(ApplicationDbContext db) : ICatalogApi
 {

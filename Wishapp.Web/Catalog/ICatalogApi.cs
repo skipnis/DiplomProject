@@ -1,4 +1,4 @@
-namespace Wishapp.Web.Catalog.Api;
+namespace Wishapp.Web.Catalog;
 
 public interface ICatalogApi
 {

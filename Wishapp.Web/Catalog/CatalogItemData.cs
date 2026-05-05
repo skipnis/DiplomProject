@@ -1,6 +1,6 @@
 using Wishapp.Web.Wishlists.Entities;
 
-namespace Wishapp.Web.Catalog.Api;
+namespace Wishapp.Web.Catalog;
 
 public record CatalogItemData(
     string Name,

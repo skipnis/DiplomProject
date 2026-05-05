@@ -1,5 +1,4 @@
 using Wishapp.Web.Notifications.Features.DispatchPendingNotifications;
-using Wishapp.Web.Notifications.Interfaces;
 using Wishapp.Web.Notifications.SignalR;
 
 namespace Wishapp.Web.Notifications;

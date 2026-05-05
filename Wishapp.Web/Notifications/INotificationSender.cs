@@ -1,6 +1,6 @@
 using Wishapp.Web.Notifications.Entities;
 
-namespace Wishapp.Web.Notifications.Interfaces;
+namespace Wishapp.Web.Notifications;
 
 public interface INotificationSender
 {

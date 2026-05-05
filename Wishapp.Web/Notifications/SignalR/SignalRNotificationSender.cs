@@ -1,7 +1,6 @@
 using Microsoft.AspNetCore.SignalR;
 using Wishapp.Web.Notifications.Dtos;
 using Wishapp.Web.Notifications.Entities;
-using Wishapp.Web.Notifications.Interfaces;
 
 namespace Wishapp.Web.Notifications.SignalR;
 
