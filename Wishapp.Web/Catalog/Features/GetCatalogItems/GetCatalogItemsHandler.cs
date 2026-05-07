@@ -16,7 +16,7 @@ public sealed class GetCatalogItemsHandler(ApplicationDbContext db, IGamificatio
         GetCatalogItemsQuery query,
         CancellationToken ct = default)
     {
-        var hasOccasionFilter = query.Filter.OccasionIds is { Count: > 0 };
+        var hasOccasionFilter = query.Filter.OccasionIds is { Length: > 0 };
 
         var itemQuery = db.CatalogItems
             .AsNoTracking()

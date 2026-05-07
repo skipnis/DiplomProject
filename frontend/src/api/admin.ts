@@ -74,7 +74,7 @@ export function adminParseUrl(url: string): Promise<ParsedWishData> {
 }
 
 export function adminGetCategories(): Promise<CatalogCategoryDto[]> {
-  return adminRequest<CatalogCategoryDto[]>('GET', '/catalog/categories');
+  return adminRequest<CatalogCategoryDto[]>('GET', '/admin/catalog/categories');
 }
 
 export function adminCreateCategory(data: CreateCatalogCategoryRequest): Promise<string> {

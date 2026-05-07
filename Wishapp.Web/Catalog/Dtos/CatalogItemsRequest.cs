@@ -8,7 +8,7 @@ public record CatalogItemsRequest(
     string? Search = null,
     decimal? MinPrice = null,
     decimal? MaxPrice = null,
-    [property: FromQuery(Name = "occasionIds")] List<Guid>? OccasionIds = null,
+    [property: FromQuery(Name = "occasionIds")] Guid[]? OccasionIds = null,
     int Page = 1,
     int PageSize = 20)
 {

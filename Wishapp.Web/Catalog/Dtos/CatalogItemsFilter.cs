@@ -5,4 +5,4 @@ public record CatalogItemsFilter(
     string? Search = null,
     decimal? MinPrice = null,
     decimal? MaxPrice = null,
-    List<Guid>? OccasionIds = null);
+    Guid[]? OccasionIds = null);
