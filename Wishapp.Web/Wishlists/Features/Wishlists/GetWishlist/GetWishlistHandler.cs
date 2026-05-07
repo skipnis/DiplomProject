@@ -15,15 +15,21 @@ public sealed class GetWishlistHandler(ApplicationDbContext db)
     {
         var wishlist = await db.Wishlists
             .AsNoTracking()
-            .Include(w => w.Members)
-            .Include(w => w.Wishes)
-            .FirstOrDefaultAsync(w => w.Id == query.WishlistId, ct);
+            .Where(w => w.Id == query.WishlistId)
+            .Select(w => new WishlistDto(
+                w.Id, w.Name, w.Description, w.Emoji,
+                w.Visibility, w.IsSystem, w.SystemType,
+                w.IsSurpriseModeEnabled,
+                w.Wishes.Count(wish => wish.IsFulfilled),
+                w.Members
+                    .OrderBy(m => m.JoinedAt)
+                    .Select(m => new WishlistMemberDto(m.UserId, m.Role, m.CustomRoleName, m.JoinedAt))
+                    .ToList()))
+            .FirstOrDefaultAsync(ct);
 
         if (wishlist is null)
-        {
             return Error.NotFound("Wishlists.NotFound", "Wishlist not found");
-        }
 
-        return WishlistDto.From(wishlist);
+        return wishlist;
     }
 }

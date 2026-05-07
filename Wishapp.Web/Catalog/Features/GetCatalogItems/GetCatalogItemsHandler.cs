@@ -10,9 +10,9 @@ using Wishapp.Web.Infrastructure.Database;
 namespace Wishapp.Web.Catalog.Features.GetCatalogItems;
 
 public sealed class GetCatalogItemsHandler(ApplicationDbContext db, IGamificationApi gamification)
-    : IQueryHandler<GetCatalogItemsQuery, PagedResponse<CatalogItemDto>>
+    : IQueryHandler<GetCatalogItemsQuery, PagedResponse<CatalogItemSummaryDto>>
 {
-    public async Task<Result<PagedResponse<CatalogItemDto>>> HandleAsync(
+    public async Task<Result<PagedResponse<CatalogItemSummaryDto>>> HandleAsync(
         GetCatalogItemsQuery query,
         CancellationToken ct = default)
     {
@@ -34,9 +34,9 @@ public sealed class GetCatalogItemsHandler(ApplicationDbContext db, IGamificatio
             .ThenBy(i => i.Name)
             .Select(i => new
             {
-                i.Id, i.Name, i.Description, i.Price, i.Currency,
+                i.Id, i.Name, i.Price, i.Currency,
                 i.ImagePath, i.Url, i.CategoryId, CategoryName = i.Category.Name,
-                i.IsPublished, i.CreatedAt, i.UpdatedAt, i.WishCount,
+                i.WishCount,
             });
 
         var totalCount = await itemQuery.CountAsync(ct);
@@ -46,38 +46,21 @@ public sealed class GetCatalogItemsHandler(ApplicationDbContext db, IGamificatio
             .ToListAsync(ct);
 
         if (rawItems.Count == 0)
-            return new PagedResponse<CatalogItemDto>([], query.Request.Page, query.Request.PageSize, totalCount);
+            return new PagedResponse<CatalogItemSummaryDto>([], query.Request.Page, query.Request.PageSize, totalCount);
 
         var itemIds = rawItems.Select(i => i.Id).ToList();
-
         var badgesByItemId = await gamification.GetBadgesForItemsAsync(itemIds, query.UserId, ct);
 
-        var occasionsByItemId = await db.CatalogItemOccasions
-            .AsNoTracking()
-            .Where(o => itemIds.Contains(o.CatalogItemId))
-            .Select(o => new { o.CatalogItemId, o.Occasion.Id, o.Occasion.Key, o.Occasion.Label, o.Occasion.Order })
-            .ToListAsync(ct);
-
-        var occasionsLookup = occasionsByItemId
-            .GroupBy(o => o.CatalogItemId)
-            .ToDictionary(
-                group => group.Key,
-                group => (IReadOnlyList<OccasionDto>)group
-                    .Select(o => new OccasionDto(o.Id, o.Key, o.Label, o.Order))
-                    .ToList());
-
         var items = rawItems
-            .Select(i => new CatalogItemDto(
-                i.Id, i.Name, i.Description,
+            .Select(i => new CatalogItemSummaryDto(
+                i.Id, i.Name,
                 i.Price, i.Currency?.ToString(),
                 i.ImagePath, i.Url,
                 i.CategoryId, i.CategoryName,
-                i.IsPublished, i.CreatedAt, i.UpdatedAt,
                 i.WishCount, null,
-                badgesByItemId.GetValueOrDefault(i.Id, []),
-                occasionsLookup.GetValueOrDefault(i.Id, [])))
+                badgesByItemId.GetValueOrDefault(i.Id, [])))
             .ToList();
 
-        return new PagedResponse<CatalogItemDto>(items, query.Request.Page, query.Request.PageSize, totalCount);
+        return new PagedResponse<CatalogItemSummaryDto>(items, query.Request.Page, query.Request.PageSize, totalCount);
     }
 }

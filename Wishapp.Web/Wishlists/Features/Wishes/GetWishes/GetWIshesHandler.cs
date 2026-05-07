@@ -13,19 +13,20 @@ public sealed class GetWishesHandler(
     ApplicationDbContext db,
     IReservationsApi reservationsApi,
     IGamificationApi gamificationApi)
-    : IQueryHandler<GetWishesQuery, PagedResponse<WishDto>>
+    : IQueryHandler<GetWishesQuery, PagedResponse<WishSummaryDto>>
 {
-    public async Task<Result<PagedResponse<WishDto>>> HandleAsync(
+    public async Task<Result<PagedResponse<WishSummaryDto>>> HandleAsync(
         GetWishesQuery query,
         CancellationToken ct = default)
     {
-        var wishes = await db.Wishes
+        var pagedData = await db.Wishes
             .AsNoTracking()
             .Where(w => w.WishlistId == query.WishlistId)
             .OrderByDescending(w => w.CreatedAt)
+            .Select(w => new { w.Id, w.Name, w.Price, w.Currency, w.Priority, w.ImagePath, w.IsFulfilled })
             .ToPagedResponseAsync(query.Request, ct);
 
-        var wishIds = wishes.Items.Select(w => w.Id).ToList();
+        var wishIds = pagedData.Items.Select(w => w.Id).ToList();
 
         HashSet<Guid> reservedIds = [];
         if (!query.HideReservations)
@@ -35,24 +36,12 @@ public sealed class GetWishesHandler(
 
         var wishesWithBadgeIds = await gamificationApi.GetWishIdsWithBadgesAsync(wishIds, ct);
 
-        var items = wishes.Items.Select(w => new WishDto(
-            w.Id,
-            w.Name,
-            w.Description,
-            w.Price,
-            w.Currency,
-            w.Priority,
-            w.Url,
-            w.ImagePath,
-            w.CreatedAt,
-            w.IsFulfilled,
-            w.FulfilledAt,
-            reservedIds.Contains(w.Id),
-            null,
-            null,
-            wishesWithBadgeIds.Contains(w.Id)))
+        var items = pagedData.Items
+            .Select(w => new WishSummaryDto(
+                w.Id, w.Name, w.Price, w.Currency, w.Priority, w.ImagePath,
+                w.IsFulfilled, reservedIds.Contains(w.Id), wishesWithBadgeIds.Contains(w.Id)))
             .ToList();
 
-        return new PagedResponse<WishDto>(items, wishes.Page, wishes.PageSize, wishes.TotalCount);
+        return new PagedResponse<WishSummaryDto>(items, pagedData.Page, pagedData.PageSize, pagedData.TotalCount);
     }
 }

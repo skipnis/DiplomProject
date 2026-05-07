@@ -7,4 +7,4 @@ public record CatalogCollectionDto(
     OccasionDto? Occasion,
     string? CoverImagePath,
     int Order,
-    List<CatalogItemDto> Items);
+    List<CatalogItemSummaryDto> Items);

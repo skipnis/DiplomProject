@@ -39,13 +39,12 @@ public sealed class GetCollectionHandler(ApplicationDbContext db)
             return Error.NotFound("Catalog.CollectionNotFound", "Collection not found");
 
         var items = raw.Items
-            .Select(i => new CatalogItemDto(
-                i.Id, i.Name, i.Description,
+            .Select(i => new CatalogItemSummaryDto(
+                i.Id, i.Name,
                 i.Price, i.Currency?.ToString(),
                 i.ImagePath, i.Url,
                 i.CategoryId, i.CategoryName,
-                i.IsPublished, i.CreatedAt, i.UpdatedAt,
-                i.WishCount, i.ItemDescription, [], []))
+                i.WishCount, i.ItemDescription, []))
             .ToList();
 
         OccasionDto? occasionDto = null;

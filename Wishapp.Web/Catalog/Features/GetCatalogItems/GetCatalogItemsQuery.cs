@@ -5,4 +5,4 @@ using Wishapp.Web.Common.Types;
 namespace Wishapp.Web.Catalog.Features.GetCatalogItems;
 
 public record GetCatalogItemsQuery(CatalogItemsFilter Filter, PagedRequest Request, Guid? UserId)
-    : IQuery<PagedResponse<CatalogItemDto>>;
+    : IQuery<PagedResponse<CatalogItemSummaryDto>>;

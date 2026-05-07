@@ -18,14 +18,14 @@ namespace Wishapp.Web.Wishlists;
 
 public static partial class WishlistsEndpoints
 {
-    private static async Task<Results<Ok<PagedResponse<WishDto>>, ForbidHttpResult, UnauthorizedHttpResult>> GetWishes(
+    private static async Task<Results<Ok<PagedResponse<WishSummaryDto>>, ForbidHttpResult, UnauthorizedHttpResult>> GetWishes(
         [FromRoute] Guid id,
         [AsParameters] PagedRequest request,
         ClaimsPrincipal user,
         ApplicationDbContext db,
         IAuthorizationService authorizationService,
         IFriendshipsApi friendshipsApi,
-        [FromServices] IQueryHandler<GetWishesQuery, PagedResponse<WishDto>> handler,
+        [FromServices] IQueryHandler<GetWishesQuery, PagedResponse<WishSummaryDto>> handler,
         CancellationToken ct)
     {
         var userIdResult = user.TryGetUserId();

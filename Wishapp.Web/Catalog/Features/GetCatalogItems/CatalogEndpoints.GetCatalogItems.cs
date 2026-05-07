@@ -10,10 +10,10 @@ namespace Wishapp.Web.Catalog;
 
 public static partial class CatalogEndpoints
 {
-    private static async Task<Ok<PagedResponse<CatalogItemDto>>> GetCatalogItems(
+    private static async Task<Ok<PagedResponse<CatalogItemSummaryDto>>> GetCatalogItems(
         [AsParameters] CatalogItemsRequest request,
         ClaimsPrincipal user,
-        IQueryHandler<GetCatalogItemsQuery, PagedResponse<CatalogItemDto>> handler,
+        IQueryHandler<GetCatalogItemsQuery, PagedResponse<CatalogItemSummaryDto>> handler,
         CancellationToken ct)
     {
         var userIdResult = user.TryGetUserId();

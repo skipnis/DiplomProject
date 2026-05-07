@@ -37,10 +37,8 @@ public sealed class GetUserWishlistsHandler(
                 w.Emoji,
                 w.Visibility,
                 w.IsSystem,
-                w.SystemType,
                 w.Wishes.Count,
-                w.Wishes.Count(wish => wish.IsFulfilled),
-                w.CreatedAt))
+                w.Wishes.Count(wish => wish.IsFulfilled)))
             .ToPagedResponseAsync(query.Request, ct);
 
         return result;
