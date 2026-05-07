@@ -66,7 +66,7 @@ export default function OnboardingPage() {
     setErrors({});
     setSaving(true);
     try {
-      await updateMyProfile({ displayName, username, bio: bio || null, birthDate: birthDate || null });
+      await updateMyProfile({ displayName, username, bio: bio || null, birthDate: birthDate || null, showFulfilledWishes: true });
       await refreshUser();
       navigate('/wishlists');
     } catch (e) {

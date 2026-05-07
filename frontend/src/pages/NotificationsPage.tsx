@@ -33,6 +33,7 @@ function NotificationItem({
   };
 
   const getLink = (): string | null => {
+    if (p.proposalId) return `/proposals/${p.proposalId}`;
     if (p.wishlistId) return `/wishlists/${p.wishlistId}`;
     if (p.requesterId) return `/users/${p.requesterId}`;
     if (p.acceptedByUserId) return `/users/${p.acceptedByUserId}`;
@@ -49,6 +50,8 @@ function NotificationItem({
       case 20: return `${p.addedByDisplayName ?? 'Кто-то'} добавил вас в вишлист «${p.wishlistName ?? '...'}» с ролью ${ROLE_LABELS[p.role as number] ?? ''}`;
       case 21: return `${p.removedByDisplayName ?? 'Кто-то'} удалил вас из вишлиста «${p.wishlistName ?? '...'}»`;
       case 22: return `Ваша роль в вишлисте «${p.wishlistName ?? '...'}» изменена на ${p.customRoleName ? `«${p.customRoleName}»` : (ROLE_LABELS[p.newRole as number] ?? '')}`;
+      case 30: return 'Кто-то анонимно предложил тебе идею подарка';
+      case 31: return p.status === 'Liked' ? 'Получатель ответил: Хочу' : 'Получатель ответил: Не моё';
       default: return 'Уведомление';
     }
   };

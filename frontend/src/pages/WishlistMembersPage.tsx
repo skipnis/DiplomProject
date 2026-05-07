@@ -27,6 +27,7 @@ export default function WishlistMembersPage() {
   const [friends, setFriends] = useState<FriendInfo[]>([]);
   const [friendFilter, setFriendFilter] = useState('');
   const [customRoleEdits, setCustomRoleEdits] = useState<Record<string, string>>({});
+  const [savingAlias, setSavingAlias] = useState<Record<string, boolean>>({});
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -73,16 +74,19 @@ export default function WishlistMembersPage() {
     catch (e) { toast.error(parseError(e)); }
   };
 
-  const handleCustomRoleBlur = async (userId: string) => {
+  const handleSaveAlias = async (userId: string) => {
     if (!id) return;
     const member = members.find((m) => m.userId === userId);
     if (!member) return;
     const customRoleName = customRoleEdits[userId]?.trim() || null;
     if (customRoleName === (member.customRoleName ?? null)) return;
+    setSavingAlias((prev) => ({ ...prev, [userId]: true }));
     try {
       await updateMemberRole(id, userId, member.role, customRoleName);
       setMembers((prev) => prev.map((m) => m.userId === userId ? { ...m, customRoleName } : m));
+      toast.success('Сохранено');
     } catch (e) { toast.error(parseError(e)); }
+    finally { setSavingAlias((prev) => ({ ...prev, [userId]: false })); }
   };
 
   if (loading) return <div className="flex items-center justify-center min-h-[200px] text-muted-foreground">Загрузка...</div>;
@@ -139,16 +143,24 @@ export default function WishlistMembersPage() {
                     )}
                     {!isMe && m.role !== 2 && <Button variant="destructive" size="sm" onClick={() => handleRemoveMember(m.userId)}>Удалить</Button>}
                   </div>
-                  {m.role !== 2 && !isMe && (
-                    <div className="pl-11">
+                  {(m.role !== 2 || isMe) && (
+                    <div className="pl-11 flex gap-2">
                       <Input
-                        className="h-6 text-xs"
-                        placeholder="Кастомная роль..."
+                        className="h-7 text-xs flex-1"
+                        placeholder={isMe && m.role === 2 ? 'Ваш псевдоним в этом вишлисте...' : 'Кастомная роль...'}
                         value={customRoleEdits[m.userId] ?? ''}
                         onChange={(e) => setCustomRoleEdits((prev) => ({ ...prev, [m.userId]: e.target.value }))}
-                        onBlur={() => handleCustomRoleBlur(m.userId)}
-                        onKeyDown={(e) => { if (e.key === 'Enter') (e.target as HTMLInputElement).blur(); }}
+                        onKeyDown={(e) => { if (e.key === 'Enter') handleSaveAlias(m.userId); }}
                       />
+                      <Button
+                        size="sm"
+                        variant="outline"
+                        className="h-7 text-xs"
+                        disabled={savingAlias[m.userId] || (customRoleEdits[m.userId]?.trim() || null) === (m.customRoleName ?? null)}
+                        onClick={() => handleSaveAlias(m.userId)}
+                      >
+                        Сохранить
+                      </Button>
                     </div>
                   )}
                 </div>

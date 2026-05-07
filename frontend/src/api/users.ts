@@ -1,5 +1,5 @@
 import { apiGet, apiPut, apiPost, apiDelete, apiPostForm } from './client';
-import type { MyProfile, UserProfile, UserSearchResult, GiftProfileDto } from '../types';
+import type { MyProfile, UserProfile, UserSearchResult, GiftProfileDto, FulfilledWishItem } from '../types';
 
 export function getMyProfile(): Promise<MyProfile> {
   return apiGet<MyProfile>('/users/me');
@@ -10,8 +10,13 @@ export function updateMyProfile(data: {
   username: string;
   bio: string | null;
   birthDate: string | null;
+  showFulfilledWishes: boolean;
 }): Promise<void> {
   return apiPut<void>('/users/me', data);
+}
+
+export function getUserFulfilledWishes(id: string): Promise<FulfilledWishItem[]> {
+  return apiGet<FulfilledWishItem[]>(`/users/${id}/fulfilled-wishes`);
 }
 
 export function getUserProfile(id: string): Promise<UserProfile> {

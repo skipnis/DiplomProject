@@ -1,7 +1,9 @@
 // Enums match C# backend integer values (no JsonStringEnumConverter)
 export type WishlistVisibility = 0 | 1 | 2 | 3; // Public | Friends | SelectedFriends | Private
 export type SystemWishlistType = 'None' | 'Hidden' | 'Blacklist';
-export type NotificationType = 1 | 2 | 3 | 10 | 11 | 20 | 21 | 22;
+export type NotificationType = 1 | 2 | 3 | 10 | 11 | 20 | 21 | 22 | 30 | 31;
+export type ProposalSourceType = 1 | 2 | 3; // Catalog | Wishlist | Custom
+export type ProposalStatus = 0 | 1 | 2;      // Pending | Liked | Disliked
 export type Currency = 0 | 1 | 2 | 3;           // BYN | RUB | USD | EUR
 export type WishPriority = 0 | 1 | 2 | 3 | 4;   // None | NiceToHave | Want | ReallyWant | Dream
 export type WishlistMemberRole = 0 | 1 | 2;      // Viewer | Editor | Owner
@@ -32,6 +34,8 @@ export const NOTIFICATION_TYPE_LABELS: Record<number, string> = {
   20: 'Вас добавили в вишлист',
   21: 'Вас удалили из вишлиста',
   22: 'Ваша роль изменена',
+  30: 'Новое предложение подарка',
+  31: 'Ответ на предложение',
 };
 
 export const ROLE_LABELS: Record<number, string> = {
@@ -48,6 +52,15 @@ export interface MyProfile {
   birthDate: string | null;
   isGoogleCalendarConnected: boolean;
   isOnboarded: boolean;
+  showFulfilledWishes: boolean;
+}
+
+export interface FulfilledWishItem {
+  id: string;
+  wishName: string;
+  imagePath: string | null;
+  wishlistName: string;
+  fulfilledAt: string;
 }
 
 export interface UserProfile {
@@ -294,6 +307,7 @@ export interface CatalogItemDto {
   wishCount: number;
   collectionItemDescription: string | null;
   badges: CatalogItemBadgeDto[];
+  occasions: OccasionDto[];
 }
 
 export interface CreateCatalogItemRequest {
@@ -304,6 +318,7 @@ export interface CreateCatalogItemRequest {
   imagePath: string | null;
   url: string | null;
   categoryId: string;
+  occasionIds: string[];
 }
 
 export interface UpdateCatalogItemRequest extends CreateCatalogItemRequest {
@@ -324,7 +339,7 @@ export interface CatalogCollectionSummaryDto {
   id: string;
   name: string;
   description: string | null;
-  occasion: string | null;
+  occasion: OccasionDto | null;
   coverImagePath: string | null;
   order: number;
   itemCount: number;
@@ -334,7 +349,7 @@ export interface CatalogCollectionDto {
   id: string;
   name: string;
   description: string | null;
-  occasion: string | null;
+  occasion: OccasionDto | null;
   coverImagePath: string | null;
   order: number;
   items: CatalogItemDto[];
@@ -344,7 +359,7 @@ export interface CatalogCollectionAdminDto {
   id: string;
   name: string;
   description: string | null;
-  occasion: string | null;
+  occasion: OccasionDto | null;
   coverImagePath: string | null;
   order: number;
   isPublished: boolean;
@@ -355,7 +370,7 @@ export interface CatalogCollectionAdminDto {
 export interface CreateCollectionRequest {
   name: string;
   description: string | null;
-  occasion: string | null;
+  occasionId: string | null;
   coverImagePath: string | null;
   order: number;
 }
@@ -402,3 +417,104 @@ export interface FulfilledWishRecordDto {
   wishlistName: string;
   fulfilledAt: string;
 }
+
+export interface IncomingProposalDto {
+  id: string;
+  sourceType: ProposalSourceType;
+  senderAlias: string;
+  hintMessage: string | null;
+  isViewedByRecipient: boolean;
+  status: ProposalStatus;
+  recipientComment: string | null;
+  createdAt: string;
+  reactedAt: string | null;
+  catalogItemId: string | null;
+  catalogItemName: string | null;
+  catalogItemImagePath: string | null;
+  catalogItemPrice: number | null;
+  wishlistItemId: string | null;
+  wishlistItemName: string | null;
+  wishlistItemImagePath: string | null;
+  customTitle: string | null;
+  customDescription: string | null;
+  customImagePath: string | null;
+}
+
+export interface OutgoingProposalDto {
+  id: string;
+  sourceType: ProposalSourceType;
+  status: ProposalStatus;
+  hintMessage: string | null;
+  recipientComment: string | null;
+  createdAt: string;
+  reactedAt: string | null;
+  recipientId: string;
+  recipientDisplayName: string;
+  recipientAvatarUrl: string | null;
+  catalogItemId: string | null;
+  catalogItemName: string | null;
+  catalogItemImagePath: string | null;
+  catalogItemPrice: number | null;
+  wishlistItemId: string | null;
+  wishlistItemName: string | null;
+  wishlistItemImagePath: string | null;
+  customTitle: string | null;
+  customDescription: string | null;
+  customImagePath: string | null;
+}
+
+export interface ProposalDetailDto {
+  id: string;
+  sourceType: ProposalSourceType;
+  senderAlias: string;
+  hintMessage: string | null;
+  isViewedByRecipient: boolean;
+  status: ProposalStatus;
+  recipientComment: string | null;
+  createdAt: string;
+  reactedAt: string | null;
+  isOwnProposal: boolean;
+  recipientId: string | null;
+  recipientDisplayName: string | null;
+  recipientAvatarUrl: string | null;
+  catalogItemId: string | null;
+  catalogItemName: string | null;
+  catalogItemImagePath: string | null;
+  catalogItemPrice: number | null;
+  catalogItemUrl: string | null;
+  wishlistItemId: string | null;
+  wishlistItemName: string | null;
+  wishlistItemImagePath: string | null;
+  wishlistItemDescription: string | null;
+  customTitle: string | null;
+  customDescription: string | null;
+  customImagePath: string | null;
+}
+
+export interface CreateProposalRequest {
+  recipientId: string;
+  sourceType: ProposalSourceType;
+  catalogItemId: string | null;
+  wishlistItemId: string | null;
+  customTitle: string | null;
+  customDescription: string | null;
+  hintMessage: string | null;
+  senderAlias: string | null;
+}
+
+export interface ReactToProposalRequest {
+  status: 1 | 2;
+  comment: string | null;
+}
+
+export const PROPOSAL_STATUS_LABELS: Record<ProposalStatus, string> = {
+  0: 'Ожидает ответа',
+  1: 'Хочу',
+  2: 'Не моё',
+};
+
+export const PROPOSAL_SOURCE_LABELS: Record<ProposalSourceType, string> = {
+  1: 'Каталог',
+  2: 'Из вишлиста',
+  3: 'Своя идея',
+};

@@ -7,6 +7,7 @@ import { useToast } from '../components/Toast';
 import { parseError } from '../utils/errors';
 import { Card, CardContent } from '@/components/ui/card';
 import { z } from 'zod';
+import { OTP_CODE_LENGTH } from '@/lib/utils';
 
 const emailSchema = z.string().email('Введите корректный email');
 
@@ -191,7 +192,7 @@ export default function LoginPage() {
               <input
                 type="text"
                 inputMode="numeric"
-                maxLength={6}
+                maxLength={OTP_CODE_LENGTH}
                 placeholder="000000"
                 value={code}
                 onChange={e => setCode(e.target.value.replace(/\D/g, ''))}

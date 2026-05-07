@@ -19,8 +19,10 @@ import type {
   UpdateCollectionRequest,
 } from '../types';
 
+export const ADMIN_TOKEN_KEY = 'admin_token';
+
 export function getAdminToken(): string | null {
-  return localStorage.getItem('admin_token');
+  return localStorage.getItem(ADMIN_TOKEN_KEY);
 }
 
 async function adminRequest<T>(
@@ -43,7 +45,7 @@ async function adminRequest<T>(
   });
 
   if (res.status === 401) {
-    localStorage.removeItem('admin_token');
+    localStorage.removeItem(ADMIN_TOKEN_KEY);
     window.location.href = '/admin/login';
     throw new Error('Unauthorized');
   }
@@ -191,7 +193,7 @@ async function adminRequestForm<T>(path: string, data: FormData): Promise<T> {
   });
 
   if (res.status === 401) {
-    localStorage.removeItem('admin_token');
+    localStorage.removeItem(ADMIN_TOKEN_KEY);
     window.location.href = '/admin/login';
     throw new Error('Unauthorized');
   }

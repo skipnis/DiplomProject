@@ -1,16 +1,16 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { createWishlist } from '../api/wishlists';
 import { createEvent, linkWishlist, syncToGoogleCalendar } from '../api/events';
-import { searchUsers } from '../api/users';
+import { getFriends } from '../api/friends';
 import { getImageUrl } from '../api/client';
 import { useToast } from '../components/Toast';
 import { parseError } from '../utils/errors';
 import { wishlistSchema, eventSchema, parseZodErrors, type FormErrors } from '../lib/schemas';
 import { parseApiFieldErrors } from '../utils/errors';
 import { VISIBILITY_LABELS } from '../types';
-import type { WishlistVisibility, WishlistMemberInvite, WishlistMemberRole, UserSearchResult } from '../types';
+import type { WishlistVisibility, WishlistMemberRole, FriendInfo } from '../types';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
@@ -30,9 +30,9 @@ export default function NewWishlistPage() {
   const [description, setDescription] = useState('');
   const [emoji, setEmoji] = useState('🎁');
   const [visibility, setVisibility] = useState<WishlistVisibility>(1);
-  const [members, setMembers] = useState<WishlistMemberInvite[]>([]);
-  const [userQuery, setUserQuery] = useState('');
-  const [userResults, setUserResults] = useState<UserSearchResult[]>([]);
+  const [friends, setFriends] = useState<FriendInfo[]>([]);
+  const [selectedFriends, setSelectedFriends] = useState<FriendInfo[]>([]);
+  const [friendFilter, setFriendFilter] = useState('');
   const [surpriseMode, setSurpriseMode] = useState(false);
   const [saving, setSaving] = useState(false);
   const [createEventEnabled, setCreateEventEnabled] = useState(false);
@@ -41,28 +41,27 @@ export default function NewWishlistPage() {
   const [eventDescription, setEventDescription] = useState('');
   const [errors, setErrors] = useState<FormErrors>({});
 
+  useEffect(() => {
+    getFriends(1, 100).then((res) => setFriends(res.items)).catch(() => {});
+  }, []);
+
   const clearError = (field: string) => {
     if (errors[field]) setErrors((prev) => ({ ...prev, [field]: '' }));
   };
 
-  const handleSearchUsers = async () => {
-    if (!userQuery.trim()) return;
-    try {
-      const res = await searchUsers(userQuery.trim());
-      setUserResults(res.items);
-    } catch (e) {
-      toast.error(parseError(e));
-    }
+  const addFriend = (friend: FriendInfo) => {
+    setSelectedFriends((prev) => [...prev, friend]);
   };
 
-  const addMember = (u: UserSearchResult) => {
-    if (members.some((m) => m.userId === u.id)) return;
-    setMembers((prev) => [...prev, { userId: u.id, role: 1 as WishlistMemberRole }]);
-    setUserResults([]);
-    setUserQuery('');
+  const removeFriend = (userId: string) => {
+    setSelectedFriends((prev) => prev.filter((f) => f.userId !== userId));
   };
 
-  const removeMember = (userId: string) => setMembers((prev) => prev.filter((m) => m.userId !== userId));
+  const availableFriends = friends.filter(
+    (f) =>
+      !selectedFriends.some((s) => s.userId === f.userId) &&
+      f.username.toLowerCase().includes(friendFilter.toLowerCase()),
+  );
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -82,6 +81,7 @@ export default function NewWishlistPage() {
 
     setSaving(true);
     try {
+      const members = selectedFriends.map((f) => ({ userId: f.userId, role: 1 as WishlistMemberRole }));
       const wishlist = await createWishlist({ name, description: description || null, emoji, visibility, isSurpriseModeEnabled: surpriseMode, members: members.length > 0 ? members : undefined });
       if (createEventEnabled && eventTitle.trim() && eventDate) {
         const event = await createEvent({ title: eventTitle.trim(), description: eventDescription.trim() || null, date: eventDate });
@@ -163,31 +163,36 @@ export default function NewWishlistPage() {
             {visibility === 2 && (
               <div className="flex flex-col gap-2">
                 <Label>Участники</Label>
-                <div className="flex gap-2">
-                  <Input placeholder="Поиск по username..." value={userQuery} onChange={(e) => setUserQuery(e.target.value)} onKeyDown={(e) => e.key === 'Enter' && (e.preventDefault(), handleSearchUsers())} />
-                  <Button type="button" variant="ghost" onClick={handleSearchUsers}>Найти</Button>
-                </div>
-                {userResults.length > 0 && (
+                <Input
+                  placeholder="Поиск по друзьям..."
+                  value={friendFilter}
+                  onChange={(e) => setFriendFilter(e.target.value)}
+                />
+                {availableFriends.length > 0 && (
                   <Card>
                     <CardContent className="p-2 flex flex-col gap-1">
-                      {userResults.map((u) => (
-                        <button key={u.id} type="button" className="flex items-center gap-2 p-2 rounded-md hover:bg-muted text-left" onClick={() => addMember(u)}>
+                      {availableFriends.map((f) => (
+                        <button key={f.userId} type="button" className="flex items-center gap-2 p-2 rounded-md hover:bg-muted text-left" onClick={() => addFriend(f)}>
                           <Avatar className="h-7 w-7">
-                            <AvatarImage src={getImageUrl(u.avatarUrl) ?? undefined} />
-                            <AvatarFallback className="text-xs">{(u.username ?? '?')[0].toUpperCase()}</AvatarFallback>
+                            <AvatarImage src={getImageUrl(f.avatarUrl) ?? undefined} />
+                            <AvatarFallback className="text-xs">{f.username[0].toUpperCase()}</AvatarFallback>
                           </Avatar>
-                          <span className="text-sm font-medium">{u.username}</span>
+                          <span className="text-sm font-medium flex-1">{f.username}</span>
+                          <span className="text-xs text-primary font-semibold">+ Добавить</span>
                         </button>
                       ))}
                     </CardContent>
                   </Card>
                 )}
-                {members.length > 0 && (
+                {friends.length === 0 && (
+                  <p className="text-sm text-muted-foreground">Нет друзей для добавления</p>
+                )}
+                {selectedFriends.length > 0 && (
                   <div className="flex flex-wrap gap-1">
-                    {members.map((m) => (
-                      <span key={m.userId} className="flex items-center gap-1 bg-primary/10 text-primary rounded-full px-3 py-0.5 text-xs font-medium">
-                        {m.userId.slice(0, 8)}…
-                        <button type="button" className="font-bold hover:text-primary/70" onClick={() => removeMember(m.userId)}>×</button>
+                    {selectedFriends.map((f) => (
+                      <span key={f.userId} className="flex items-center gap-1 bg-primary/10 text-primary rounded-full px-3 py-0.5 text-xs font-medium">
+                        {f.username}
+                        <button type="button" className="font-bold hover:text-primary/70" onClick={() => removeFriend(f.userId)}>×</button>
                       </span>
                     ))}
                   </div>

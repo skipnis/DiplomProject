@@ -1,6 +1,6 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { useParams, Link } from 'react-router-dom';
-import { getUserProfile, getUserGiftProfile } from '../api/users';
+import { getUserProfile, getUserGiftProfile, getUserFulfilledWishes } from '../api/users';
 import { getUserWishlists } from '../api/wishlists';
 import { sendFriendRequest, acceptFriendRequest, removeFriend, getFriends, getFriendshipRequests } from '../api/friends';
 import { getImageUrl } from '../api/client';
@@ -8,7 +8,7 @@ import { useAuth } from '../context/AuthContext';
 import { useToast } from '../components/Toast';
 import { parseError } from '../utils/errors';
 import { VISIBILITY_LABELS, getWishlistEmoji } from '../types';
-import type { UserProfile, WishlistSummaryDto, GiftProfileDto } from '../types';
+import type { UserProfile, WishlistSummaryDto, GiftProfileDto, FulfilledWishItem } from '../types';
 import { Button, buttonVariants } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
@@ -95,17 +95,20 @@ export default function UserProfilePage() {
   const [profile, setProfile] = useState<UserProfile | null>(null);
   const [wishlists, setWishlists] = useState<WishlistSummaryDto[]>([]);
   const [giftProfile, setGiftProfile] = useState<GiftProfileDto | null>(null);
+  const [fulfilledWishes, setFulfilledWishes] = useState<FulfilledWishItem[]>([]);
   const [friendStatus, setFriendStatus] = useState<FriendStatus>('none');
   const [loading, setLoading] = useState(true);
   const [actionLoading, setActionLoading] = useState(false);
+  const carouselRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     if (!id) return;
-    Promise.all([getUserProfile(id), getUserWishlists(id), getUserGiftProfile(id)])
-      .then(([fetchedProfile, fetchedWishlists, fetchedGiftProfile]) => {
+    Promise.all([getUserProfile(id), getUserWishlists(id), getUserGiftProfile(id), getUserFulfilledWishes(id)])
+      .then(([fetchedProfile, fetchedWishlists, fetchedGiftProfile, fetchedFulfilledWishes]) => {
         setProfile(fetchedProfile);
         setWishlists(fetchedWishlists);
         setGiftProfile(fetchedGiftProfile);
+        setFulfilledWishes(fetchedFulfilledWishes);
       })
       .catch((e) => toast.error(parseError(e)))
       .finally(() => setLoading(false));
@@ -185,6 +188,38 @@ export default function UserProfilePage() {
       </Card>
 
       {giftProfile && <GiftProfileSection giftProfile={giftProfile} />}
+
+      {fulfilledWishes.length > 0 && (
+        <div className="mb-6">
+          <div className="text-base font-bold mb-3">Исполненные желания</div>
+          <div
+            ref={carouselRef}
+            className="flex gap-3 overflow-x-auto pb-2 snap-x snap-mandatory scrollbar-thin"
+            style={{ scrollbarWidth: 'thin' }}
+          >
+            {fulfilledWishes.map((wish) => (
+              <div
+                key={wish.id}
+                className="snap-start shrink-0 w-40 rounded-xl border bg-card overflow-hidden"
+              >
+                {wish.imagePath ? (
+                  <img
+                    src={getImageUrl(wish.imagePath) ?? wish.imagePath}
+                    alt={wish.wishName}
+                    className="w-full h-28 object-cover"
+                  />
+                ) : (
+                  <div className="w-full h-28 bg-muted flex items-center justify-center text-3xl">🎁</div>
+                )}
+                <div className="p-2">
+                  <div className="text-xs font-semibold line-clamp-2">{wish.wishName}</div>
+                  <div className="text-xs text-muted-foreground mt-0.5 truncate">{wish.wishlistName}</div>
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
 
       <div className="flex items-center justify-between mb-5">
         <h2 className="text-lg font-bold">Вишлисты</h2>

@@ -12,6 +12,7 @@ import {
   adminGetCatalogBadgeDefinitions, adminCreateCatalogBadgeDefinition, adminUpdateCatalogBadgeDefinition, adminDeleteCatalogBadgeDefinition,
   adminGetFulfilledBadgeDefinitions, adminCreateFulfilledBadgeDefinition, adminUpdateFulfilledBadgeDefinition, adminDeleteFulfilledBadgeDefinition,
   adminGetAchievementDefinitions, adminCreateAchievementDefinition, adminUpdateAchievementDefinition, adminDeleteAchievementDefinition,
+  ADMIN_TOKEN_KEY,
 } from '../api/admin';
 import { useToast } from '../components/Toast';
 import { parseError } from '../utils/errors';
@@ -29,11 +30,11 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { FieldError } from '@/components/ui/field-error';
 
-type ItemFormValues = { name: string; description: string; price: string; currency: string; imagePath: string; url: string; categoryId: string; isPublished: boolean };
-type CollectionFormValues = { name: string; description: string; occasion: string; coverImagePath: string; order: string; isPublished: boolean };
+type ItemFormValues = { name: string; description: string; price: string; currency: string; imagePath: string; url: string; categoryId: string; isPublished: boolean; occasionIds: string[] };
+type CollectionFormValues = { name: string; description: string; occasionId: string; coverImagePath: string; order: string; isPublished: boolean };
 
-function ItemForm({ form, setForm, categories, itemImageFile, setItemImageFile, externalImageUrl, setExternalImageUrl, onSubmit, submitLabel, onCancel, onParseUrl, parsing, errors, clearError }: {
-  form: ItemFormValues; setForm: (f: ItemFormValues) => void; categories: CatalogCategoryDto[];
+function ItemForm({ form, setForm, categories, occasions, itemImageFile, setItemImageFile, externalImageUrl, setExternalImageUrl, onSubmit, submitLabel, onCancel, onParseUrl, parsing, errors, clearError }: {
+  form: ItemFormValues; setForm: (f: ItemFormValues) => void; categories: CatalogCategoryDto[]; occasions: OccasionDto[];
   itemImageFile: File | null; setItemImageFile: (f: File | null) => void;
   externalImageUrl: string | null; setExternalImageUrl: (u: string | null) => void;
   onSubmit: (e: React.FormEvent) => void; submitLabel: string; onCancel: () => void;
@@ -111,6 +112,26 @@ function ItemForm({ form, setForm, categories, itemImageFile, setItemImageFile, 
               />
               <FieldError message={errors.description} />
             </div>
+            {occasions.length > 0 && (
+              <div className="flex flex-col gap-1.5 col-span-2">
+                <Label>Поводы</Label>
+                <div className="flex flex-wrap gap-2">
+                  {occasions.map((o) => {
+                    const selected = form.occasionIds.includes(o.id);
+                    return (
+                      <button
+                        key={o.id}
+                        type="button"
+                        onClick={() => setForm({ ...form, occasionIds: selected ? form.occasionIds.filter((id) => id !== o.id) : [...form.occasionIds, o.id] })}
+                        className={`px-3 py-1 rounded-full text-sm border transition-colors ${selected ? 'bg-primary text-primary-foreground border-primary' : 'bg-background border-border text-foreground hover:bg-muted'}`}
+                      >
+                        {o.label}
+                      </button>
+                    );
+                  })}
+                </div>
+              </div>
+            )}
           </div>
           <div className="flex gap-2">
             <Button type="submit">{submitLabel}</Button>
@@ -123,7 +144,7 @@ function ItemForm({ form, setForm, categories, itemImageFile, setItemImageFile, 
 }
 
 function CollectionForm({ form, setForm, occasions, collectionImageFile, setCollectionImageFile, onSubmit, submitLabel, onCancel, errors, clearError }: {
-  form: CollectionFormValues; setForm: (f: CollectionFormValues) => void; occasions: [string, string][];
+  form: CollectionFormValues; setForm: (f: CollectionFormValues) => void; occasions: OccasionDto[];
   collectionImageFile: File | null; setCollectionImageFile: (f: File | null) => void;
   onSubmit: (e: React.FormEvent) => void; submitLabel: string; onCancel: () => void;
   errors: FormErrors; clearError: (field: string) => void;
@@ -144,17 +165,17 @@ function CollectionForm({ form, setForm, occasions, collectionImageFile, setColl
             </div>
             <div className="flex flex-col gap-1.5">
               <Label>Повод</Label>
-              <Select value={form.occasion || '__none__'} onValueChange={(v) => setForm({ ...form, occasion: v == null || v === '__none__' ? '' : v })}>
+              <Select value={form.occasionId || '__none__'} onValueChange={(v) => setForm({ ...form, occasionId: v == null || v === '__none__' ? '' : v })}>
                 <SelectTrigger>
                   <SelectValue>
-                    {form.occasion
-                      ? (occasions.find(([key]) => key === form.occasion)?.[1] ?? form.occasion)
+                    {form.occasionId
+                      ? (occasions.find((o) => o.id === form.occasionId)?.label ?? '—')
                       : '—'}
                   </SelectValue>
                 </SelectTrigger>
                 <SelectContent>
                   <SelectItem value="__none__">—</SelectItem>
-                  {occasions.map(([key, label]) => <SelectItem key={key} value={key}>{label}</SelectItem>)}
+                  {occasions.map((o) => <SelectItem key={o.id} value={o.id}>{o.label}</SelectItem>)}
                 </SelectContent>
               </Select>
             </div>
@@ -208,7 +229,7 @@ export default function AdminPage() {
     <div>
       <div className="flex items-center justify-between mb-7">
         <h1 className="text-2xl font-extrabold tracking-tight">Администрирование каталога</h1>
-        <Button variant="ghost" size="sm" onClick={() => { localStorage.removeItem('admin_token'); window.location.href = '/admin/login'; }}>Выйти</Button>
+        <Button variant="ghost" size="sm" onClick={() => { localStorage.removeItem(ADMIN_TOKEN_KEY); window.location.href = '/admin/login'; }}>Выйти</Button>
       </div>
       <Tabs value={activeTab} onValueChange={(v) => { setActiveTab(v); if (v !== 'items') setFilterCategoryId(undefined); }}>
         <TabsList className="mb-6 flex-wrap h-auto gap-1">
@@ -342,13 +363,14 @@ function CategoriesTab({ onOpenItems }: { onOpenItems: (categoryId: string) => v
 function ItemsTab({ initialCategoryId }: { initialCategoryId?: string }) {
   const toast = useToast();
   const [categories, setCategories] = useState<CatalogCategoryDto[]>([]);
+  const [occasions, setOccasions] = useState<OccasionDto[]>([]);
   const [data, setData] = useState<PagedResponse<CatalogItemDto> | null>(null);
   const [page, setPage] = useState(1);
   const [categoryFilter, setCategoryFilter] = useState<string>('');
   const [loading, setLoading] = useState(true);
   const [showCreate, setShowCreate] = useState(false);
   const [editItem, setEditItem] = useState<CatalogItemDto | null>(null);
-  const [form, setForm] = useState<ItemFormValues>({ name: '', description: '', price: '', currency: '0', imagePath: '', url: '', categoryId: '', isPublished: false });
+  const [form, setForm] = useState<ItemFormValues>({ name: '', description: '', price: '', currency: '0', imagePath: '', url: '', categoryId: '', isPublished: false, occasionIds: [] });
   const [itemImageFile, setItemImageFile] = useState<File | null>(null);
   const [externalImageUrl, setExternalImageUrl] = useState<string | null>(null);
   const [parsing, setParsing] = useState(false);
@@ -366,11 +388,12 @@ function ItemsTab({ initialCategoryId }: { initialCategoryId?: string }) {
       setCategories(cats);
       if (initialCategoryId) setCategoryFilter(initialCategoryId);
     }).catch(() => {});
+    adminGetOccasions().then(setOccasions).catch(() => {});
   }, []);
   const load = (p: number, catId?: string) => { setLoading(true); adminGetAllItems({ page: p, categoryId: catId || undefined }).then(setData).catch(() => {}).finally(() => setLoading(false)); };
   useEffect(() => { load(page, categoryFilter); }, [page, categoryFilter]);
 
-  const resetForm = () => { setForm({ name: '', description: '', price: '', currency: '0', imagePath: '', url: '', categoryId: '', isPublished: false }); setItemImageFile(null); setExternalImageUrl(null); setErrors({}); };
+  const resetForm = () => { setForm({ name: '', description: '', price: '', currency: '0', imagePath: '', url: '', categoryId: '', isPublished: false, occasionIds: [] }); setItemImageFile(null); setExternalImageUrl(null); setErrors({}); };
 
   const handleBatchImport = async () => {
     const urls = batchUrls.map((url) => url.trim()).filter(Boolean);
@@ -412,7 +435,7 @@ function ItemsTab({ initialCategoryId }: { initialCategoryId?: string }) {
     e.preventDefault();
     if (!validate()) return;
     try {
-      const newId = await adminCreateItem({ name: form.name, description: form.description || null, price: form.price ? Number(form.price) : null, currency: form.currency ? (Number(form.currency) as never) : null, imagePath: null, url: form.url || null, categoryId: form.categoryId });
+      const newId = await adminCreateItem({ name: form.name, description: form.description || null, price: form.price ? Number(form.price) : null, currency: form.currency ? (Number(form.currency) as never) : null, imagePath: null, url: form.url || null, categoryId: form.categoryId, occasionIds: form.occasionIds });
       if (itemImageFile) await adminUploadItemImage(newId, itemImageFile);
       else if (externalImageUrl) await adminUploadItemImage(newId, externalImageUrl);
       resetForm(); setShowCreate(false); load(page);
@@ -423,7 +446,7 @@ function ItemsTab({ initialCategoryId }: { initialCategoryId?: string }) {
     e.preventDefault();
     if (!editItem || !validate()) return;
     try {
-      await adminUpdateItem(editItem.id, { name: form.name, description: form.description || null, price: form.price ? Number(form.price) : null, currency: form.currency ? (Number(form.currency) as never) : null, imagePath: form.imagePath || null, url: form.url || null, categoryId: form.categoryId, isPublished: form.isPublished });
+      await adminUpdateItem(editItem.id, { name: form.name, description: form.description || null, price: form.price ? Number(form.price) : null, currency: form.currency ? (Number(form.currency) as never) : null, imagePath: form.imagePath || null, url: form.url || null, categoryId: form.categoryId, isPublished: form.isPublished, occasionIds: form.occasionIds });
       if (itemImageFile) await adminUploadItemImage(editItem.id, itemImageFile);
       else if (externalImageUrl) await adminUploadItemImage(editItem.id, externalImageUrl);
       setEditItem(null); resetForm(); load(page);
@@ -513,7 +536,7 @@ function ItemsTab({ initialCategoryId }: { initialCategoryId?: string }) {
                                   if (found) {
                                     setEditItem(found);
                                     setShowCreate(false);
-                                    setForm({ name: found.name, description: found.description ?? '', price: found.price !== null ? String(found.price) : '', currency: '0', imagePath: found.imagePath ?? '', url: found.url ?? '', categoryId: found.categoryId, isPublished: found.isPublished });
+                                    setForm({ name: found.name, description: found.description ?? '', price: found.price !== null ? String(found.price) : '', currency: '0', imagePath: found.imagePath ?? '', url: found.url ?? '', categoryId: found.categoryId, isPublished: found.isPublished, occasionIds: found.occasions.map((o) => o.id) });
                                     setErrors({});
                                     setShowBatchImport(false);
                                   }
@@ -584,8 +607,8 @@ function ItemsTab({ initialCategoryId }: { initialCategoryId?: string }) {
           )}
         </>
       )}
-      {showCreate && <ItemForm form={form} setForm={setForm} categories={categories} itemImageFile={itemImageFile} setItemImageFile={setItemImageFile} externalImageUrl={externalImageUrl} setExternalImageUrl={setExternalImageUrl} onSubmit={handleCreate} submitLabel="Создать" onCancel={handleCancel} onParseUrl={handleParseUrl} parsing={parsing} errors={errors} clearError={clearError} />}
-      {editItem && <ItemForm form={form} setForm={setForm} categories={categories} itemImageFile={itemImageFile} setItemImageFile={setItemImageFile} externalImageUrl={externalImageUrl} setExternalImageUrl={setExternalImageUrl} onSubmit={handleUpdate} submitLabel="Сохранить" onCancel={handleCancel} onParseUrl={handleParseUrl} parsing={parsing} errors={errors} clearError={clearError} />}
+      {showCreate && <ItemForm form={form} setForm={setForm} categories={categories} occasions={occasions} itemImageFile={itemImageFile} setItemImageFile={setItemImageFile} externalImageUrl={externalImageUrl} setExternalImageUrl={setExternalImageUrl} onSubmit={handleCreate} submitLabel="Создать" onCancel={handleCancel} onParseUrl={handleParseUrl} parsing={parsing} errors={errors} clearError={clearError} />}
+      {editItem && <ItemForm form={form} setForm={setForm} categories={categories} occasions={occasions} itemImageFile={itemImageFile} setItemImageFile={setItemImageFile} externalImageUrl={externalImageUrl} setExternalImageUrl={setExternalImageUrl} onSubmit={handleUpdate} submitLabel="Сохранить" onCancel={handleCancel} onParseUrl={handleParseUrl} parsing={parsing} errors={errors} clearError={clearError} />}
 
       {loading ? <div className="text-muted-foreground text-sm">Загрузка...</div> : !data || data.items.length === 0 ? <div className="text-muted-foreground text-sm">Нет товаров</div> : (
         <>
@@ -602,7 +625,7 @@ function ItemsTab({ initialCategoryId }: { initialCategoryId?: string }) {
                     <td className="p-3 text-right">
                       <div className="flex gap-1 justify-end">
                         <Button size="sm" variant="ghost" onClick={async () => { try { await adminSetItemPublished(item.id, !item.isPublished); load(page); } catch (e) { toast.error(parseError(e)); } }}>{item.isPublished ? 'Снять' : 'Опубликовать'}</Button>
-                        <Button size="sm" variant="ghost" onClick={() => { setEditItem(item); setShowCreate(false); setForm({ name: item.name, description: item.description ?? '', price: item.price !== null ? String(item.price) : '', currency: '0', imagePath: item.imagePath ?? '', url: item.url ?? '', categoryId: item.categoryId, isPublished: item.isPublished }); setErrors({}); }}>Изменить</Button>
+                        <Button size="sm" variant="ghost" onClick={() => { setEditItem(item); setShowCreate(false); setForm({ name: item.name, description: item.description ?? '', price: item.price !== null ? String(item.price) : '', currency: '0', imagePath: item.imagePath ?? '', url: item.url ?? '', categoryId: item.categoryId, isPublished: item.isPublished, occasionIds: item.occasions.map((o) => o.id) }); setErrors({}); }}>Изменить</Button>
                         <Button size="sm" variant="ghost" className="text-destructive" onClick={async () => { if (!confirm('Удалить товар?')) return; try { await adminDeleteItem(item.id); load(page); } catch (e) { toast.error(parseError(e)); } }}>Удалить</Button>
                       </div>
                     </td>
@@ -633,11 +656,10 @@ function CollectionsTab() {
   const [selectedCollection, setSelectedCollection] = useState<CatalogCollectionAdminDto | null>(null);
   const [addItemId, setAddItemId] = useState('');
   const [addItemDescription, setAddItemDescription] = useState('');
-  const [form, setForm] = useState<CollectionFormValues>({ name: '', description: '', occasion: '', coverImagePath: '', order: '1', isPublished: false });
+  const [form, setForm] = useState<CollectionFormValues>({ name: '', description: '', occasionId: '', coverImagePath: '', order: '1', isPublished: false });
   const [collectionImageFile, setCollectionImageFile] = useState<File | null>(null);
   const [errors, setErrors] = useState<FormErrors>({});
   const clearError = (field: string) => { if (errors[field]) setErrors((p) => ({ ...p, [field]: '' })); };
-  const occasionPairs = occasions.map((o) => [o.key, o.label] as [string, string]);
 
   const load = () => { setLoading(true); adminGetAllCollections().then(setCollections).catch(() => {}).finally(() => setLoading(false)); };
   useEffect(() => {
@@ -646,7 +668,7 @@ function CollectionsTab() {
     adminGetOccasions().then(setOccasions).catch(() => {});
   }, []);
 
-  const resetForm = () => { setForm({ name: '', description: '', occasion: '', coverImagePath: '', order: '1', isPublished: false }); setCollectionImageFile(null); setErrors({}); };
+  const resetForm = () => { setForm({ name: '', description: '', occasionId: '', coverImagePath: '', order: '1', isPublished: false }); setCollectionImageFile(null); setErrors({}); };
   const handleCancel = () => { setShowCreate(false); setEditCollection(null); resetForm(); };
 
   const validate = () => {
@@ -660,7 +682,7 @@ function CollectionsTab() {
     e.preventDefault();
     if (!validate()) return;
     try {
-      const newId = await adminCreateCollection({ name: form.name, description: form.description || null, occasion: form.occasion || null, coverImagePath: null, order: Number(form.order) });
+      const newId = await adminCreateCollection({ name: form.name, description: form.description || null, occasionId: form.occasionId || null, coverImagePath: null, order: Number(form.order) });
       if (collectionImageFile) await adminUploadCollectionImage(newId, collectionImageFile);
       resetForm(); setShowCreate(false); load(); toast.success('Подборка создана');
     } catch (e) { const fe = parseApiFieldErrors(e); if (fe) setErrors((p) => ({ ...p, ...fe })); else toast.error(parseError(e)); }
@@ -670,7 +692,7 @@ function CollectionsTab() {
     e.preventDefault();
     if (!editCollection || !validate()) return;
     try {
-      await adminUpdateCollection(editCollection.id, { name: form.name, description: form.description || null, occasion: form.occasion || null, coverImagePath: form.coverImagePath || null, order: Number(form.order), isPublished: form.isPublished });
+      await adminUpdateCollection(editCollection.id, { name: form.name, description: form.description || null, occasionId: form.occasionId || null, coverImagePath: form.coverImagePath || null, order: Number(form.order), isPublished: form.isPublished });
       if (collectionImageFile) await adminUploadCollectionImage(editCollection.id, collectionImageFile);
       setEditCollection(null); resetForm(); load(); toast.success('Подборка обновлена');
     } catch (e) { const fe = parseApiFieldErrors(e); if (fe) setErrors((p) => ({ ...p, ...fe })); else toast.error(parseError(e)); }
@@ -679,8 +701,8 @@ function CollectionsTab() {
   return (
     <div>
       {!showCreate && !editCollection && <Button className="mb-4" onClick={() => { setShowCreate(true); resetForm(); }}>Создать подборку</Button>}
-      {showCreate && <CollectionForm form={form} setForm={setForm} occasions={occasionPairs} collectionImageFile={collectionImageFile} setCollectionImageFile={setCollectionImageFile} onSubmit={handleCreate} submitLabel="Создать" onCancel={handleCancel} errors={errors} clearError={clearError} />}
-      {editCollection && <CollectionForm form={form} setForm={setForm} occasions={occasionPairs} collectionImageFile={collectionImageFile} setCollectionImageFile={setCollectionImageFile} onSubmit={handleUpdate} submitLabel="Сохранить" onCancel={handleCancel} errors={errors} clearError={clearError} />}
+      {showCreate && <CollectionForm form={form} setForm={setForm} occasions={occasions} collectionImageFile={collectionImageFile} setCollectionImageFile={setCollectionImageFile} onSubmit={handleCreate} submitLabel="Создать" onCancel={handleCancel} errors={errors} clearError={clearError} />}
+      {editCollection && <CollectionForm form={form} setForm={setForm} occasions={occasions} collectionImageFile={collectionImageFile} setCollectionImageFile={setCollectionImageFile} onSubmit={handleUpdate} submitLabel="Сохранить" onCancel={handleCancel} errors={errors} clearError={clearError} />}
 
       {loading ? <div className="text-muted-foreground text-sm">Загрузка...</div> : collections.length === 0 ? <div className="text-muted-foreground text-sm">Нет подборок</div> : (
         <Card><CardContent className="p-0">
@@ -693,14 +715,14 @@ function CollectionsTab() {
                     <td className="p-3 font-medium">
                       <Link to={`/collections/${c.id}`} className="hover:underline">{c.name}</Link>
                     </td>
-                    <td className="p-3 text-muted-foreground">{c.occasion ? (occasions.find((o) => o.key === c.occasion)?.label ?? c.occasion) : '—'}</td>
+                    <td className="p-3 text-muted-foreground">{c.occasion?.label ?? '—'}</td>
                     <td className="p-3">{c.itemCount}</td>
                     <td className="p-3"><Badge variant={c.isPublished ? 'default' : 'secondary'}>{c.isPublished ? 'Опубликована' : 'Черновик'}</Badge></td>
                     <td className="p-3 text-right">
                       <div className="flex gap-1 justify-end">
                         <Button size="sm" variant="ghost" onClick={async () => { try { await adminSetCollectionPublished(c.id, !c.isPublished); load(); } catch (e) { toast.error(parseError(e)); } }}>{c.isPublished ? 'Снять' : 'Опубликовать'}</Button>
                         <Button size="sm" variant="ghost" onClick={() => setSelectedCollection(selectedCollection?.id === c.id ? null : c)}>{selectedCollection?.id === c.id ? 'Свернуть' : 'Товары'}</Button>
-                        <Button size="sm" variant="ghost" onClick={() => { setEditCollection(c); setShowCreate(false); setForm({ name: c.name, description: c.description ?? '', occasion: c.occasion ?? '', coverImagePath: c.coverImagePath ?? '', order: String(c.order), isPublished: c.isPublished }); setErrors({}); }}>Изменить</Button>
+                        <Button size="sm" variant="ghost" onClick={() => { setEditCollection(c); setShowCreate(false); setForm({ name: c.name, description: c.description ?? '', occasionId: c.occasion?.id ?? '', coverImagePath: c.coverImagePath ?? '', order: String(c.order), isPublished: c.isPublished }); setErrors({}); }}>Изменить</Button>
                         <Button size="sm" variant="ghost" className="text-destructive" onClick={async () => { if (!confirm('Удалить подборку?')) return; try { await adminDeleteCollection(c.id); if (selectedCollection?.id === c.id) setSelectedCollection(null); load(); } catch (e) { toast.error(parseError(e)); } }}>Удалить</Button>
                       </div>
                     </td>

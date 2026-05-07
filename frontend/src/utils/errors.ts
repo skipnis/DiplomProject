@@ -19,6 +19,12 @@ const CODE_MESSAGES: Record<string, string> = {
   'Reservations.AlreadyReserved': 'Желание уже забронировано',
   'Reservations.CannotReserveOwn': 'Нельзя забронировать собственное желание',
   'Users.UsernameAlreadyTaken': 'Имя пользователя уже занято',
+  'Proposals.NotFound': 'Предложение не найдено',
+  'Proposals.RecipientNotFound': 'Получатель не найден или не является другом',
+  'Proposals.SelfProposal': 'Нельзя отправить предложение самому себе',
+  'Proposals.AlreadyReacted': 'Вы уже ответили на это предложение',
+  'Proposals.CatalogItemNotFound': 'Товар каталога не найден',
+  'Proposals.WishNotFound': 'Желание не найдено',
 };
 
 const STATUS_MESSAGES: Record<number, string> = {

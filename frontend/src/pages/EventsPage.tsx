@@ -7,14 +7,7 @@ import { parseError } from '../utils/errors';
 import type { EventDto } from '../types';
 import { Button, buttonVariants } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-
-function daysUntil(dateStr: string): number {
-  const today = new Date();
-  today.setHours(0, 0, 0, 0);
-  const d = new Date(dateStr);
-  d.setHours(0, 0, 0, 0);
-  return Math.ceil((d.getTime() - today.getTime()) / 86400000);
-}
+import { daysUntil } from '@/lib/utils';
 
 function formatDate(dateStr: string): string {
   return new Date(dateStr).toLocaleDateString('ru-RU', { day: 'numeric', month: 'long', year: 'numeric' });

@@ -23,6 +23,7 @@ export function getCatalogItems(params: {
   search?: string;
   minPrice?: number;
   maxPrice?: number;
+  occasionIds?: string[];
   page?: number;
   pageSize?: number;
 }): Promise<PagedResponse<CatalogItemDto>> {
@@ -31,6 +32,7 @@ export function getCatalogItems(params: {
   if (params.search) query.set('search', params.search);
   if (params.minPrice !== undefined) query.set('minPrice', String(params.minPrice));
   if (params.maxPrice !== undefined) query.set('maxPrice', String(params.maxPrice));
+  if (params.occasionIds?.length) params.occasionIds.forEach((id) => query.append('occasionIds', id));
   if (params.page) query.set('page', String(params.page));
   if (params.pageSize) query.set('pageSize', String(params.pageSize));
   return apiGet<PagedResponse<CatalogItemDto>>(`/catalog/items?${query.toString()}`);

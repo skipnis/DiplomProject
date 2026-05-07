@@ -1,12 +1,12 @@
 import { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
-import { getCatalogCategories, getCatalogItems, getCatalogPriceRange, addWishFromCatalog } from '../api/catalog';
+import { getCatalogCategories, getCatalogItems, getCatalogOccasions, getCatalogPriceRange, addWishFromCatalog } from '../api/catalog';
 import { getMyWishlists } from '../api/wishlists';
 import { getImageUrl } from '../api/client';
 import { useToast } from '../components/Toast';
 import { parseError } from '../utils/errors';
 import { useAuth } from '../context/AuthContext';
-import type { CatalogCategoryDto, CatalogItemDto, PagedResponse, WishlistSummaryDto } from '../types';
+import type { CatalogCategoryDto, CatalogItemDto, OccasionDto, PagedResponse, WishlistSummaryDto } from '../types';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Dialog, DialogContent, DialogTitle } from '@/components/ui/dialog';
@@ -14,21 +14,16 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Slider } from '@/components/ui/slider';
 
 function ItemBadges({ item }: { item: CatalogItemDto }) {
-  const topBadges = item.badges
+  const topBadge = item.badges
     .filter((badge) => badge.voteCount > 0)
-    .sort((a, b) => b.voteCount - a.voteCount)
-    .slice(0, 3);
+    .sort((a, b) => b.voteCount - a.voteCount)[0];
 
-  if (topBadges.length === 0) return null;
+  if (!topBadge) return null;
 
   return (
-    <div className="flex flex-wrap gap-1 mt-1">
-      {topBadges.map((badge) => (
-        <span key={badge.badgeType} className="text-xs px-1.5 py-0.5 rounded-full bg-primary/8 text-primary border border-primary/20 leading-tight">
-          {badge.emoji} {badge.label}
-        </span>
-      ))}
-    </div>
+    <span className="text-xs px-1.5 py-0.5 rounded-full bg-primary/8 text-primary border border-primary/20 leading-tight">
+      {topBadge.emoji} {topBadge.label}
+    </span>
   );
 }
 
@@ -37,6 +32,8 @@ export default function CatalogPage() {
   const { user } = useAuth();
 
   const [categories, setCategories] = useState<CatalogCategoryDto[]>([]);
+  const [occasions, setOccasions] = useState<OccasionDto[]>([]);
+  const [selectedOccasionIds, setSelectedOccasionIds] = useState<string[]>([]);
   const [data, setData] = useState<PagedResponse<CatalogItemDto> | null>(null);
   const [page, setPage] = useState(1);
   const [loading, setLoading] = useState(true);
@@ -56,7 +53,7 @@ export default function CatalogPage() {
 
   const load = (p: number) => {
     setLoading(true);
-    getCatalogItems({ categoryId: selectedCategory, search, minPrice, maxPrice, page: p })
+    getCatalogItems({ categoryId: selectedCategory, search, minPrice, maxPrice, occasionIds: selectedOccasionIds.length ? selectedOccasionIds : undefined, page: p })
       .then(setData)
       .catch((e) => toast.error(parseError(e)))
       .finally(() => setLoading(false));
@@ -64,6 +61,7 @@ export default function CatalogPage() {
 
   useEffect(() => {
     getCatalogCategories().then(setCategories).catch(() => {});
+    getCatalogOccasions().then(setOccasions).catch(() => {});
     getCatalogPriceRange().then(({ max }) => {
       if (max > 0) {
         setMaxCatalogPrice(max);
@@ -71,7 +69,7 @@ export default function CatalogPage() {
       }
     }).catch(() => {});
   }, []);
-  useEffect(() => { setPage(1); load(1); }, [selectedCategory, search, priceRange]);
+  useEffect(() => { setPage(1); load(1); }, [selectedCategory, search, priceRange, selectedOccasionIds]);
   useEffect(() => { if (page > 1) load(page); }, [page]);
 
   const handleSearch = (e: React.FormEvent) => { e.preventDefault(); setSearch(searchInput); };
@@ -137,6 +135,28 @@ export default function CatalogPage() {
               </div>
             </div>
           </div>
+          {occasions.length > 0 && (
+            <div className="mt-4">
+              <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wide mb-2">Повод</p>
+              <div className="flex flex-col gap-1">
+                {occasions.map((o) => {
+                  const selected = selectedOccasionIds.includes(o.id);
+                  return (
+                    <button
+                      key={o.id}
+                      className={`text-sm px-3 py-1.5 rounded-md text-left transition-colors ${selected ? 'bg-primary/10 text-primary font-medium' : 'hover:bg-muted text-foreground'}`}
+                      onClick={() => setSelectedOccasionIds(selected ? selectedOccasionIds.filter((id) => id !== o.id) : [...selectedOccasionIds, o.id])}
+                    >
+                      {o.label}
+                    </button>
+                  );
+                })}
+                {selectedOccasionIds.length > 0 && (
+                  <button className="text-xs text-muted-foreground text-left px-3 mt-1 hover:underline" onClick={() => setSelectedOccasionIds([])}>Сбросить</button>
+                )}
+              </div>
+            </div>
+          )}
         </aside>
 
         <div className="flex-1 min-w-0">
@@ -152,23 +172,28 @@ export default function CatalogPage() {
               <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-4">
                 {data.items.map((item) => (
                   <div key={item.id} className="rounded-xl border bg-card overflow-hidden flex flex-col hover:shadow-md transition-shadow">
-                    <Link to={`/catalog/items/${item.id}`} className="block">
+                    <Link to={`/catalog/items/${item.id}`} className="flex flex-col flex-1">
                       {item.imagePath
                         ? <img src={getImageUrl(item.imagePath) ?? ''} alt={item.name} className="w-full h-36 object-contain bg-muted" />
                         : <div className="w-full h-36 bg-muted flex items-center justify-center text-4xl">🛍️</div>
                       }
-                      <div className="px-3 pt-3 flex flex-col gap-1">
-                        <div className="font-semibold text-sm leading-snug line-clamp-2 min-h-[2.5rem]">{item.name}</div>
-                        <div className="text-xs text-muted-foreground">{item.categoryName}</div>
-                        {item.price !== null && <div className="font-bold text-primary text-sm">{item.price} {item.currency}</div>}
-                        <ItemBadges item={item} />
+                      <div className="px-3 pt-2.5 pb-3 flex flex-col gap-1.5 flex-1">
+                        <div className="font-semibold text-sm leading-snug line-clamp-2">{item.name}</div>
+                        <div className="flex items-center justify-between gap-1">
+                          {item.price !== null && (
+                            <span className="font-bold text-primary text-sm whitespace-nowrap">{item.price} {item.currency}</span>
+                          )}
+                        </div>
+                        <div className="flex items-center justify-between mt-auto pt-1">
+                          <ItemBadges item={item} />
+                          {item.wishCount > 0 && (
+                            <span className="text-xs text-muted-foreground">♥ {item.wishCount}</span>
+                          )}
+                        </div>
                       </div>
                     </Link>
-                    <div className="px-3 pb-3 flex flex-col gap-1 flex-1">
-                      {item.wishCount > 0 && (
-                        <div className="text-xs text-muted-foreground">{item.wishCount} в вишлистах</div>
-                      )}
-                      <Button size="sm" className="mt-auto" onClick={() => openAddModal(item)}>В вишлист</Button>
+                    <div className="px-3 pb-3">
+                      <Button size="sm" className="w-full" onClick={(e) => { e.preventDefault(); openAddModal(item); }}>В вишлист</Button>
                     </div>
                   </div>
                 ))}

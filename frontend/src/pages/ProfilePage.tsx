@@ -24,6 +24,9 @@ import {
   DialogHeader,
   DialogTitle,
 } from '@/components/ui/dialog';
+import { OTP_CODE_LENGTH } from '@/lib/utils';
+
+const MAX_LEVEL_SENTINEL = 2147483647;
 
 const LEVEL_COLORS: Record<number, string> = {
   1: 'bg-muted text-muted-foreground',
@@ -35,7 +38,7 @@ const LEVEL_COLORS: Record<number, string> = {
 };
 
 function GiftProfileSection({ giftProfile }: { giftProfile: GiftProfileDto }) {
-  const isMaxLevel = giftProfile.nextLevelThreshold === 2147483647;
+  const isMaxLevel = giftProfile.nextLevelThreshold === MAX_LEVEL_SENTINEL;
   const progressPercent = !isMaxLevel && giftProfile.nextLevelThreshold > 0
     ? Math.min(100, Math.round((giftProfile.giftsGiven / giftProfile.nextLevelThreshold) * 100))
     : 100;
@@ -220,7 +223,6 @@ export default function ProfilePage() {
             <div className="flex-1">
               <h1 className="text-xl font-extrabold tracking-tight">{user.displayName}</h1>
               {user.username && <div className="text-sm text-muted-foreground">@{user.username}</div>}
-              <div className="text-sm text-muted-foreground">{user.email}</div>
               {user.bio && <div className="text-sm mt-1">{user.bio}</div>}
               {user.birthDate && (
                 <div className="text-sm text-muted-foreground mt-1">
@@ -414,7 +416,7 @@ export default function ProfilePage() {
                         value={deleteCode}
                         onChange={(e) => setDeleteCode(e.target.value)}
                         placeholder="000000"
-                        maxLength={6}
+                        maxLength={OTP_CODE_LENGTH}
                         inputMode="numeric"
                         autoFocus
                       />

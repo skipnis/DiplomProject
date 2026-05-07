@@ -35,13 +35,8 @@ export default function CollectionsPage() {
   }, []);
 
   const visibleCollections = occasionFilter
-    ? collections.filter((c) => c.occasion === occasionFilter)
+    ? collections.filter((c) => c.occasion?.key === occasionFilter)
     : collections;
-
-  const occasionLabel = (key: string | null) => {
-    if (!key) return null;
-    return occasions.find((o) => o.key === key)?.label ?? key;
-  };
 
   const openCollection = async (c: CatalogCollectionSummaryDto) => {
     setActiveCollection(c);
@@ -109,7 +104,7 @@ export default function CollectionsPage() {
             />
           )}
           {activeCollection.occasion && (
-            <Badge variant="secondary" className="mb-2">{occasionLabel(activeCollection.occasion)}</Badge>
+            <Badge variant="secondary" className="mb-2">{activeCollection.occasion.label}</Badge>
           )}
           <h1 className="text-3xl font-extrabold tracking-tight mb-3">{activeCollection.name}</h1>
           {activeCollection.description && (
@@ -191,7 +186,7 @@ export default function CollectionsPage() {
       ) : (
         <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-4">
           {visibleCollections.map((c) => {
-            const label = occasionLabel(c.occasion);
+            const label = c.occasion?.label ?? null;
             return (
               <div key={c.id} className="rounded-xl border bg-card overflow-hidden cursor-pointer hover:shadow-md hover:-translate-y-0.5 transition-all flex flex-col" onClick={() => openCollection(c)}>
                 {c.coverImagePath

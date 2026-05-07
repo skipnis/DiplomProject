@@ -1,19 +1,22 @@
 import { useEffect, useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { getWishlist, updateWishlist } from '../api/wishlists';
+import { getWishlist, updateWishlist, getWishlistMembers, addWishlistMembers, removeWishlistMember } from '../api/wishlists';
 import { getMyEvents, linkWishlist } from '../api/events';
+import { getFriends } from '../api/friends';
+import { getImageUrl } from '../api/client';
 import { useToast } from '../components/Toast';
 import { parseError } from '../utils/errors';
 import { wishlistSchema, parseZodErrors, type FormErrors } from '../lib/schemas';
 import { parseApiFieldErrors } from '../utils/errors';
 import { VISIBILITY_LABELS } from '../types';
-import type { WishlistVisibility, EventDto } from '../types';
+import type { WishlistVisibility, EventDto, FriendInfo } from '../types';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { Label } from '@/components/ui/label';
 import { Card, CardContent } from '@/components/ui/card';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { FieldError } from '@/components/ui/field-error';
 
 const EMOJIS = ['🎁', '🎂', '🎮', '👗', '📚', '🏠', '✈️', '💄', '🎵', '🍕', '⚽', '🌸', '💻', '📷', '🎨'];
@@ -31,14 +34,17 @@ export default function EditWishlistPage() {
   const [events, setEvents] = useState<EventDto[]>([]);
   const [selectedEventId, setSelectedEventId] = useState<string>('');
   const [originalEventId, setOriginalEventId] = useState<string>('');
+  const [friends, setFriends] = useState<FriendInfo[]>([]);
+  const [memberUserIds, setMemberUserIds] = useState<Set<string>>(new Set());
+  const [friendFilter, setFriendFilter] = useState('');
   const [saving, setSaving] = useState(false);
   const [loading, setLoading] = useState(true);
   const [errors, setErrors] = useState<FormErrors>({});
 
   useEffect(() => {
     if (!id) return;
-    Promise.all([getWishlist(id), getMyEvents(1, 100)])
-      .then(([wl, eventsRes]) => {
+    Promise.all([getWishlist(id), getMyEvents(1, 100), getFriends(1, 100), getWishlistMembers(id)])
+      .then(([wl, eventsRes, friendsRes, members]) => {
         setName(wl.name);
         setDescription(wl.description ?? '');
         setEmoji(wl.emoji ?? '🎁');
@@ -49,6 +55,8 @@ export default function EditWishlistPage() {
         const linkedId = linked?.id ?? '';
         setSelectedEventId(linkedId);
         setOriginalEventId(linkedId);
+        setFriends(friendsRes.items);
+        setMemberUserIds(new Set(members.map((m) => m.userId)));
       })
       .catch((e) => toast.error(parseError(e)))
       .finally(() => setLoading(false));
@@ -56,6 +64,22 @@ export default function EditWishlistPage() {
 
   const clearError = (field: string) => {
     if (errors[field]) setErrors((prev) => ({ ...prev, [field]: '' }));
+  };
+
+  const handleAddFriend = async (friend: FriendInfo) => {
+    if (!id) return;
+    try {
+      await addWishlistMembers(id, [{ userId: friend.userId, role: 1 }]);
+      setMemberUserIds((prev) => new Set([...prev, friend.userId]));
+    } catch (e) { toast.error(parseError(e)); }
+  };
+
+  const handleRemoveFriend = async (userId: string) => {
+    if (!id) return;
+    try {
+      await removeWishlistMember(id, userId);
+      setMemberUserIds((prev) => { const next = new Set(prev); next.delete(userId); return next; });
+    } catch (e) { toast.error(parseError(e)); }
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -141,6 +165,55 @@ export default function EditWishlistPage() {
                     </SelectContent>
                   </Select>
                 </div>
+                {visibility === 2 && (
+                  <div className="flex flex-col gap-2">
+                    <Label>Участники</Label>
+                    <Input
+                      placeholder="Поиск по друзьям..."
+                      value={friendFilter}
+                      onChange={(e) => setFriendFilter(e.target.value)}
+                    />
+                    {(() => {
+                      const available = friends.filter(
+                        (f) => !memberUserIds.has(f.userId) && f.username.toLowerCase().includes(friendFilter.toLowerCase()),
+                      );
+                      const added = friends.filter((f) => memberUserIds.has(f.userId));
+                      return (
+                        <>
+                          {available.length > 0 && (
+                            <Card>
+                              <CardContent className="p-2 flex flex-col gap-1">
+                                {available.map((f) => (
+                                  <button key={f.userId} type="button" className="flex items-center gap-2 p-2 rounded-md hover:bg-muted text-left" onClick={() => handleAddFriend(f)}>
+                                    <Avatar className="h-7 w-7">
+                                      <AvatarImage src={getImageUrl(f.avatarUrl) ?? undefined} />
+                                      <AvatarFallback className="text-xs">{f.username[0].toUpperCase()}</AvatarFallback>
+                                    </Avatar>
+                                    <span className="text-sm font-medium flex-1">{f.username}</span>
+                                    <span className="text-xs text-primary font-semibold">+ Добавить</span>
+                                  </button>
+                                ))}
+                              </CardContent>
+                            </Card>
+                          )}
+                          {friends.length === 0 && (
+                            <p className="text-sm text-muted-foreground">Нет друзей для добавления</p>
+                          )}
+                          {added.length > 0 && (
+                            <div className="flex flex-wrap gap-1">
+                              {added.map((f) => (
+                                <span key={f.userId} className="flex items-center gap-1 bg-primary/10 text-primary rounded-full px-3 py-0.5 text-xs font-medium">
+                                  {f.username}
+                                  <button type="button" className="font-bold hover:text-primary/70" onClick={() => handleRemoveFriend(f.userId)}>×</button>
+                                </span>
+                              ))}
+                            </div>
+                          )}
+                        </>
+                      );
+                    })()}
+                  </div>
+                )}
                 <div className="flex flex-col gap-1.5">
                   <Label>Событие</Label>
                   <Select value={selectedEventId} onValueChange={(v) => setSelectedEventId(v ?? '')}>

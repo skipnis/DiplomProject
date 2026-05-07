@@ -24,6 +24,7 @@ export default function EditProfilePage() {
   const [username, setUsername] = useState('');
   const [bio, setBio] = useState('');
   const [birthDate, setBirthDate] = useState('');
+  const [showFulfilledWishes, setShowFulfilledWishes] = useState(false);
   const [saving, setSaving] = useState(false);
   const [avatarUploading, setAvatarUploading] = useState(false);
   const [previewAvatarUrl, setPreviewAvatarUrl] = useState<string | null>(null);
@@ -36,6 +37,7 @@ export default function EditProfilePage() {
       setUsername(user.username ?? '');
       setBio(user.bio ?? '');
       setBirthDate(user.birthDate ?? '');
+      setShowFulfilledWishes(user.showFulfilledWishes);
     }
   }, [user]);
 
@@ -86,7 +88,7 @@ export default function EditProfilePage() {
     setErrors({});
     setSaving(true);
     try {
-      await updateMyProfile({ displayName, username, bio: bio || null, birthDate: birthDate || null });
+      await updateMyProfile({ displayName, username, bio: bio || null, birthDate: birthDate || null, showFulfilledWishes });
       await refreshUser();
       toast.success('Профиль сохранён');
       navigate('/profile');
@@ -196,6 +198,15 @@ export default function EditProfilePage() {
               <Label htmlFor="birthDate">Дата рождения</Label>
               <Input id="birthDate" type="date" value={birthDate} onChange={(e) => setBirthDate(e.target.value)} />
             </div>
+            <label className="flex items-center gap-3 cursor-pointer select-none">
+              <input
+                type="checkbox"
+                checked={showFulfilledWishes}
+                onChange={(e) => setShowFulfilledWishes(e.target.checked)}
+                className="w-4 h-4 rounded border-input accent-primary"
+              />
+              <span className="text-sm font-medium leading-none">Показывать исполненные желания в профиле</span>
+            </label>
             <div className="flex gap-2 justify-end">
               <Button type="button" variant="ghost" onClick={() => navigate('/profile')}>Отмена</Button>
               <Button type="submit" disabled={saving}>{saving ? 'Сохранение...' : 'Сохранить'}</Button>
