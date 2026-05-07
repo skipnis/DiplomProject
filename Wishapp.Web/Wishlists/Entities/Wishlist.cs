@@ -161,7 +161,8 @@ public sealed class Wishlist
 
         if (member.Role == WishlistMemberRole.Owner)
         {
-            return Error.Failure("Wishlists.OwnerRole", "Cannot change Owner role");
+            member.UpdateAlias(customRoleName);
+            return Result.Success();
         }
 
         member.UpdateRole(role, customRoleName);

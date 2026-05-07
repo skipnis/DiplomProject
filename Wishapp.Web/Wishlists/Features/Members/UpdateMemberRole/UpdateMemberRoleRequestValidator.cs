@@ -8,8 +8,7 @@ public sealed class UpdateMemberRoleRequestValidator : AbstractValidator<UpdateM
     public UpdateMemberRoleRequestValidator()
     {
         RuleFor(x => x.Role)
-            .IsInEnum()
-            .NotEqual(WishlistMemberRole.Owner);
+            .IsInEnum();
 
         RuleFor(x => x.CustomRoleName)
             .MaximumLength(50)

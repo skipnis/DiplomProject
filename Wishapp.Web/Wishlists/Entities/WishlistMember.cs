@@ -28,4 +28,9 @@ public sealed class WishlistMember
         Role = role;
         CustomRoleName = customRoleName;
     }
+
+    public void UpdateAlias(string? alias)
+    {
+        CustomRoleName = alias;
+    }
 }

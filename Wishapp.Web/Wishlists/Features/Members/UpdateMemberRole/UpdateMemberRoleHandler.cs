@@ -44,13 +44,17 @@ public sealed class UpdateMemberRoleHandler(ApplicationDbContext db, INotificati
 
         await db.SaveChangesAsync(ct);
 
-        await notificationsApi.EnqueueAsync(command.UserId, NotificationType.WishlistRoleUpdated, new
+        var updatedMember = wishlist.Members.First(m => m.UserId == command.UserId);
+        if (updatedMember.Role != WishlistMemberRole.Owner)
         {
-            wishlistId = command.WishlistId,
-            wishlistName = wishlist.Name,
-            newRole = (int)command.Role,
-            customRoleName = command.CustomRoleName,
-        }, ct);
+            await notificationsApi.EnqueueAsync(command.UserId, NotificationType.WishlistRoleUpdated, new
+            {
+                wishlistId = command.WishlistId,
+                wishlistName = wishlist.Name,
+                newRole = (int)command.Role,
+                customRoleName = command.CustomRoleName,
+            }, ct);
+        }
 
         return Result.Success();
     }
