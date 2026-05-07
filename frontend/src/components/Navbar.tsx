@@ -1,4 +1,4 @@
-import { useState, useCallback } from 'react';
+import { useState, useCallback, useEffect } from 'react';
 import { Link, NavLink, useLocation, useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { getImageUrl } from '../api/client';
@@ -16,6 +16,7 @@ export default function Navbar() {
   const { theme, toggle } = useTheme();
   const [menuOpen, setMenuOpen] = useState(false);
   const [unreadCount, setUnreadCount] = useState(0);
+  const [unviewedProposalsCount, setUnviewedProposalsCount] = useState(0);
 
   const handleNotification = useCallback((n: NotificationDto) => {
     if (!n.isRead) setUnreadCount((c) => c + 1);
@@ -25,6 +26,15 @@ export default function Navbar() {
   const handleConnected = useCallback(() => {
     getUnreadCount().then(setUnreadCount).catch(() => {});
   }, []);
+
+  useEffect(() => {
+    if (!user) return;
+    import('../api/proposals').then(({ getIncomingProposals }) => {
+      getIncomingProposals(1, 20).then((res) => {
+        setUnviewedProposalsCount(res.items.filter((p) => !p.isViewedByRecipient).length);
+      }).catch(() => {});
+    });
+  }, [user]);
 
   useNotificationsHub(!!user, handleNotification, handleConnected);
 
@@ -65,6 +75,24 @@ export default function Navbar() {
               <NavLink to="/catalog/collections" className={navCls} onClick={close}>Подборки</NavLink>
               <NavLink to="/friends" className={navCls} onClick={close}>Друзья</NavLink>
               <NavLink to="/reservations" className={navCls} onClick={close}>Бронирования</NavLink>
+              <NavLink
+                to="/proposals"
+                onClick={() => { setUnviewedProposalsCount(0); close(); }}
+                className={({ isActive }) =>
+                  `relative text-sm font-medium px-3 py-1.5 rounded-md transition-colors ${
+                    isActive
+                      ? 'text-primary bg-primary/10'
+                      : 'text-muted-foreground hover:text-foreground hover:bg-muted'
+                  }`
+                }
+              >
+                Предложения
+                {unviewedProposalsCount > 0 && (
+                  <span className="absolute -top-1 -right-1 bg-destructive text-destructive-foreground text-[10px] font-bold rounded-full min-w-[16px] h-4 flex items-center justify-center px-0.5 leading-none">
+                    {unviewedProposalsCount > 99 ? '99+' : unviewedProposalsCount}
+                  </span>
+                )}
+              </NavLink>
               <NavLink to="/events" className={navCls} onClick={close}>События</NavLink>
               <NavLink
                 to="/notifications"

@@ -4,6 +4,7 @@ import { AuthProvider, useAuth } from './context/AuthContext';
 import { ToastProvider } from './components/Toast';
 import { Toaster } from '@/components/ui/sonner';
 import Navbar from './components/Navbar';
+import Footer from './components/Footer';
 import LoginPage from './pages/LoginPage';
 import ProfilePage from './pages/ProfilePage';
 import EditProfilePage from './pages/EditProfilePage';
@@ -18,6 +19,9 @@ import NewWishPage from './pages/NewWishPage';
 import WishPage from './pages/WishPage';
 import EditWishPage from './pages/EditWishPage';
 import ReservationsPage from './pages/ReservationsPage';
+import ProposalsPage from './pages/ProposalsPage';
+import ProposalDetailPage from './pages/ProposalDetailPage';
+import CreateProposalPage from './pages/CreateProposalPage';
 import EventsPage from './pages/EventsPage';
 import NewEventPage from './pages/NewEventPage';
 import EventPage from './pages/EventPage';
@@ -74,6 +78,9 @@ function AppRoutes() {
           <Route path="/wishlists/:id/wishes/:wishId" element={<WishPage />} />
           <Route path="/wishlists/:id/wishes/:wishId/edit" element={<PrivateRoute><EditWishPage /></PrivateRoute>} />
           <Route path="/reservations" element={<PrivateRoute><ReservationsPage /></PrivateRoute>} />
+          <Route path="/proposals" element={<PrivateRoute><ProposalsPage /></PrivateRoute>} />
+          <Route path="/proposals/new" element={<PrivateRoute><CreateProposalPage /></PrivateRoute>} />
+          <Route path="/proposals/:id" element={<PrivateRoute><ProposalDetailPage /></PrivateRoute>} />
           <Route path="/events" element={<PrivateRoute><EventsPage /></PrivateRoute>} />
           <Route path="/events/new" element={<PrivateRoute><NewEventPage /></PrivateRoute>} />
           <Route path="/events/:id" element={<PrivateRoute><EventPage /></PrivateRoute>} />
@@ -88,6 +95,7 @@ function AppRoutes() {
           <Route path="/share/:token" element={<SharedWishPage />} />
         </Routes>
       </main>
+      <Footer />
     </>
   );
 }
