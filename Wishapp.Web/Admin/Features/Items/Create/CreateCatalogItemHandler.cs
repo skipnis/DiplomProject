@@ -18,8 +18,14 @@ public sealed class CreateCatalogItemHandler(ApplicationDbContext db, IFusionCac
             .AnyAsync(c => c.Id == command.CategoryId, ct);
 
         if (!categoryExists)
-        {
             return Error.NotFound("Catalog.CategoryNotFound", "Category not found");
+
+        if (command.OccasionIds.Count > 0)
+        {
+            var validOccasionCount = await db.CatalogOccasions
+                .CountAsync(o => command.OccasionIds.Contains(o.Id), ct);
+            if (validOccasionCount != command.OccasionIds.Count)
+                return Error.NotFound("Catalog.OccasionNotFound", "One or more occasions not found");
         }
 
         var item = CatalogItem.Create(
@@ -31,6 +37,7 @@ public sealed class CreateCatalogItemHandler(ApplicationDbContext db, IFusionCac
             command.Url,
             command.CategoryId);
 
+        item.SetOccasions(command.OccasionIds);
         db.CatalogItems.Add(item);
 
         await db.SaveChangesAsync(ct);

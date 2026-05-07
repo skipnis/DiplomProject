@@ -17,4 +17,5 @@ public record CatalogItemDto(
     DateTimeOffset UpdatedAt,
     int WishCount,
     string? CollectionItemDescription,
-    IReadOnlyList<CatalogItemBadgeDto> Badges);
+    IReadOnlyList<CatalogItemBadgeDto> Badges,
+    IReadOnlyList<OccasionDto> Occasions);

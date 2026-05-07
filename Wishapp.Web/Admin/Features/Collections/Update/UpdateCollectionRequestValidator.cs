@@ -14,9 +14,6 @@ public sealed class UpdateCollectionRequestValidator : AbstractValidator<UpdateC
             .MaximumLength(500)
             .When(x => x.Description is not null);
 
-        RuleFor(x => x.Occasion)
-            .MaximumLength(50)
-            .When(x => x.Occasion is not null);
 
         RuleFor(x => x.Order)
             .GreaterThanOrEqualTo(0);

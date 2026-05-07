@@ -31,6 +31,12 @@ public sealed class GetCatalogItemHandler(ApplicationDbContext db, IGamification
 
         var badgesByItemId = await gamification.GetBadgesForItemsAsync([item.Id], query.UserId, ct);
 
+        var occasions = await db.CatalogItemOccasions
+            .AsNoTracking()
+            .Where(o => o.CatalogItemId == item.Id)
+            .Select(o => new OccasionDto(o.Occasion.Id, o.Occasion.Key, o.Occasion.Label, o.Occasion.Order))
+            .ToListAsync(ct);
+
         return new CatalogItemDto(
             item.Id, item.Name, item.Description,
             item.Price, item.Currency?.ToString(),
@@ -38,6 +44,7 @@ public sealed class GetCatalogItemHandler(ApplicationDbContext db, IGamification
             item.CategoryId, item.CategoryName,
             item.IsPublished, item.CreatedAt, item.UpdatedAt,
             item.WishCount, null,
-            badgesByItemId.GetValueOrDefault(item.Id, []));
+            badgesByItemId.GetValueOrDefault(item.Id, []),
+            occasions);
     }
 }

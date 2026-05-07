@@ -1,4 +1,5 @@
 using Microsoft.EntityFrameworkCore;
+using Wishapp.Web.Catalog.Dtos;
 using Wishapp.Web.Common.Interfaces;
 using Wishapp.Web.Common.Types;
 using Wishapp.Web.Infrastructure.Database;
@@ -19,7 +20,9 @@ public sealed class GetAllCollectionsHandler(ApplicationDbContext db)
                 c.Id,
                 c.Name,
                 c.Description,
-                c.Occasion,
+                c.Occasion != null
+                    ? new OccasionDto(c.Occasion.Id, c.Occasion.Key, c.Occasion.Label, c.Occasion.Order)
+                    : null,
                 c.CoverImagePath,
                 c.Order,
                 c.IsPublished,

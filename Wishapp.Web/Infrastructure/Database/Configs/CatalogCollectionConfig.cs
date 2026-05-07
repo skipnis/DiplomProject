@@ -19,9 +19,10 @@ public class CatalogCollectionConfig : IEntityTypeConfiguration<CatalogCollectio
             .HasMaxLength(500)
             .HasColumnType("text");
 
-        builder.Property(c => c.Occasion)
-            .HasMaxLength(50)
-            .HasColumnType("text");
+        builder.HasOne(c => c.Occasion)
+            .WithMany()
+            .HasForeignKey(c => c.OccasionId)
+            .OnDelete(DeleteBehavior.SetNull);
 
         builder.Property(c => c.CoverImagePath)
             .HasMaxLength(500)

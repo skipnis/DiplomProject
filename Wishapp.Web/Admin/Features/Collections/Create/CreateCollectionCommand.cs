@@ -5,6 +5,6 @@ namespace Wishapp.Web.Admin.Features.Collections.Create;
 public record CreateCollectionCommand(
     string Name,
     string? Description,
-    string? Occasion,
+    Guid? OccasionId,
     string? CoverImagePath,
     int Order) : ICommand<Guid>;

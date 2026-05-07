@@ -3,6 +3,7 @@ using Wishapp.Web.Common.Interfaces;
 using Wishapp.Web.Common.Types;
 using Wishapp.Web.Infrastructure.Database;
 using Wishapp.Web.Infrastructure.Interfaces;
+using Wishapp.Web.Common;
 using Wishapp.Web.Infrastructure.Minio;
 
 namespace Wishapp.Web.Admin.Features.Collections.UploadCover;
@@ -12,8 +13,6 @@ public sealed class UploadCollectionCoverHandler(
     IStorageService storageService)
     : ICommandHandler<UploadCollectionCoverCommand, UploadCollectionCoverResponse>
 {
-    private const long MaxImageSize = 10 * 1024 * 1024;
-
     public async Task<Result<UploadCollectionCoverResponse>> HandleAsync(
         UploadCollectionCoverCommand command,
         CancellationToken ct = default)
@@ -23,7 +22,7 @@ public sealed class UploadCollectionCoverHandler(
         if (collection is null)
             return Error.NotFound("Catalog.CollectionNotFound", "Collection not found");
 
-        if (command.File.Length > MaxImageSize)
+        if (command.File.Length > StorageLimits.MaxImageSizeBytes)
             return Error.Validation("Image.TooLarge", "Image must be less than 10MB");
 
         if (collection.CoverImagePath is not null)

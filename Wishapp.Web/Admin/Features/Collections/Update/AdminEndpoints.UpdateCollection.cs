@@ -19,7 +19,7 @@ public static partial class AdminEndpoints
                 id,
                 request.Name,
                 request.Description,
-                request.Occasion,
+                request.OccasionId,
                 request.CoverImagePath,
                 request.Order,
                 request.IsPublished), ct);

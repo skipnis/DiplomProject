@@ -20,7 +20,7 @@ public sealed class UpdateCollectionHandler(ApplicationDbContext db)
         collection.Update(
             command.Name,
             command.Description,
-            command.Occasion,
+            command.OccasionId,
             command.CoverImagePath,
             command.Order,
             command.IsPublished);

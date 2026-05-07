@@ -36,6 +36,24 @@ public sealed class GetAllCatalogItemsHandler(ApplicationDbContext db)
             .Take(query.Request.PageSize)
             .ToListAsync(ct);
 
+        if (rawItems.Count == 0)
+            return new PagedResponse<CatalogItemDto>([], query.Request.Page, query.Request.PageSize, totalCount);
+
+        var itemIds = rawItems.Select(i => i.Id).ToList();
+        var occasionsByItemId = await db.CatalogItemOccasions
+            .AsNoTracking()
+            .Where(o => itemIds.Contains(o.CatalogItemId))
+            .Select(o => new { o.CatalogItemId, o.Occasion.Id, o.Occasion.Key, o.Occasion.Label, o.Occasion.Order })
+            .ToListAsync(ct);
+
+        var occasionsLookup = occasionsByItemId
+            .GroupBy(o => o.CatalogItemId)
+            .ToDictionary(
+                group => group.Key,
+                group => (IReadOnlyList<OccasionDto>)group
+                    .Select(o => new OccasionDto(o.Id, o.Key, o.Label, o.Order))
+                    .ToList());
+
         var items = rawItems
             .Select(i => new CatalogItemDto(
                 i.Id, i.Name, i.Description,
@@ -43,7 +61,8 @@ public sealed class GetAllCatalogItemsHandler(ApplicationDbContext db)
                 i.ImagePath, i.Url,
                 i.CategoryId, i.CategoryName,
                 i.IsPublished, i.CreatedAt, i.UpdatedAt,
-                i.WishCount, null, []))
+                i.WishCount, null, [],
+                occasionsLookup.GetValueOrDefault(i.Id, [])))
             .ToList();
 
         return new PagedResponse<CatalogItemDto>(items, query.Request.Page, query.Request.PageSize, totalCount);

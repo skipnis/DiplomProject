@@ -6,7 +6,7 @@ public record UpdateCollectionCommand(
     Guid Id,
     string Name,
     string? Description,
-    string? Occasion,
+    Guid? OccasionId,
     string? CoverImagePath,
     int Order,
     bool IsPublished) : ICommand;

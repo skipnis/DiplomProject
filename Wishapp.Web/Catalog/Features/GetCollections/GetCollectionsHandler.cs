@@ -23,7 +23,9 @@ public sealed class GetCollectionsHandler(ApplicationDbContext db, IFusionCache 
                     c.Id,
                     c.Name,
                     c.Description,
-                    c.Occasion,
+                    c.Occasion != null
+                        ? new OccasionDto(c.Occasion.Id, c.Occasion.Key, c.Occasion.Label, c.Occasion.Order)
+                        : null,
                     c.CoverImagePath,
                     c.Order,
                     c.Items.Count))

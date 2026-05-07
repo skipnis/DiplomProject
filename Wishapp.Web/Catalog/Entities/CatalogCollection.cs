@@ -5,7 +5,8 @@ public sealed class CatalogCollection
     public Guid Id { get; private set; }
     public string Name { get; private set; } = null!;
     public string? Description { get; private set; }
-    public string? Occasion { get; private set; }
+    public Guid? OccasionId { get; private set; }
+    public CatalogOccasion? Occasion { get; private set; }
     public string? CoverImagePath { get; private set; }
     public int Order { get; private set; }
     public bool IsPublished { get; private set; }
@@ -19,7 +20,7 @@ public sealed class CatalogCollection
     public static CatalogCollection Create(
         string name,
         string? description,
-        string? occasion,
+        Guid? occasionId,
         string? coverImagePath,
         int order)
     {
@@ -28,7 +29,7 @@ public sealed class CatalogCollection
             Id = Guid.CreateVersion7(),
             Name = name,
             Description = description,
-            Occasion = occasion,
+            OccasionId = occasionId,
             CoverImagePath = coverImagePath,
             Order = order,
             IsPublished = false,
@@ -39,14 +40,14 @@ public sealed class CatalogCollection
     public void Update(
         string name,
         string? description,
-        string? occasion,
+        Guid? occasionId,
         string? coverImagePath,
         int order,
         bool isPublished)
     {
         Name = name;
         Description = description;
-        Occasion = occasion;
+        OccasionId = occasionId;
         CoverImagePath = coverImagePath;
         Order = order;
         IsPublished = isPublished;

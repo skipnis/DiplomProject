@@ -24,7 +24,8 @@ public static partial class AdminEndpoints
                 request.ImagePath,
                 request.Url,
                 request.CategoryId,
-                request.IsPublished), ct);
+                request.IsPublished,
+                request.OccasionIds ?? []), ct);
 
         return result.IsSuccess
             ? TypedResults.NoContent()

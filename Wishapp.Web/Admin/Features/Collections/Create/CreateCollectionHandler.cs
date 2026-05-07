@@ -15,7 +15,7 @@ public sealed class CreateCollectionHandler(ApplicationDbContext db)
         var collection = CatalogCollection.Create(
             command.Name,
             command.Description,
-            command.Occasion,
+            command.OccasionId,
             command.CoverImagePath,
             command.Order);
 

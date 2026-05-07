@@ -10,4 +10,5 @@ public record CreateCatalogItemCommand(
     Currency? Currency,
     string? ImagePath,
     string? Url,
-    Guid CategoryId) : ICommand<Guid>;
+    Guid CategoryId,
+    List<Guid> OccasionIds) : ICommand<Guid>;

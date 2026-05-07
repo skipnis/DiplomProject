@@ -18,6 +18,9 @@ public sealed class CatalogItem
     public DateTimeOffset CreatedAt { get; private set; }
     public DateTimeOffset UpdatedAt { get; private set; }
 
+    private readonly List<CatalogItemOccasion> _occasions = [];
+    public IReadOnlyList<CatalogItemOccasion> Occasions => _occasions.AsReadOnly();
+
     private CatalogItem() { }
 
     public static CatalogItem Create(
@@ -81,5 +84,12 @@ public sealed class CatalogItem
     {
         ImagePath = imagePath;
         UpdatedAt = DateTimeOffset.UtcNow;
+    }
+
+    public void SetOccasions(IEnumerable<Guid> occasionIds)
+    {
+        _occasions.Clear();
+        foreach (var occasionId in occasionIds)
+            _occasions.Add(CatalogItemOccasion.Create(Id, occasionId));
     }
 }

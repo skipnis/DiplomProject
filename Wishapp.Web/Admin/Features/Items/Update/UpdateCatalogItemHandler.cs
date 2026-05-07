@@ -14,19 +14,24 @@ public sealed class UpdateCatalogItemHandler(ApplicationDbContext db, IFusionCac
         CancellationToken ct = default)
     {
         var item = await db.CatalogItems
+            .Include(i => i.Occasions)
             .FirstOrDefaultAsync(i => i.Id == command.Id, ct);
 
         if (item is null)
-        {
             return Error.NotFound("Catalog.ItemNotFound", "Catalog item not found");
-        }
 
         var categoryExists = await db.CatalogCategories
             .AnyAsync(c => c.Id == command.CategoryId, ct);
 
         if (!categoryExists)
-        {
             return Error.NotFound("Catalog.CategoryNotFound", "Category not found");
+
+        if (command.OccasionIds.Count > 0)
+        {
+            var validOccasionCount = await db.CatalogOccasions
+                .CountAsync(o => command.OccasionIds.Contains(o.Id), ct);
+            if (validOccasionCount != command.OccasionIds.Count)
+                return Error.NotFound("Catalog.OccasionNotFound", "One or more occasions not found");
         }
 
         item.Update(
@@ -38,6 +43,8 @@ public sealed class UpdateCatalogItemHandler(ApplicationDbContext db, IFusionCac
             command.Url,
             command.CategoryId,
             command.IsPublished);
+
+        item.SetOccasions(command.OccasionIds);
 
         await db.SaveChangesAsync(ct);
         await cache.RemoveAsync("catalog:price-range", token: ct);

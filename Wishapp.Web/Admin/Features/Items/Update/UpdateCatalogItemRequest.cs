@@ -10,4 +10,5 @@ public record UpdateCatalogItemRequest(
     string? ImagePath,
     string? Url,
     Guid CategoryId,
-    bool IsPublished);
+    bool IsPublished,
+    List<Guid>? OccasionIds);

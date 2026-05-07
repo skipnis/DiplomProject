@@ -4,7 +4,7 @@ public record CatalogCollectionSummaryDto(
     Guid Id,
     string Name,
     string? Description,
-    string? Occasion,
+    OccasionDto? Occasion,
     string? CoverImagePath,
     int Order,
     int ItemCount);

@@ -35,7 +35,7 @@ public sealed class GetCollectionItemsHandler(ApplicationDbContext db)
                 i.ImagePath, i.Url,
                 i.CategoryId, i.CategoryName,
                 i.IsPublished, i.CreatedAt, i.UpdatedAt,
-                i.WishCount, i.CollectionItemDescription, []))
+                i.WishCount, i.CollectionItemDescription, [], []))
             .ToList();
     }
 }

@@ -16,6 +16,8 @@ public sealed class GetCatalogItemsHandler(ApplicationDbContext db, IGamificatio
         GetCatalogItemsQuery query,
         CancellationToken ct = default)
     {
+        var hasOccasionFilter = query.Filter.OccasionIds is { Count: > 0 };
+
         var itemQuery = db.CatalogItems
             .AsNoTracking()
             .Include(i => i.Category)
@@ -26,6 +28,8 @@ public sealed class GetCatalogItemsHandler(ApplicationDbContext db, IGamificatio
                     .Matches(EF.Functions.WebSearchToTsQuery("russian", query.Filter.Search!)))
             .WhereIf(query.Filter.MinPrice.HasValue, i => i.Price >= query.Filter.MinPrice!.Value)
             .WhereIf(query.Filter.MaxPrice.HasValue, i => i.Price <= query.Filter.MaxPrice!.Value)
+            .WhereIf(hasOccasionFilter,
+                i => i.Occasions.Any(o => query.Filter.OccasionIds!.Contains(o.OccasionId)))
             .OrderByDescending(i => i.WishCount)
             .ThenBy(i => i.Name)
             .Select(i => new
@@ -45,7 +49,22 @@ public sealed class GetCatalogItemsHandler(ApplicationDbContext db, IGamificatio
             return new PagedResponse<CatalogItemDto>([], query.Request.Page, query.Request.PageSize, totalCount);
 
         var itemIds = rawItems.Select(i => i.Id).ToList();
+
         var badgesByItemId = await gamification.GetBadgesForItemsAsync(itemIds, query.UserId, ct);
+
+        var occasionsByItemId = await db.CatalogItemOccasions
+            .AsNoTracking()
+            .Where(o => itemIds.Contains(o.CatalogItemId))
+            .Select(o => new { o.CatalogItemId, o.Occasion.Id, o.Occasion.Key, o.Occasion.Label, o.Occasion.Order })
+            .ToListAsync(ct);
+
+        var occasionsLookup = occasionsByItemId
+            .GroupBy(o => o.CatalogItemId)
+            .ToDictionary(
+                group => group.Key,
+                group => (IReadOnlyList<OccasionDto>)group
+                    .Select(o => new OccasionDto(o.Id, o.Key, o.Label, o.Order))
+                    .ToList());
 
         var items = rawItems
             .Select(i => new CatalogItemDto(
@@ -55,7 +74,8 @@ public sealed class GetCatalogItemsHandler(ApplicationDbContext db, IGamificatio
                 i.CategoryId, i.CategoryName,
                 i.IsPublished, i.CreatedAt, i.UpdatedAt,
                 i.WishCount, null,
-                badgesByItemId.GetValueOrDefault(i.Id, [])))
+                badgesByItemId.GetValueOrDefault(i.Id, []),
+                occasionsLookup.GetValueOrDefault(i.Id, [])))
             .ToList();
 
         return new PagedResponse<CatalogItemDto>(items, query.Request.Page, query.Request.PageSize, totalCount);

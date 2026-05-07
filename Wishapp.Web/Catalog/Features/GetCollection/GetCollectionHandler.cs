@@ -45,11 +45,18 @@ public sealed class GetCollectionHandler(ApplicationDbContext db)
                 i.ImagePath, i.Url,
                 i.CategoryId, i.CategoryName,
                 i.IsPublished, i.CreatedAt, i.UpdatedAt,
-                i.WishCount, i.ItemDescription, []))
+                i.WishCount, i.ItemDescription, [], []))
             .ToList();
+
+        OccasionDto? occasionDto = null;
+        if (raw.Occasion is not null)
+        {
+            var occ = raw.Occasion;
+            occasionDto = new OccasionDto(occ.Id, occ.Key, occ.Label, occ.Order);
+        }
 
         return new CatalogCollectionDto(
             raw.Id, raw.Name, raw.Description,
-            raw.Occasion, raw.CoverImagePath, raw.Order, items);
+            occasionDto, raw.CoverImagePath, raw.Order, items);
     }
 }

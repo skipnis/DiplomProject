@@ -12,4 +12,5 @@ public record UpdateCatalogItemCommand(
     string? ImagePath,
     string? Url,
     Guid CategoryId,
-    bool IsPublished) : ICommand;
+    bool IsPublished,
+    List<Guid> OccasionIds) : ICommand;
