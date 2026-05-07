@@ -5,6 +5,7 @@ import type {
   CatalogCollectionDto,
   CatalogCollectionSummaryDto,
   CatalogItemDto,
+  CatalogItemSummaryDto,
   FulfilledBadgeDefinitionDto,
   OccasionDto,
   PagedResponse,
@@ -26,7 +27,7 @@ export function getCatalogItems(params: {
   occasionIds?: string[];
   page?: number;
   pageSize?: number;
-}): Promise<PagedResponse<CatalogItemDto>> {
+}): Promise<PagedResponse<CatalogItemSummaryDto>> {
   const query = new URLSearchParams();
   if (params.categoryId) query.set('categoryId', params.categoryId);
   if (params.search) query.set('search', params.search);
@@ -35,7 +36,7 @@ export function getCatalogItems(params: {
   if (params.occasionIds?.length) params.occasionIds.forEach((id) => query.append('occasionIds', id));
   if (params.page) query.set('page', String(params.page));
   if (params.pageSize) query.set('pageSize', String(params.pageSize));
-  return apiGet<PagedResponse<CatalogItemDto>>(`/catalog/items?${query.toString()}`);
+  return apiGet<PagedResponse<CatalogItemSummaryDto>>(`/catalog/items?${query.toString()}`);
 }
 
 export function getCatalogItem(id: string): Promise<CatalogItemDto> {

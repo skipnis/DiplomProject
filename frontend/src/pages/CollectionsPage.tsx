@@ -5,7 +5,7 @@ import { getImageUrl } from '../api/client';
 import { useToast } from '../components/Toast';
 import { parseError } from '../utils/errors';
 import { useAuth } from '../context/AuthContext';
-import type { CatalogCollectionSummaryDto, CatalogItemDto, OccasionDto, WishlistSummaryDto } from '../types';
+import type { CatalogCollectionSummaryDto, CatalogItemSummaryDto, OccasionDto, WishlistSummaryDto } from '../types';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Dialog, DialogContent, DialogTitle } from '@/components/ui/dialog';
@@ -19,10 +19,10 @@ export default function CollectionsPage() {
   const [occasions, setOccasions] = useState<OccasionDto[]>([]);
   const [occasionFilter, setOccasionFilter] = useState<string | null>(null);
   const [activeCollection, setActiveCollection] = useState<CatalogCollectionSummaryDto | null>(null);
-  const [collectionItems, setCollectionItems] = useState<CatalogItemDto[]>([]);
+  const [collectionItems, setCollectionItems] = useState<CatalogItemSummaryDto[]>([]);
   const [loading, setLoading] = useState(true);
   const [collectionLoading, setCollectionLoading] = useState(false);
-  const [addModal, setAddModal] = useState<CatalogItemDto | null>(null);
+  const [addModal, setAddModal] = useState<CatalogItemSummaryDto | null>(null);
   const [wishlists, setWishlists] = useState<WishlistSummaryDto[]>([]);
   const [selectedWishlistId, setSelectedWishlistId] = useState('');
   const [adding, setAdding] = useState(false);
@@ -46,7 +46,7 @@ export default function CollectionsPage() {
     finally { setCollectionLoading(false); }
   };
 
-  const openAddModal = async (item: CatalogItemDto) => {
+  const openAddModal = async (item: CatalogItemSummaryDto) => {
     if (!user) { toast.error('Войдите в аккаунт'); return; }
     setAddModal(item);
     const lists = await getMyWishlists().catch(() => []);

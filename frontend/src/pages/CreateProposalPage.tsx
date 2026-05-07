@@ -9,10 +9,10 @@ import { getImageUrl } from '../api/client';
 import { useToast } from '../components/Toast';
 import { parseError } from '../utils/errors';
 import type {
-  CatalogItemDto,
+  CatalogItemSummaryDto,
   FriendInfo,
   PagedResponse,
-  WishDto,
+  WishSummaryDto,
   WishlistSummaryDto,
   CatalogCategoryDto,
 } from '../types';
@@ -43,8 +43,8 @@ const ALIAS_PRESETS = [
 ];
 
 type SelectedGift =
-  | { type: 1; item: CatalogItemDto }
-  | { type: 2; wish: WishDto }
+  | { type: 1; item: CatalogItemSummaryDto }
+  | { type: 2; wish: WishSummaryDto }
   | { type: 3; title: string; description: string; imageFile: File | null; imagePreview: string | null };
 
 function CatalogPickerDialog({
@@ -54,12 +54,12 @@ function CatalogPickerDialog({
 }: {
   open: boolean;
   onClose: () => void;
-  onSelect: (item: CatalogItemDto) => void;
+  onSelect: (item: CatalogItemSummaryDto) => void;
 }) {
   const [search, setSearch] = useState('');
   const [categoryId, setCategoryId] = useState('');
   const [categories, setCategories] = useState<CatalogCategoryDto[]>([]);
-  const [items, setItems] = useState<PagedResponse<CatalogItemDto> | null>(null);
+  const [items, setItems] = useState<PagedResponse<CatalogItemSummaryDto> | null>(null);
   const [page, setPage] = useState(1);
   const [loading, setLoading] = useState(false);
   const toast = useToast();
@@ -144,11 +144,11 @@ function WishlistPickerDialog({
 }: {
   open: boolean;
   onClose: () => void;
-  onSelect: (wish: WishDto) => void;
+  onSelect: (wish: WishSummaryDto) => void;
 }) {
   const [wishlists, setWishlists] = useState<WishlistSummaryDto[]>([]);
   const [selectedWishlist, setSelectedWishlist] = useState<WishlistSummaryDto | null>(null);
-  const [wishes, setWishes] = useState<WishDto[]>([]);
+  const [wishes, setWishes] = useState<WishSummaryDto[]>([]);
   const [loading, setLoading] = useState(false);
   const toast = useToast();
 

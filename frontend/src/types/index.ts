@@ -96,7 +96,6 @@ export interface WishlistDto {
   isSystem: boolean;
   systemType: SystemWishlistType;
   isSurpriseModeEnabled: boolean;
-  createdAt: string;
   fulfilledWishCount: number;
   members: WishlistMemberDto[];
 }
@@ -108,10 +107,20 @@ export interface WishlistSummaryDto {
   emoji: string | null;
   visibility: WishlistVisibility;
   isSystem: boolean;
-  systemType: SystemWishlistType;
   wishCount: number;
   fulfilledWishCount: number;
-  createdAt: string;
+}
+
+export interface WishSummaryDto {
+  id: string;
+  name: string;
+  price: number | null;
+  currency: Currency | null;
+  priority: WishPriority;
+  imagePath: string | null;
+  isFulfilled: boolean;
+  isReserved: boolean;
+  hasGiftBadges: boolean;
 }
 
 export interface WishDto {
@@ -291,6 +300,20 @@ export interface GiftProfileDto {
 
 
 
+export interface CatalogItemSummaryDto {
+  id: string;
+  name: string;
+  price: number | null;
+  currency: string | null;
+  imagePath: string | null;
+  url: string | null;
+  categoryId: string;
+  categoryName: string;
+  wishCount: number;
+  collectionItemDescription: string | null;
+  badges: CatalogItemBadgeDto[];
+}
+
 export interface CatalogItemDto {
   id: string;
   name: string;
@@ -352,7 +375,7 @@ export interface CatalogCollectionDto {
   occasion: OccasionDto | null;
   coverImagePath: string | null;
   order: number;
-  items: CatalogItemDto[];
+  items: CatalogItemSummaryDto[];
 }
 
 export interface CatalogCollectionAdminDto {

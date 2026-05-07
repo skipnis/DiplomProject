@@ -6,14 +6,14 @@ import { getImageUrl } from '../api/client';
 import { useToast } from '../components/Toast';
 import { parseError } from '../utils/errors';
 import { useAuth } from '../context/AuthContext';
-import type { CatalogCategoryDto, CatalogItemDto, OccasionDto, PagedResponse, WishlistSummaryDto } from '../types';
+import type { CatalogCategoryDto, CatalogItemSummaryDto, OccasionDto, PagedResponse, WishlistSummaryDto } from '../types';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Dialog, DialogContent, DialogTitle } from '@/components/ui/dialog';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Slider } from '@/components/ui/slider';
 
-function ItemBadges({ item }: { item: CatalogItemDto }) {
+function ItemBadges({ item }: { item: CatalogItemSummaryDto }) {
   const topBadge = item.badges
     .filter((badge) => badge.voteCount > 0)
     .sort((a, b) => b.voteCount - a.voteCount)[0];
@@ -34,7 +34,7 @@ export default function CatalogPage() {
   const [categories, setCategories] = useState<CatalogCategoryDto[]>([]);
   const [occasions, setOccasions] = useState<OccasionDto[]>([]);
   const [selectedOccasionIds, setSelectedOccasionIds] = useState<string[]>([]);
-  const [data, setData] = useState<PagedResponse<CatalogItemDto> | null>(null);
+  const [data, setData] = useState<PagedResponse<CatalogItemSummaryDto> | null>(null);
   const [page, setPage] = useState(1);
   const [loading, setLoading] = useState(true);
   const [selectedCategory, setSelectedCategory] = useState<string | undefined>();
@@ -46,7 +46,7 @@ export default function CatalogPage() {
   const priceFilterActive = priceRange[0] > 1 || priceRange[1] < maxCatalogPrice;
   const minPrice = priceFilterActive ? priceRange[0] : undefined;
   const maxPrice = priceFilterActive ? priceRange[1] : undefined;
-  const [addModal, setAddModal] = useState<CatalogItemDto | null>(null);
+  const [addModal, setAddModal] = useState<CatalogItemSummaryDto | null>(null);
   const [wishlists, setWishlists] = useState<WishlistSummaryDto[]>([]);
   const [selectedWishlistId, setSelectedWishlistId] = useState('');
   const [adding, setAdding] = useState(false);
@@ -74,7 +74,7 @@ export default function CatalogPage() {
 
   const handleSearch = (e: React.FormEvent) => { e.preventDefault(); setSearch(searchInput); };
 
-  const openAddModal = async (item: CatalogItemDto) => {
+  const openAddModal = async (item: CatalogItemSummaryDto) => {
     if (!user) { toast.error('Войдите в аккаунт'); return; }
     setAddModal(item);
     const lists = await getMyWishlists().catch(() => []);

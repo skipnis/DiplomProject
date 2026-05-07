@@ -9,7 +9,7 @@ import { useAuth } from '../context/AuthContext';
 import { useToast } from '../components/Toast';
 import { parseError, ApiError } from '../utils/errors';
 import { VISIBILITY_LABELS, ROLE_LABELS, PRIORITY_LABELS, getWishlistEmoji } from '../types';
-import type { WishlistDto, WishDto, WishlistMemberRole, UserProfile } from '../types';
+import type { WishlistDto, WishSummaryDto, WishlistMemberRole, UserProfile } from '../types';
 import { Button, buttonVariants } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Card, CardContent } from '@/components/ui/card';
@@ -61,7 +61,7 @@ export default function WishlistPage() {
   const toast = useToast();
 
   const [wishlist, setWishlist] = useState<WishlistDto | null>(null);
-  const [wishes, setWishes] = useState<WishDto[]>([]);
+  const [wishes, setWishes] = useState<WishSummaryDto[]>([]);
   const [wishPage, setWishPage] = useState(1);
   const [wishTotalPages, setWishTotalPages] = useState(1);
   const [wishTotalCount, setWishTotalCount] = useState(0);
@@ -158,7 +158,7 @@ export default function WishlistPage() {
     } catch (e) { toast.error(parseError(e)); }
   };
 
-  const handleFulfill = async (wish: WishDto) => {
+  const handleFulfill = async (wish: WishSummaryDto) => {
     if (!id) return;
     try {
       if (wish.isFulfilled) {
@@ -172,7 +172,7 @@ export default function WishlistPage() {
     } catch (e) { toast.error(parseError(e)); }
   };
 
-  const handleReserve = async (wish: WishDto) => {
+  const handleReserve = async (wish: WishSummaryDto) => {
     if (!id) return;
     try {
       if (myReservationIds.has(wish.id)) {
