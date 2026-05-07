@@ -4,6 +4,7 @@ using Wishapp.Web.Common.Types;
 using Wishapp.Web.Infrastructure.Database;
 using Wishapp.Web.Infrastructure.Interfaces;
 using Wishapp.Web.Infrastructure.Minio;
+using Wishapp.Web.Common;
 using Wishapp.Web.Infrastructure.Parser;
 
 namespace Wishapp.Web.Wishlists.Features.Wishes.UploadWishImage;
@@ -14,7 +15,6 @@ public sealed class UploadWishImageHandler(
     IHttpClientFactory httpClientFactory)
     : ICommandHandler<UploadWishImageCommand, UploadWishImageResponse>
 {
-    private const long MaxImageSize = 10 * 1024 * 1024; 
 
     public async Task<Result<UploadWishImageResponse>> HandleAsync(
         UploadWishImageCommand command,
@@ -71,7 +71,7 @@ public sealed class UploadWishImageHandler(
 
     private async Task<Result> UploadFromFileAsync(string path, IFormFile file, CancellationToken ct)
     {
-        if (file.Length > MaxImageSize)
+        if (file.Length > StorageLimits.MaxImageSizeBytes)
         {
             return Error.Validation("Image.TooLarge", "Image must be less than 10MB");
         }
@@ -111,7 +111,7 @@ public sealed class UploadWishImageHandler(
             return Error.Validation("Image.InvalidContentType", "URL must point to an image");
         }
 
-        if (response.Content.Headers.ContentLength > MaxImageSize)
+        if (response.Content.Headers.ContentLength > StorageLimits.MaxImageSizeBytes)
         {
             return Error.Validation("Image.TooLarge", "Image must be less than 10MB");
         }

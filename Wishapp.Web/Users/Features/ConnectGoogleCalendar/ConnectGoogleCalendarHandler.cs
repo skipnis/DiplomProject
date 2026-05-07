@@ -4,6 +4,7 @@ using Wishapp.Web.Common.Types;
 using Wishapp.Web.Infrastructure.Database;
 using Wishapp.Web.Infrastructure.GoogleCalendar;
 using Wishapp.Web.Users.Entities;
+using static Wishapp.Web.Infrastructure.GoogleCalendar.GoogleCalendarConstants;
 
 namespace Wishapp.Web.Users.Features.ConnectGoogleCalendar;
 
@@ -12,9 +13,6 @@ public sealed class ConnectGoogleCalendarHandler(
     IGoogleCalendarService calendarService)
     : ICommandHandler<ConnectGoogleCalendarCommand>
 {
-    private const string Provider = "google";
-    private const string Scope = "calendar";
-
     public async Task<Result> HandleAsync(ConnectGoogleCalendarCommand command, CancellationToken ct = default)
     {
         var exchangeResult = await calendarService.ExchangeCodeAsync(command.Code, ct);

@@ -1,5 +1,3 @@
-using System.Security.Cryptography;
-using System.Text;
 using Microsoft.EntityFrameworkCore;
 using Wishapp.Web.Common.Interfaces;
 using Wishapp.Web.Common.Types;
@@ -29,8 +27,7 @@ public sealed class SendOtpHandler(
         if (recentOtp is not null && DateTime.UtcNow - recentOtp.CreatedAt < TimeSpan.FromSeconds(60))
             return TooManyRequests;
 
-        var code = GenerateCode();
-        var codeHash = HashCode(code);
+        var (code, codeHash) = OtpGenerator.Generate();
 
         db.EmailOtps.Add(EmailOtp.Create(email, codeHash));
         await db.SaveChangesAsync(ct);
@@ -42,17 +39,5 @@ public sealed class SendOtpHandler(
             ct);
 
         return Result.Success();
-    }
-
-    private static string GenerateCode()
-    {
-        var number = RandomNumberGenerator.GetInt32(0, 1_000_000);
-        return number.ToString("D6");
-    }
-
-    private static string HashCode(string code)
-    {
-        var hash = SHA256.HashData(Encoding.UTF8.GetBytes(code));
-        return Convert.ToBase64String(hash);
     }
 }

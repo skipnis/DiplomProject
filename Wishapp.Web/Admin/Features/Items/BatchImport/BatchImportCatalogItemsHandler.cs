@@ -5,6 +5,7 @@ using Wishapp.Web.Common.Types;
 using Wishapp.Web.Infrastructure.Database;
 using Wishapp.Web.Infrastructure.Interfaces;
 using Wishapp.Web.Infrastructure.Minio;
+using Wishapp.Web.Common;
 using Wishapp.Web.Infrastructure.Parser;
 using Wishapp.Web.Wishlists.Dtos;
 using ZiggyCreatures.Caching.Fusion;
@@ -20,8 +21,6 @@ public sealed class BatchImportCatalogItemsHandler(
     ILogger<BatchImportCatalogItemsHandler> logger)
     : ICommandHandler<BatchImportCatalogItemsCommand, List<BatchImportItemResult>>
 {
-    private const long MaxImageSize = 10 * 1024 * 1024;
-
     public async Task<Result<List<BatchImportItemResult>>> HandleAsync(
         BatchImportCatalogItemsCommand command,
         CancellationToken ct = default)
@@ -146,7 +145,7 @@ public sealed class BatchImportCatalogItemsHandler(
         if (contentType is null || !contentType.StartsWith("image/"))
             return Error.Validation("Image.InvalidContentType", "URL must point to an image");
 
-        if (response.Content.Headers.ContentLength > MaxImageSize)
+        if (response.Content.Headers.ContentLength > StorageLimits.MaxImageSizeBytes)
             return Error.Validation("Image.TooLarge", "Image must be less than 10MB");
 
         await using var stream = await response.Content.ReadAsStreamAsync(ct);

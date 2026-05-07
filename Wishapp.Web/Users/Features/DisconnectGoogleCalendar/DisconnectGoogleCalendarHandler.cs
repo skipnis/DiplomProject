@@ -2,15 +2,14 @@ using Microsoft.EntityFrameworkCore;
 using Wishapp.Web.Common.Interfaces;
 using Wishapp.Web.Common.Types;
 using Wishapp.Web.Infrastructure.Database;
+using Wishapp.Web.Infrastructure.GoogleCalendar;
+using static Wishapp.Web.Infrastructure.GoogleCalendar.GoogleCalendarConstants;
 
 namespace Wishapp.Web.Users.Features.DisconnectGoogleCalendar;
 
 public sealed class DisconnectGoogleCalendarHandler(ApplicationDbContext db)
     : ICommandHandler<DisconnectGoogleCalendarCommand>
 {
-    private const string Provider = "google";
-    private const string Scope = "calendar";
-
     public async Task<Result> HandleAsync(DisconnectGoogleCalendarCommand command, CancellationToken ct = default)
     {
         var token = await db.UserExternalTokens

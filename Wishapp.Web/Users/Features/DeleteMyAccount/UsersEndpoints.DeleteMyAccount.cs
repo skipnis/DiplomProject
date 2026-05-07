@@ -3,6 +3,7 @@ using Microsoft.AspNetCore.Http.HttpResults;
 using Microsoft.AspNetCore.Mvc;
 using Wishapp.Web.Common.Interfaces;
 using Wishapp.Web.Common.Types;
+using Wishapp.Web.Infrastructure.Authentication;
 using Wishapp.Web.Infrastructure.Extensions;
 using Wishapp.Web.Users.Features.DeleteMyAccount;
 
@@ -31,8 +32,8 @@ public static partial class UsersEndpoints
             return TypedResults.BadRequest(result.Error.Description);
         }
 
-        httpContext.Response.Cookies.Delete("access_token");
-        httpContext.Response.Cookies.Delete("refresh_token");
+        httpContext.Response.Cookies.Delete(CookieNames.AccessToken);
+        httpContext.Response.Cookies.Delete(CookieNames.RefreshToken);
 
         return TypedResults.NoContent();
     }

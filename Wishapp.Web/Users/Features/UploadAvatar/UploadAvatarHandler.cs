@@ -2,6 +2,7 @@ using Wishapp.Web.Common.Interfaces;
 using Wishapp.Web.Common.Types;
 using Wishapp.Web.Infrastructure.Database;
 using Wishapp.Web.Infrastructure.Interfaces;
+using Wishapp.Web.Common;
 using Wishapp.Web.Infrastructure.Minio;
 
 namespace Wishapp.Web.Users.Features.UploadAvatar;
@@ -11,13 +12,11 @@ public sealed class UploadAvatarHandler(
     IStorageService storageService)
     : ICommandHandler<UploadAvatarCommand, UploadAvatarResponse>
 {
-    private const long MaxAvatarSize = 5 * 1024 * 1024;
-
     public async Task<Result<UploadAvatarResponse>> HandleAsync(
         UploadAvatarCommand command,
         CancellationToken ct = default)
     {
-        if (command.File.Length > MaxAvatarSize)
+        if (command.File.Length > StorageLimits.MaxAvatarSizeBytes)
         {
             return Error.Validation("Avatar.TooLarge", "Avatar must be less than 5MB");
         }

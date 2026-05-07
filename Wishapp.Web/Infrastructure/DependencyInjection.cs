@@ -121,7 +121,7 @@ public static class DependencyInjection
                         OnMessageReceived = ctx =>
                         {
                             if (ctx.Request.Headers.Authorization.Count == 0 &&
-                                ctx.Request.Cookies.TryGetValue("access_token", out var token))
+                                ctx.Request.Cookies.TryGetValue(CookieNames.AccessToken, out var token))
                             {
                                 ctx.Token = token;
                             }

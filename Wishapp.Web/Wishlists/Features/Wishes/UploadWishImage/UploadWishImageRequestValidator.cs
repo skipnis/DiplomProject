@@ -1,11 +1,10 @@
 using FluentValidation;
+using Wishapp.Web.Common;
 
 namespace Wishapp.Web.Wishlists.Features.Wishes.UploadWishImage;
 
 public sealed class UploadWishImageRequestValidator : AbstractValidator<UploadWishImageRequest>
 {
-    private const long MaxImageSize = 10 * 1024 * 1024;
-
     public UploadWishImageRequestValidator()
     {
         RuleFor(x => x)
@@ -15,7 +14,7 @@ public sealed class UploadWishImageRequestValidator : AbstractValidator<UploadWi
             .WithMessage("Provide either File or ExternalImageUrl, not both.");
 
         RuleFor(x => x.File)
-            .Must(f => f!.Length <= MaxImageSize)
+            .Must(f => f!.Length <= StorageLimits.MaxImageSizeBytes)
             .WithMessage("Image must be less than 10MB.")
             .When(x => x.File is not null);
 

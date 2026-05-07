@@ -1,5 +1,6 @@
 using Microsoft.AspNetCore.Http.HttpResults;
 using Wishapp.Web.Common.Interfaces;
+using Wishapp.Web.Infrastructure.Authentication;
 using Wishapp.Web.Users.Features.RefreshToken;
 
 namespace Wishapp.Web.Users;
@@ -11,7 +12,7 @@ public static partial class UsersEndpoints
         HttpContext httpContext,
         CancellationToken ct)
     {
-        if (!httpContext.Request.Cookies.TryGetValue("refresh_token", out var refreshToken))
+        if (!httpContext.Request.Cookies.TryGetValue(CookieNames.RefreshToken, out var refreshToken))
         {
             return TypedResults.Unauthorized();
         }
