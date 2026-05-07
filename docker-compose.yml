@@ -32,13 +32,6 @@ services:
       timeout: 5s
       retries: 5
 
-  mailpit:
-    image: axllent/mailpit
-    restart: unless-stopped
-    ports:
-      - "8025:8025"
-      - "1025:1025"
-
   minio-init:
     image: minio/mc
     env_file:
@@ -78,8 +71,6 @@ services:
         condition: service_healthy
       minio-init:
         condition: service_completed_successfully
-      mailpit:
-        condition: service_started
       migrator:
         condition: service_completed_successfully
 
