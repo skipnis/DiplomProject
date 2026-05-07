@@ -12,4 +12,7 @@ public enum NotificationType
     AddedToWishlist = 20,
     RemovedFromWishlist = 21,
     WishlistRoleUpdated = 22,
+
+    ProposalReceived = 30,
+    ProposalReacted = 31,
 }

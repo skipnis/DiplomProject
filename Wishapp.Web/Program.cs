@@ -15,6 +15,7 @@ using Wishapp.Web.Gamification.Features.AchievementChecker;
 using Wishapp.Web.Infrastructure;
 using Wishapp.Web.Notifications;
 using Wishapp.Web.Notifications.SignalR;
+using Wishapp.Web.Proposals;
 using Wishapp.Web.Reservations;
 using Wishapp.Web.Users;
 using Wishapp.Web.Wishlists;
@@ -41,6 +42,7 @@ builder.Services
     .AddCatalogModule()
     .AddGamificationModule(builder.Configuration)
     .AddWishlistsModule()
+    .AddProposalsModule()
     .AddReservationsModule()
     .AddEventsModule()
     .AddNotificationsModule();
@@ -95,6 +97,7 @@ app.MapHealthChecks("/health",
 app.MapUsersEndpoints()
     .MapFriendshipsEndpoints()
     .MapWishlistsEndpoints()
+    .MapProposalsEndpoints()
     .MapReservationsEndpoints()
     .MapEventsEndpoints()
     .MapCatalogEndpoints()

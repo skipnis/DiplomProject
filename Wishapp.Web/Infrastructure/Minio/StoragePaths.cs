@@ -13,4 +13,7 @@ public static class StoragePaths
 
     public static string UserAvatar(Guid userId) =>
         $"users/{userId}/avatar";
+
+    public static string ProposalCustomImage(Guid proposalId) =>
+        $"proposals/{proposalId}/image";
 }

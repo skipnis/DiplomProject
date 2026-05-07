@@ -7,6 +7,7 @@ using Wishapp.Web.Friendships;
 using Wishapp.Web.Gamification;
 using Wishapp.Web.Infrastructure.Database;
 using Wishapp.Web.Infrastructure.Interfaces;
+using Wishapp.Web.Proposals;
 using Wishapp.Web.Reservations;
 using Wishapp.Web.Wishlists;
 
@@ -18,6 +19,7 @@ public sealed class DeleteMyAccountHandler(
     IReservationsApi reservationsApi,
     IFriendshipsApi friendshipsApi,
     IGamificationApi gamificationApi,
+    IProposalsApi proposalsApi,
     IStorageService storageService)
     : ICommandHandler<DeleteMyAccountCommand>
 {
@@ -59,6 +61,7 @@ public sealed class DeleteMyAccountHandler(
             await storageService.DeleteAsync(user.AvatarPath, ct);
 
         await reservationsApi.DeleteUserDataAsync(command.UserId, ct);
+        await proposalsApi.DeleteUserDataAsync(command.UserId, ct);
         await gamificationApi.DeleteUserDataAsync(command.UserId, ct);
         await wishlistsApi.DeleteUserDataAsync(command.UserId, ct);
         await friendshipsApi.DeleteUserDataAsync(command.UserId, ct);

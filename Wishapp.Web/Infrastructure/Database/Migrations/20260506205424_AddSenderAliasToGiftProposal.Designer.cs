@@ -3,6 +3,7 @@ using System;
 using System.Text.Json;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 using NpgsqlTypes;
@@ -13,9 +14,11 @@ using Wishapp.Web.Infrastructure.Database;
 namespace Wishapp.Web.Infrastructure.Database.Migrations
 {
     [DbContext(typeof(ApplicationDbContext))]
-    partial class ApplicationDbContextModelSnapshot : ModelSnapshot
+    [Migration("20260506205424_AddSenderAliasToGiftProposal")]
+    partial class AddSenderAliasToGiftProposal
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -134,9 +137,10 @@ namespace Wishapp.Web.Infrastructure.Database.Migrations
                         .HasColumnType("text")
                         .HasColumnName("name");
 
-                    b.Property<Guid?>("OccasionId")
-                        .HasColumnType("uuid")
-                        .HasColumnName("occasion_id");
+                    b.Property<string>("Occasion")
+                        .HasMaxLength(50)
+                        .HasColumnType("text")
+                        .HasColumnName("occasion");
 
                     b.Property<int>("Order")
                         .HasColumnType("integer")
@@ -147,9 +151,6 @@ namespace Wishapp.Web.Infrastructure.Database.Migrations
 
                     b.HasIndex("IsPublished")
                         .HasDatabaseName("ix_catalog_collections_is_published");
-
-                    b.HasIndex("OccasionId")
-                        .HasDatabaseName("ix_catalog_collections_occasion_id");
 
                     b.HasIndex("Order")
                         .HasDatabaseName("ix_catalog_collections_order");
@@ -275,25 +276,6 @@ namespace Wishapp.Web.Infrastructure.Database.Migrations
 
                             t.HasCheckConstraint("CK_catalog_items_price_positive", "price > 0");
                         });
-                });
-
-            modelBuilder.Entity("Wishapp.Web.Catalog.Entities.CatalogItemOccasion", b =>
-                {
-                    b.Property<Guid>("CatalogItemId")
-                        .HasColumnType("uuid")
-                        .HasColumnName("catalog_item_id");
-
-                    b.Property<Guid>("OccasionId")
-                        .HasColumnType("uuid")
-                        .HasColumnName("occasion_id");
-
-                    b.HasKey("CatalogItemId", "OccasionId")
-                        .HasName("pk_catalog_item_occasions");
-
-                    b.HasIndex("OccasionId")
-                        .HasDatabaseName("ix_catalog_item_occasions_occasion_id");
-
-                    b.ToTable("catalog_item_occasions", "catalog");
                 });
 
             modelBuilder.Entity("Wishapp.Web.Catalog.Entities.CatalogOccasion", b =>
@@ -1020,10 +1002,6 @@ namespace Wishapp.Web.Infrastructure.Database.Migrations
                         .HasColumnType("boolean")
                         .HasColumnName("is_onboarded");
 
-                    b.Property<bool>("ShowFulfilledWishes")
-                        .HasColumnType("boolean")
-                        .HasColumnName("show_fulfilled_wishes");
-
                     b.Property<string>("Username")
                         .HasMaxLength(50)
                         .HasColumnType("text")
@@ -1412,17 +1390,6 @@ namespace Wishapp.Web.Infrastructure.Database.Migrations
                     b.ToTable("wishlist_members", "wishlists");
                 });
 
-            modelBuilder.Entity("Wishapp.Web.Catalog.Entities.CatalogCollection", b =>
-                {
-                    b.HasOne("Wishapp.Web.Catalog.Entities.CatalogOccasion", "Occasion")
-                        .WithMany()
-                        .HasForeignKey("OccasionId")
-                        .OnDelete(DeleteBehavior.SetNull)
-                        .HasConstraintName("fk_catalog_collections_catalog_occasions_occasion_id");
-
-                    b.Navigation("Occasion");
-                });
-
             modelBuilder.Entity("Wishapp.Web.Catalog.Entities.CatalogCollectionItem", b =>
                 {
                     b.HasOne("Wishapp.Web.Catalog.Entities.CatalogItem", "CatalogItem")
@@ -1454,27 +1421,6 @@ namespace Wishapp.Web.Infrastructure.Database.Migrations
                         .HasConstraintName("fk_catalog_items_catalog_categories_category_id");
 
                     b.Navigation("Category");
-                });
-
-            modelBuilder.Entity("Wishapp.Web.Catalog.Entities.CatalogItemOccasion", b =>
-                {
-                    b.HasOne("Wishapp.Web.Catalog.Entities.CatalogItem", "CatalogItem")
-                        .WithMany("Occasions")
-                        .HasForeignKey("CatalogItemId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired()
-                        .HasConstraintName("fk_catalog_item_occasions_catalog_items_catalog_item_id");
-
-                    b.HasOne("Wishapp.Web.Catalog.Entities.CatalogOccasion", "Occasion")
-                        .WithMany()
-                        .HasForeignKey("OccasionId")
-                        .OnDelete(DeleteBehavior.Restrict)
-                        .IsRequired()
-                        .HasConstraintName("fk_catalog_item_occasions_catalog_occasions_occasion_id");
-
-                    b.Navigation("CatalogItem");
-
-                    b.Navigation("Occasion");
                 });
 
             modelBuilder.Entity("Wishapp.Web.Users.Entities.AuthIdentity", b =>
@@ -1510,11 +1456,6 @@ namespace Wishapp.Web.Infrastructure.Database.Migrations
             modelBuilder.Entity("Wishapp.Web.Catalog.Entities.CatalogCollection", b =>
                 {
                     b.Navigation("Items");
-                });
-
-            modelBuilder.Entity("Wishapp.Web.Catalog.Entities.CatalogItem", b =>
-                {
-                    b.Navigation("Occasions");
                 });
 
             modelBuilder.Entity("Wishapp.Web.Users.Entities.User", b =>

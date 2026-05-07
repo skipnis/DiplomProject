@@ -5,6 +5,7 @@ using Wishapp.Web.Events.Entities;
 using Wishapp.Web.Friendships.Entities;
 using Wishapp.Web.Gamification.Entities;
 using Wishapp.Web.Notifications.Entities;
+using Wishapp.Web.Proposals.Entities;
 using Wishapp.Web.Reservations.Entities;
 using Wishapp.Web.Users.Entities;
 using Wishapp.Web.Wishlists.Entities;
@@ -29,6 +30,8 @@ public class ApplicationDbContext(
 
     public DbSet<WishReservation> WishReservations { get; set; }
 
+    public DbSet<GiftProposal> GiftProposals { get; set; }
+
     public DbSet<Event> Events { get; set; }
 
     public DbSet<Notification> Notifications { get; set; }
@@ -38,6 +41,7 @@ public class ApplicationDbContext(
     public DbSet<CatalogItem> CatalogItems { get; set; }
     public DbSet<CatalogCollection> CatalogCollections { get; set; }
     public DbSet<CatalogCollectionItem> CatalogCollectionItems { get; set; }
+    public DbSet<CatalogItemOccasion> CatalogItemOccasions { get; set; }
     public DbSet<CatalogOccasion> CatalogOccasions { get; set; }
     public DbSet<CatalogItemBadgeVote> CatalogItemBadgeVotes { get; set; }
     public DbSet<CatalogBadgeDefinition> CatalogBadgeDefinitions { get; set; }
