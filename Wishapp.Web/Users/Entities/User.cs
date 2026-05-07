@@ -12,6 +12,7 @@ public sealed class User
     public DateOnly? BirthDate { get; private set; }
     public DateTimeOffset CreatedAt { get; private set; }
     public bool IsOnboarded { get; private set; }
+    public bool ShowFulfilledWishes { get; private set; }
     public IReadOnlyCollection<AuthIdentity> Identities { get; private set; } = null!;
 
     private User() { }
@@ -36,6 +37,8 @@ public sealed class User
         Bio = bio;
         BirthDate = birthDate;
     }
+
+    public void SetShowFulfilledWishes(bool show) => ShowFulfilledWishes = show;
 
     public void CompleteOnboarding() => IsOnboarded = true;
 

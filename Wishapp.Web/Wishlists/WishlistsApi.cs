@@ -181,6 +181,21 @@ public sealed class WishlistsApi(ApplicationDbContext db) : IWishlistsApi
             wishlist.Wish?.FulfilledByReserverId);
     }
 
+    public async Task<List<PublicFulfilledWishDto>> GetPublicFulfilledWishesAsync(Guid userId, CancellationToken ct = default)
+    {
+        return await db.FulfilledWishRecords
+            .AsNoTracking()
+            .Where(record => record.OwnerId == userId)
+            .OrderByDescending(record => record.FulfilledAt)
+            .Select(record => new PublicFulfilledWishDto(
+                record.Id,
+                record.WishName,
+                record.ImagePath,
+                record.WishlistName,
+                record.FulfilledAt))
+            .ToListAsync(ct);
+    }
+
     public async Task DeleteUserDataAsync(Guid userId, CancellationToken ct = default)
     {
         var ownedWishlistIds = await db.Wishlists

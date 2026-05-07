@@ -1,3 +1,4 @@
+using Wishapp.Web.Infrastructure.Authentication;
 using Wishapp.Web.Infrastructure.Validation;
 using Wishapp.Web.Users.Features.ConnectGoogleCalendar;
 using Wishapp.Web.Users.Features.DeleteAvatar;
@@ -34,6 +35,8 @@ public static partial class UsersEndpoints
 
         usersEndpoints.MapGet("/{id:guid}", GetUserProfile).AllowAnonymous();
 
+        usersEndpoints.MapGet("/{id:guid}/fulfilled-wishes", GetUserFulfilledWishes).AllowAnonymous();
+
         usersEndpoints.MapGet("/search", SearchUsers).Produces(401);;
 
         usersEndpoints.MapPost("/me/google-calendar", ConnectGoogleCalendar).Produces(401)
@@ -65,14 +68,14 @@ public static partial class UsersEndpoints
             Path = "/"
         };
 
-        httpContext.Response.Cookies.Append("access_token", accessToken, cookieOptions);
-        httpContext.Response.Cookies.Append("refresh_token", refreshToken, cookieOptions);
+        httpContext.Response.Cookies.Append(CookieNames.AccessToken, accessToken, cookieOptions);
+        httpContext.Response.Cookies.Append(CookieNames.RefreshToken, refreshToken, cookieOptions);
     }
 
     private static IResult Logout(HttpContext httpContext)
     {
-        httpContext.Response.Cookies.Delete("access_token");
-        httpContext.Response.Cookies.Delete("refresh_token");
+        httpContext.Response.Cookies.Delete(CookieNames.AccessToken);
+        httpContext.Response.Cookies.Delete(CookieNames.RefreshToken);
         return Results.Ok();
     }
 }

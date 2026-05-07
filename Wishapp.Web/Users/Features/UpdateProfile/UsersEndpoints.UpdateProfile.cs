@@ -23,7 +23,7 @@ public static partial class UsersEndpoints
         }
 
         var result = await handler.HandleAsync(
-            new UpdateProfileCommand(userIdResult.Value, request.DisplayName, request.Username, request.Bio, request.BirthDate), ct);
+            new UpdateProfileCommand(userIdResult.Value, request.DisplayName, request.Username, request.Bio, request.BirthDate, request.ShowFulfilledWishes), ct);
 
         if (result.IsSuccess) return TypedResults.NoContent();
 

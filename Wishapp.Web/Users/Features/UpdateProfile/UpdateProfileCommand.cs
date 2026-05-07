@@ -7,4 +7,5 @@ public record UpdateProfileCommand(
     string DisplayName,
     string Username,
     string? Bio,
-    DateOnly? BirthDate) : ICommand;
+    DateOnly? BirthDate,
+    bool ShowFulfilledWishes) : ICommand;

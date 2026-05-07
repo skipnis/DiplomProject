@@ -29,6 +29,7 @@ public sealed class UpdateProfileHandler(ApplicationDbContext db)
         }
 
         user.UpdateProfile(command.DisplayName, command.Username, command.Bio, command.BirthDate);
+        user.SetShowFulfilledWishes(command.ShowFulfilledWishes);
         user.CompleteOnboarding();
 
         await db.SaveChangesAsync(ct);

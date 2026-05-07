@@ -9,4 +9,5 @@ public record GetMyProfileResponse(
     string? Bio,
     DateOnly? BirthDate,
     bool IsGoogleCalendarConnected,
-    bool IsOnboarded);
+    bool IsOnboarded,
+    bool ShowFulfilledWishes);

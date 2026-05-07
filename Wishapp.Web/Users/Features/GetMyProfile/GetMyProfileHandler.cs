@@ -37,6 +37,7 @@ public sealed class GetMyProfileHandler(
             user.Bio ?? string.Empty,
             user.BirthDate,
             isGoogleCalendarConnected,
-            user.IsOnboarded);
+            user.IsOnboarded,
+            user.ShowFulfilledWishes);
     }
 }
