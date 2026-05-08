@@ -3,7 +3,7 @@ import { Link } from 'react-router-dom';
 import { getCatalogItems } from '../api/catalog';
 import { getImageUrl } from '../api/client';
 import { buttonVariants } from '@/components/ui/button';
-import type { CatalogItemDto } from '../types';
+import type { CatalogItemSummaryDto } from '../types';
 
 const FEATURES = [
   {
@@ -29,7 +29,7 @@ const FEATURES = [
 ];
 
 export default function LandingPage() {
-  const [carouselItems, setCarouselItems] = useState<CatalogItemDto[]>([]);
+  const [carouselItems, setCarouselItems] = useState<CatalogItemSummaryDto[]>([]);
 
   useEffect(() => {
     getCatalogItems({ page: 1, pageSize: 16 })
@@ -255,7 +255,7 @@ export default function LandingPage() {
   );
 }
 
-function CarouselCard({ item }: { item: CatalogItemDto }) {
+function CarouselCard({ item }: { item: CatalogItemSummaryDto }) {
   const imageUrl = getImageUrl(item.imagePath);
   return (
     <div className="w-44 flex-shrink-0 rounded-xl border bg-card overflow-hidden hover:shadow-md transition-shadow">
