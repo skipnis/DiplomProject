@@ -24,7 +24,8 @@ public static partial class UsersEndpoints
             return TypedResults.Unauthorized();
         }
 
-        SetAuthCookies(httpContext, result.Value.AccessToken, result.Value.RefreshToken);
+        var rememberMe = httpContext.Request.Cookies.ContainsKey(CookieNames.RememberMe);
+        SetAuthCookies(httpContext, result.Value.AccessToken, result.Value.RefreshToken, rememberMe);
 
         return TypedResults.Ok();
     }

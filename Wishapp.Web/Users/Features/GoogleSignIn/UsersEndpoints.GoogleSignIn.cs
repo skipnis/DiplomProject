@@ -19,7 +19,7 @@ public static partial class UsersEndpoints
             return TypedResults.Unauthorized();
         }
 
-        SetAuthCookies(httpContext, result.Value.AccessToken, result.Value.RefreshToken);
+        SetAuthCookies(httpContext, result.Value.AccessToken, result.Value.RefreshToken, command.RememberMe);
 
         return TypedResults.Ok();
     }
