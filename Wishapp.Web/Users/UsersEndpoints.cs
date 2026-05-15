@@ -1,9 +1,11 @@
 using Wishapp.Web.Infrastructure.Authentication;
 using Wishapp.Web.Infrastructure.Validation;
+using Wishapp.Web.Users.Features.AddBlacklistItem;
 using Wishapp.Web.Users.Features.ConnectGoogleCalendar;
 using Wishapp.Web.Users.Features.DeleteAvatar;
 using Wishapp.Web.Users.Features.DeleteMyAccount;
 using Wishapp.Web.Users.Features.RequestDeleteMyAccount;
+using Wishapp.Web.Users.Features.UpdateBlacklistItem;
 using Wishapp.Web.Users.Features.UpdateProfile;
 using Wishapp.Web.Users.Features.SendOtp;
 using Wishapp.Web.Users.Features.UploadAvatar;
@@ -52,6 +54,20 @@ public static partial class UsersEndpoints
         usersEndpoints.MapPost("/me/delete-confirmation", RequestAccountDeletion).Produces(401);
 
         usersEndpoints.MapDelete("/me", DeleteMyAccount).Produces(401);
+
+        usersEndpoints.MapGet("/check-username", CheckUsernameAvailability).Produces(401);
+
+        usersEndpoints.MapGet("/me/blacklist", GetMyBlacklist).Produces(401);
+
+        usersEndpoints.MapGet("/{id:guid}/blacklist", GetUserBlacklist).Produces(401).Produces(403);
+
+        usersEndpoints.MapPost("/me/blacklist", AddBlacklistItem).Produces(401)
+            .AddEndpointFilter<ValidationFilter<AddBlacklistItemRequest>>();
+
+        usersEndpoints.MapDelete("/me/blacklist/{itemId:guid}", DeleteBlacklistItem).Produces(401);
+
+        usersEndpoints.MapPut("/me/blacklist/{itemId:guid}", UpdateBlacklistItem).Produces(401)
+            .AddEndpointFilter<ValidationFilter<UpdateBlacklistItemRequest>>();
 
         return app;
     }

@@ -20,6 +20,7 @@ public class ApplicationDbContext(
     public DbSet<UserExternalToken> UserExternalTokens { get; set; }
     public DbSet<UserRefreshToken> RefreshTokens { get; set; }
     public DbSet<EmailOtp> EmailOtps { get; set; }
+    public DbSet<BlacklistItem> BlacklistItems { get; set; }
 
     public DbSet<Friendship> Friendships { get; set; }
 
