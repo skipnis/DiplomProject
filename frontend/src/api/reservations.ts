@@ -1,5 +1,5 @@
 import { apiGet, apiPost, apiDelete } from './client';
-import type { MyReservationDto, PagedResponse } from '../types';
+import type { MyReservationDto, PagedResponse, WishReservedOnMyWishDto } from '../types';
 
 export function getMyReservations(
   page = 1,
@@ -16,4 +16,8 @@ export function reserveWish(wishId: string, wishlistId: string): Promise<void> {
 
 export function cancelReservation(wishId: string): Promise<void> {
   return apiDelete<void>(`/reservations/${wishId}`);
+}
+
+export function getReservationsOnMyWishes(): Promise<WishReservedOnMyWishDto[]> {
+  return apiGet<WishReservedOnMyWishDto[]>('/reservations/my-wishes');
 }
