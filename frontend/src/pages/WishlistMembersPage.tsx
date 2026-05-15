@@ -28,7 +28,19 @@ export default function WishlistMembersPage() {
   const [friendFilter, setFriendFilter] = useState('');
   const [customRoleEdits, setCustomRoleEdits] = useState<Record<string, string>>({});
   const [savingAlias, setSavingAlias] = useState<Record<string, boolean>>({});
+  const [expandedAlias, setExpandedAlias] = useState<Record<string, boolean>>({});
   const [loading, setLoading] = useState(true);
+
+  const ROLE_PLACEHOLDERS = [
+    '«Серый кардинал»',
+    '«Главный по подаркам»',
+    '«Министр желаний»',
+    '«Главный сообщник»',
+    '«Тайный агент»',
+    '«Плохой полицейский»',
+    '«Шеф всего хорошего»',
+    '«Хранитель секретов»',
+  ];
 
   useEffect(() => {
     if (!id) return;
@@ -118,9 +130,11 @@ export default function WishlistMembersPage() {
             </div>
           )}
           <div className="flex flex-col gap-2">
-            {members.map((m) => {
+            {members.map((m, memberIndex) => {
               const p = memberProfiles[m.userId];
               const isMe = m.userId === me?.id;
+              const aliasExpanded = expandedAlias[m.userId] ?? false;
+              const placeholder = `Например, ${ROLE_PLACEHOLDERS[memberIndex % ROLE_PLACEHOLDERS.length]}`;
               return (
                 <div key={m.userId} className="flex flex-col gap-1 py-1">
                   <div className="flex items-center gap-3">
@@ -130,6 +144,9 @@ export default function WishlistMembersPage() {
                     </Avatar>
                     <div className="flex-1 text-sm font-semibold">
                       <Link to={`/users/${m.userId}`} className="hover:underline">{p?.displayName ?? m.userId.slice(0, 8) + '…'}</Link>
+                      {m.customRoleName && !aliasExpanded && (
+                        <div className="text-xs text-muted-foreground font-normal">{m.customRoleName}</div>
+                      )}
                     </div>
                     {m.role === 2 ? (
                       <Badge variant="secondary">{ROLE_LABELS[2]}</Badge>
@@ -141,16 +158,33 @@ export default function WishlistMembersPage() {
                         </SelectContent>
                       </Select>
                     )}
+                    {m.role !== 2 && (
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        className="h-7 w-7 p-0 text-muted-foreground"
+                        title="Псевдоним"
+                        onClick={() => {
+                          if (!aliasExpanded) {
+                            setCustomRoleEdits((prev) => ({ ...prev, [m.userId]: m.customRoleName ?? '' }));
+                          }
+                          setExpandedAlias((prev) => ({ ...prev, [m.userId]: !prev[m.userId] }));
+                        }}
+                      >
+                        ✏️
+                      </Button>
+                    )}
                     {!isMe && m.role !== 2 && <Button variant="destructive" size="sm" onClick={() => handleRemoveMember(m.userId)}>Удалить</Button>}
                   </div>
-                  {(m.role !== 2 || isMe) && (
+                  {aliasExpanded && (
                     <div className="pl-11 flex gap-2">
                       <Input
                         className="h-7 text-xs flex-1"
-                        placeholder={isMe && m.role === 2 ? 'Ваш псевдоним в этом вишлисте...' : 'Кастомная роль...'}
+                        placeholder={placeholder}
                         value={customRoleEdits[m.userId] ?? ''}
                         onChange={(e) => setCustomRoleEdits((prev) => ({ ...prev, [m.userId]: e.target.value }))}
                         onKeyDown={(e) => { if (e.key === 'Enter') handleSaveAlias(m.userId); }}
+                        autoFocus
                       />
                       <Button
                         size="sm"

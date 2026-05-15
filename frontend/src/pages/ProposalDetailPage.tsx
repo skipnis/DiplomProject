@@ -147,7 +147,6 @@ export default function ProposalDetailPage() {
       <Card>
         <CardContent className="pt-6 space-y-4">
           <div className="flex items-center justify-between flex-wrap gap-2">
-            <Badge variant="outline">{PROPOSAL_SOURCE_LABELS[proposal.sourceType]}</Badge>
             <p className="text-sm text-muted-foreground">от: <span className="font-medium">{proposal.senderAlias}</span></p>
           </div>
 

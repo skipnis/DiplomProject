@@ -10,10 +10,10 @@ import type {
   PagedResponse,
   ProposalStatus,
 } from '../types';
-import { PROPOSAL_SOURCE_LABELS } from '../types';
 import { Button, buttonVariants } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Card, CardContent } from '@/components/ui/card';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 
 const PAGE_SIZE = 20;
@@ -52,7 +52,6 @@ function IncomingCard({ proposal }: { proposal: IncomingProposalDto }) {
           </div>
           <div className="flex-1 min-w-0">
             <div className="flex items-center gap-2 mb-1">
-              <Badge variant="outline" className="text-xs">{PROPOSAL_SOURCE_LABELS[proposal.sourceType]}</Badge>
               <StatusBadge status={proposal.status} />
               {!proposal.isViewedByRecipient && <Badge className="text-xs bg-primary text-primary-foreground">Новое</Badge>}
             </div>
@@ -128,16 +127,12 @@ export default function ProposalsPage() {
 
   useEffect(() => { load(tab, page); }, [tab, page]);
 
-  const switchTab = (t: 'incoming' | 'outgoing') => {
-    setTab(t);
+  const handleTabChange = (value: string) => {
+    setTab(value as 'incoming' | 'outgoing');
     setPage(1);
   };
 
-  const data = tab === 'incoming' ? incoming : outgoing;
   const unviewedCount = incoming?.items.filter((p) => !p.isViewedByRecipient).length ?? 0;
-
-  const tabCls = (t: 'incoming' | 'outgoing') =>
-    `px-4 py-2 text-sm font-medium rounded-md transition-colors ${tab === t ? 'bg-primary text-primary-foreground' : 'text-muted-foreground hover:text-foreground hover:bg-muted'}`;
 
   return (
     <div>
@@ -146,56 +141,70 @@ export default function ProposalsPage() {
         <Link to="/proposals/new" className={buttonVariants({ size: 'sm' })}>+ Предложить подарок</Link>
       </div>
 
-      <div className="flex gap-2 mb-6">
-        <button onClick={() => switchTab('incoming')} className={tabCls('incoming')}>
-          Входящие
-          {unviewedCount > 0 && (
-            <span className="ml-2 inline-flex items-center justify-center bg-destructive text-destructive-foreground text-[10px] font-bold rounded-full min-w-[16px] h-4 px-1">
-              {unviewedCount}
-            </span>
-          )}
-        </button>
-        <button onClick={() => switchTab('outgoing')} className={tabCls('outgoing')}>
-          Исходящие
-        </button>
-      </div>
+      <Tabs value={tab} onValueChange={handleTabChange}>
+        <TabsList className="mb-5 w-full">
+          <TabsTrigger value="incoming" className="flex-1 gap-2">
+            Входящие
+            {unviewedCount > 0 && (
+              <span className="inline-flex items-center justify-center bg-destructive text-destructive-foreground text-[10px] font-bold rounded-full min-w-[16px] h-4 px-1">
+                {unviewedCount}
+              </span>
+            )}
+          </TabsTrigger>
+          <TabsTrigger value="outgoing" className="flex-1">Исходящие</TabsTrigger>
+        </TabsList>
 
-      {loading ? (
-        <div className="flex items-center justify-center min-h-[200px] text-muted-foreground">Загрузка...</div>
-      ) : !data || data.items.length === 0 ? (
-        <div className="text-center py-16">
-          <div className="text-5xl mb-4">🎁</div>
-          {tab === 'incoming' ? (
-            <>
+        <TabsContent value="incoming">
+          {loading ? (
+            <div className="flex items-center justify-center min-h-[200px] text-muted-foreground">Загрузка...</div>
+          ) : !incoming || incoming.items.length === 0 ? (
+            <div className="text-center py-16">
+              <div className="text-5xl mb-4">🎁</div>
               <p className="font-semibold mb-1">Нет входящих предложений</p>
               <p className="text-sm text-muted-foreground">Друзья могут анонимно предлагать тебе идеи подарков</p>
-            </>
+            </div>
           ) : (
             <>
+              <div className="flex flex-col gap-3">
+                {incoming.items.map((p) => <IncomingCard key={p.id} proposal={p} />)}
+              </div>
+              {(incoming.hasPreviousPage || incoming.hasNextPage) && (
+                <div className="flex items-center justify-center gap-3 mt-6">
+                  <Button variant="ghost" size="sm" disabled={!incoming.hasPreviousPage} onClick={() => setPage((p) => p - 1)}>← Назад</Button>
+                  <span className="text-sm text-muted-foreground">{page} / {Math.ceil(incoming.totalCount / PAGE_SIZE)}</span>
+                  <Button variant="ghost" size="sm" disabled={!incoming.hasNextPage} onClick={() => setPage((p) => p + 1)}>Вперёд →</Button>
+                </div>
+              )}
+            </>
+          )}
+        </TabsContent>
+
+        <TabsContent value="outgoing">
+          {loading ? (
+            <div className="flex items-center justify-center min-h-[200px] text-muted-foreground">Загрузка...</div>
+          ) : !outgoing || outgoing.items.length === 0 ? (
+            <div className="text-center py-16">
+              <div className="text-5xl mb-4">🎁</div>
               <p className="font-semibold mb-1">Нет исходящих предложений</p>
               <p className="text-sm text-muted-foreground mb-4">Предложи другу идею подарка анонимно</p>
               <Link to="/proposals/new" className={buttonVariants({ size: 'sm' })}>Предложить подарок</Link>
+            </div>
+          ) : (
+            <>
+              <div className="flex flex-col gap-3">
+                {outgoing.items.map((p) => <OutgoingCard key={p.id} proposal={p} />)}
+              </div>
+              {(outgoing.hasPreviousPage || outgoing.hasNextPage) && (
+                <div className="flex items-center justify-center gap-3 mt-6">
+                  <Button variant="ghost" size="sm" disabled={!outgoing.hasPreviousPage} onClick={() => setPage((p) => p - 1)}>← Назад</Button>
+                  <span className="text-sm text-muted-foreground">{page} / {Math.ceil(outgoing.totalCount / PAGE_SIZE)}</span>
+                  <Button variant="ghost" size="sm" disabled={!outgoing.hasNextPage} onClick={() => setPage((p) => p + 1)}>Вперёд →</Button>
+                </div>
+              )}
             </>
           )}
-        </div>
-      ) : (
-        <>
-          <div className="flex flex-col gap-3">
-            {tab === 'incoming'
-              ? (data as PagedResponse<IncomingProposalDto>).items.map((p) => <IncomingCard key={p.id} proposal={p} />)
-              : (data as PagedResponse<OutgoingProposalDto>).items.map((p) => <OutgoingCard key={p.id} proposal={p} />)
-            }
-          </div>
-
-          {(data.hasPreviousPage || data.hasNextPage) && (
-            <div className="flex items-center justify-center gap-3 mt-6">
-              <Button variant="ghost" size="sm" disabled={!data.hasPreviousPage} onClick={() => setPage((p) => p - 1)}>← Назад</Button>
-              <span className="text-sm text-muted-foreground">{page} / {Math.ceil(data.totalCount / PAGE_SIZE)}</span>
-              <Button variant="ghost" size="sm" disabled={!data.hasNextPage} onClick={() => setPage((p) => p + 1)}>Вперёд →</Button>
-            </div>
-          )}
-        </>
-      )}
+        </TabsContent>
+      </Tabs>
     </div>
   );
 }
