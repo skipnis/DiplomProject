@@ -3,10 +3,12 @@ using System.Text;
 using Microsoft.EntityFrameworkCore;
 using Wishapp.Web.Common.Interfaces;
 using Wishapp.Web.Common.Types;
+using Wishapp.Web.Events;
 using Wishapp.Web.Friendships;
 using Wishapp.Web.Gamification;
 using Wishapp.Web.Infrastructure.Database;
 using Wishapp.Web.Infrastructure.Interfaces;
+using Wishapp.Web.Notifications;
 using Wishapp.Web.Proposals;
 using Wishapp.Web.Reservations;
 using Wishapp.Web.Wishlists;
@@ -20,6 +22,8 @@ public sealed class DeleteMyAccountHandler(
     IFriendshipsApi friendshipsApi,
     IGamificationApi gamificationApi,
     IProposalsApi proposalsApi,
+    IEventsApi eventsApi,
+    INotificationsApi notificationsApi,
     IStorageService storageService)
     : ICommandHandler<DeleteMyAccountCommand>
 {
@@ -65,9 +69,11 @@ public sealed class DeleteMyAccountHandler(
         await gamificationApi.DeleteUserDataAsync(command.UserId, ct);
         await wishlistsApi.DeleteUserDataAsync(command.UserId, ct);
         await friendshipsApi.DeleteUserDataAsync(command.UserId, ct);
+        await eventsApi.DeleteUserDataAsync(command.UserId, ct);
+        await notificationsApi.DeleteUserDataAsync(command.UserId, ct);
 
-        await db.Events
-            .Where(e => e.OwnerId == command.UserId)
+        await db.BlacklistItems
+            .Where(item => item.UserId == command.UserId)
             .ExecuteDeleteAsync(ct);
 
         await db.UserExternalTokens

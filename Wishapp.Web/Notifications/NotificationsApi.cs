@@ -1,4 +1,5 @@
 using System.Text.Json;
+using Microsoft.EntityFrameworkCore;
 using Wishapp.Web.Infrastructure.Database;
 using Wishapp.Web.Notifications.Entities;
 
@@ -6,6 +7,13 @@ namespace Wishapp.Web.Notifications;
 
 public sealed class NotificationsApi(ApplicationDbContext db, INotificationSender sender) : INotificationsApi
 {
+    public async Task DeleteUserDataAsync(Guid userId, CancellationToken ct = default)
+    {
+        await db.Notifications
+            .Where(n => n.UserId == userId)
+            .ExecuteDeleteAsync(ct);
+    }
+
     public async Task EnqueueAsync(Guid userId, NotificationType type, object payload, CancellationToken ct = default)
     {
         var element = JsonSerializer.SerializeToElement(payload);

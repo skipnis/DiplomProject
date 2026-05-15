@@ -5,6 +5,7 @@ public record GetMyProfileResponse(
     string DisplayName,
     string? Username,
     string Email,
+    string? AvatarPath,
     string? AvatarUrl,
     string? Bio,
     DateOnly? BirthDate,
