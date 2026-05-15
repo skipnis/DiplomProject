@@ -7,6 +7,7 @@ import { useNotificationsHub } from '../hooks/useNotificationsHub';
 import { getUnreadCount } from '../api/notifications';
 import { Button, buttonVariants } from '@/components/ui/button';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
+import { Bell } from 'lucide-react';
 import type { NotificationDto } from '../types';
 
 export default function Navbar() {
@@ -71,7 +72,7 @@ export default function Navbar() {
           {user ? (
             <>
               <NavLink to="/wishlists" className={navCls} onClick={close}>Вишлисты</NavLink>
-              <NavLink to="/catalog" end className={navCls} onClick={close}>Каталог</NavLink>
+              <NavLink to="/catalog" end className={navCls} onClick={close}>Идеи подарков</NavLink>
               <NavLink to="/catalog/collections" className={navCls} onClick={close}>Подборки</NavLink>
               <NavLink to="/friends" className={navCls} onClick={close}>Друзья</NavLink>
               <NavLink to="/reservations" className={navCls} onClick={close}>Бронирования</NavLink>
@@ -105,7 +106,7 @@ export default function Navbar() {
                   }`
                 }
               >
-                🔔
+                <Bell className="h-4 w-4" />
                 {unreadCount > 0 && (
                   <span className="absolute -top-1 -right-1 bg-destructive text-destructive-foreground text-[10px] font-bold rounded-full min-w-[16px] h-4 flex items-center justify-center px-0.5 leading-none">
                     {unreadCount > 99 ? '99+' : unreadCount}
@@ -114,7 +115,7 @@ export default function Navbar() {
               </NavLink>
               <Link to="/profile" onClick={close} className="ml-1">
                 <Avatar className="h-8 w-8">
-                  <AvatarImage src={getImageUrl(user.avatarUrl) ?? user.avatarUrl ?? undefined} alt={user.username ?? undefined} />
+                  <AvatarImage src={getImageUrl(user.avatarPath) ?? user.avatarUrl ?? undefined} alt={user.username ?? undefined} />
                   <AvatarFallback className="bg-primary text-primary-foreground text-sm font-bold">
                     {user.username?.[0]?.toUpperCase() ?? '?'}
                   </AvatarFallback>
@@ -125,7 +126,7 @@ export default function Navbar() {
             </>
           ) : (
             <>
-              <NavLink to="/catalog" end className={navCls} onClick={close}>Каталог</NavLink>
+              <NavLink to="/catalog" end className={navCls} onClick={close}>Идеи подарков</NavLink>
               <NavLink to="/catalog/collections" className={navCls} onClick={close}>Подборки</NavLink>
               <Button variant="ghost" size="sm" onClick={toggle}>{theme === 'dark' ? '☀️' : '🌙'}</Button>
               <Link to="/login" onClick={close} className={buttonVariants({ size: 'sm' })}>

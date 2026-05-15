@@ -47,6 +47,7 @@ export interface MyProfile {
   displayName: string;
   username: string | null;
   email: string;
+  avatarPath: string | null;
   avatarUrl: string | null;
   bio: string | null;
   birthDate: string | null;
@@ -109,6 +110,7 @@ export interface WishlistSummaryDto {
   isSystem: boolean;
   wishCount: number;
   fulfilledWishCount: number;
+  createdAt: string;
 }
 
 export interface WishSummaryDto {
@@ -121,6 +123,8 @@ export interface WishSummaryDto {
   isFulfilled: boolean;
   isReserved: boolean;
   hasGiftBadges: boolean;
+  createdByUserId: string | null;
+  createdAt: string;
 }
 
 export interface WishDto {
@@ -139,6 +143,7 @@ export interface WishDto {
   shareToken: string | null;
   fulfilledByReserverId: string | null;
   hasGiftBadges: boolean;
+  createdByUserId: string | null;
 }
 
 export interface SharedWishResponse {
@@ -177,6 +182,19 @@ export interface FriendshipRequest {
   username: string;
   avatarUrl: string | null;
   createdAt: string;
+}
+
+export interface WishReservedOnMyWishDto {
+  wishId: string;
+  wishlistId: string;
+  wishName: string;
+  wishlistName: string;
+  wishImagePath: string | null;
+  wishPrice: number | null;
+  wishCurrency: Currency | null;
+  reservedByUserId: string;
+  reservedByDisplayName: string;
+  reservedAt: string;
 }
 
 export interface MyReservationDto {
@@ -541,3 +559,9 @@ export const PROPOSAL_SOURCE_LABELS: Record<ProposalSourceType, string> = {
   2: 'Из вишлиста',
   3: 'Своя идея',
 };
+
+export interface BlacklistItemDto {
+  id: string;
+  title: string;
+  createdAt: string;
+}

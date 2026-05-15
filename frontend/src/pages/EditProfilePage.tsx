@@ -118,7 +118,7 @@ export default function EditProfilePage() {
               <div className="flex items-center gap-4">
                 <Avatar className="h-16 w-16">
                   <AvatarImage
-                    src={previewAvatarUrl ?? getImageUrl(user?.avatarUrl) ?? user?.avatarUrl ?? undefined}
+                    src={previewAvatarUrl ?? getImageUrl(user?.avatarPath) ?? user?.avatarUrl ?? undefined}
                     alt={user?.displayName}
                   />
                   <AvatarFallback className="bg-primary text-primary-foreground text-xl font-bold">
@@ -142,7 +142,7 @@ export default function EditProfilePage() {
                   >
                     {avatarUploading ? 'Загрузка...' : 'Загрузить фото'}
                   </Button>
-                  {user?.avatarUrl && (
+                  {user?.avatarPath && (
                     <Button
                       type="button"
                       variant="ghost"

@@ -37,7 +37,7 @@ function BadgeButton({ def, myVote, voteCount, isLoggedIn, onToggle }: {
         ].join(' ')}
       >
         <span>{def.emoji}</span>
-        <span>{def.label}</span>
+        <span className="hidden sm:inline">{def.label}</span>
         {voteCount > 0 && (
           <span className={`text-xs font-bold ${myVote ? 'text-primary' : 'text-muted-foreground'}`}>{voteCount}</span>
         )}
@@ -201,21 +201,24 @@ export default function CatalogItemPage() {
             : <div className="w-full h-60 bg-muted rounded-lg flex items-center justify-center text-5xl mb-6">🛍️</div>
           }
 
-          <div className="text-xs text-muted-foreground mb-1">{item.categoryName}</div>
+          <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-muted text-muted-foreground border mb-3">{item.categoryName}</span>
           <h1 className="text-2xl font-extrabold tracking-tight mb-3">{item.name}</h1>
 
           {item.price != null && (
             <div className="font-bold text-primary text-xl mb-4">
-              {item.price} {item.currency ?? ''}
+              {item.price.toLocaleString('ru-RU')} {item.currency ?? 'руб.'}
             </div>
           )}
 
           {item.description && (
-            <p className="text-muted-foreground text-sm mb-5 leading-relaxed">{item.description}</p>
+            <div className="mb-5">
+              <div className="text-xs font-semibold text-muted-foreground uppercase tracking-wide mb-1.5">Описание</div>
+              <p className="text-muted-foreground text-sm leading-relaxed">{item.description}</p>
+            </div>
           )}
 
           {item.wishCount > 0 && (
-            <div className="text-sm text-muted-foreground mb-4">{item.wishCount} в вишлистах</div>
+            <div className="text-sm text-muted-foreground mb-4">Добавили {item.wishCount} раз</div>
           )}
 
           <Separator className="my-5" />

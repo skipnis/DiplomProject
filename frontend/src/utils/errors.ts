@@ -25,6 +25,9 @@ const CODE_MESSAGES: Record<string, string> = {
   'Proposals.AlreadyReacted': 'Вы уже ответили на это предложение',
   'Proposals.CatalogItemNotFound': 'Товар каталога не найден',
   'Proposals.WishNotFound': 'Желание не найдено',
+  'Request.TooLarge': 'Файл слишком большой, выберите файл меньшего размера',
+  'Avatar.TooLarge': 'Аватар должен быть не больше 5 МБ',
+  'Image.TooLarge': 'Изображение должно быть не больше 10 МБ',
 };
 
 const STATUS_MESSAGES: Record<number, string> = {
@@ -33,7 +36,9 @@ const STATUS_MESSAGES: Record<number, string> = {
   403: 'Нет прав доступа',
   404: 'Не найдено',
   409: 'Запись уже существует',
+  413: 'Файл слишком большой, выберите файл меньшего размера',
   422: 'Ошибка валидации',
+  429: 'Слишком много запросов, подождите немного',
   500: 'Ошибка сервера, попробуйте позже',
   503: 'Сервер временно недоступен',
 };
@@ -69,7 +74,7 @@ export function parseError(error: unknown): string {
       }
     } catch { /* not JSON */ }
 
-    return STATUS_MESSAGES[error.status] ?? `Ошибка ${error.status}`;
+    return STATUS_MESSAGES[error.status] ?? 'Произошла ошибка, попробуйте позже';
   }
 
   // Plain Error — try to parse message as JSON
@@ -84,7 +89,7 @@ export function parseError(error: unknown): string {
   const match = error.message.match(/HTTP (\d{3})/);
   if (match) {
     const status = Number(match[1]);
-    return STATUS_MESSAGES[status] ?? `Ошибка ${status}`;
+    return STATUS_MESSAGES[status] ?? 'Произошла ошибка, попробуйте позже';
   }
 
   return error.message || 'Произошла ошибка';

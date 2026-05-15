@@ -63,7 +63,7 @@ export default function Footer() {
             <div className="text-xs font-semibold uppercase tracking-wide text-muted-foreground mb-3">Навигация</div>
             <nav className="flex flex-col gap-1.5">
               <Link to="/" className="text-sm text-muted-foreground hover:text-foreground transition-colors">Главная</Link>
-              <Link to="/catalog" className="text-sm text-muted-foreground hover:text-foreground transition-colors">Каталог подарков</Link>
+              <Link to="/catalog" className="text-sm text-muted-foreground hover:text-foreground transition-colors">Идеи подарков</Link>
               <Link to="/catalog/collections" className="text-sm text-muted-foreground hover:text-foreground transition-colors">Подборки</Link>
               <Link to="/login" className="text-sm text-muted-foreground hover:text-foreground transition-colors">Войти / Зарегистрироваться</Link>
             </nav>
