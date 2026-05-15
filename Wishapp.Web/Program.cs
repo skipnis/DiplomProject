@@ -32,6 +32,7 @@ builder.Host.UseSerilog((context, services, configuration) =>
 builder.WebHost.ConfigureKestrel(options =>
 {
     options.AddServerHeader = false;
+    options.Limits.MaxRequestBodySize = 50 * 1024 * 1024;
 });
 
 builder.Services.AddInfrastructure(builder.Configuration);

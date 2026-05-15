@@ -201,12 +201,20 @@ public static class DependencyInjection
         
         private IServiceCollection AddEmail(IConfiguration configuration)
         {
-            services.AddOptions<SmtpOptions>()
-                .BindConfiguration(SmtpOptions.SectionName)
-                .ValidateDataAnnotations()
-                .ValidateOnStart();
+            var smtpSection = configuration.GetSection(SmtpOptions.SectionName);
+            if (smtpSection.Exists() && !string.IsNullOrWhiteSpace(smtpSection["Host"]))
+            {
+                services.AddOptions<SmtpOptions>()
+                    .BindConfiguration(SmtpOptions.SectionName)
+                    .ValidateDataAnnotations()
+                    .ValidateOnStart();
 
-            services.AddScoped<IEmailSender, SmtpEmailSender>();
+                services.AddScoped<IEmailSender, SmtpEmailSender>();
+            }
+            else
+            {
+                services.AddScoped<IEmailSender, LoggingEmailSender>();
+            }
 
             return services;
         }

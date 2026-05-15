@@ -16,6 +16,15 @@ public sealed class GlobalExceptionHandler(
             return true;
         }
 
+        if (exception is BadHttpRequestException { StatusCode: 413 })
+        {
+            httpContext.Response.StatusCode = StatusCodes.Status413RequestEntityTooLarge;
+            await httpContext.Response.WriteAsJsonAsync(
+                new { code = "Request.TooLarge", description = "Файл слишком большой" },
+                cancellationToken);
+            return true;
+        }
+
         logger.LogError(exception, "Unhandled exception: {ExceptionMessage}", exception.Message);
 
         httpContext.Response.StatusCode = StatusCodes.Status500InternalServerError;

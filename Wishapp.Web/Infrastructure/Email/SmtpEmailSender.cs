@@ -12,12 +12,17 @@ public sealed class SmtpEmailSender(IOptions<SmtpOptions> options) : IEmailSende
     {
         using var client = new SmtpClient(_options.Host, _options.Port);
         client.EnableSsl = true;
+        client.Timeout = 10_000;
 
         if (_options.Username is not null && _options.Password is not null)
             client.Credentials = new NetworkCredential(_options.Username, _options.Password);
 
         using var message = new MailMessage(_options.From, to, subject, body);
         message.IsBodyHtml = true;
-        await client.SendMailAsync(message, ct);
+
+        using var timeoutCts = CancellationTokenSource.CreateLinkedTokenSource(ct);
+        timeoutCts.CancelAfter(TimeSpan.FromSeconds(10));
+
+        await client.SendMailAsync(message, timeoutCts.Token);
     }
 }
