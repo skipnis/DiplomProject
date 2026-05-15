@@ -3,13 +3,13 @@ import { Link, useNavigate } from 'react-router-dom';
 import { useGoogleLogin } from '@react-oauth/google';
 import { useAuth } from '../context/AuthContext';
 import { getMyWishlists, getMyFulfilledWishes } from '../api/wishlists';
-import { connectGoogleCalendar, disconnectGoogleCalendar, deleteMyAccount, requestAccountDeletion, getUserProfile, getMyGiftProfile } from '../api/users';
+import { connectGoogleCalendar, disconnectGoogleCalendar, deleteMyAccount, requestAccountDeletion, getUserProfile, getMyGiftProfile, getMyBlacklist, addBlacklistItem, deleteBlacklistItem } from '../api/users';
 import { syncAllEvents } from '../api/events';
 import { getImageUrl } from '../api/client';
 import { useToast } from '../components/Toast';
 import { parseError } from '../utils/errors';
 import { VISIBILITY_LABELS, CURRENCY_LABELS, getWishlistEmoji } from '../types';
-import type { WishlistSummaryDto, UserProfile, GiftProfileDto, FulfilledWishRecordDto } from '../types';
+import type { WishlistSummaryDto, UserProfile, GiftProfileDto, FulfilledWishRecordDto, BlacklistItemDto } from '../types';
 import { Button, buttonVariants } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
@@ -53,9 +53,6 @@ function GiftProfileSection({ giftProfile }: { giftProfile: GiftProfileDto }) {
         </span>
         <div className="flex gap-4 text-sm">
           <span><span className="font-bold">{giftProfile.giftsGiven}</span> <span className="text-muted-foreground">подарено</span></span>
-          {giftProfile.hitRate > 0 && (
-            <span><span className="font-bold">{Math.round(giftProfile.hitRate * 100)}%</span> <span className="text-muted-foreground">с бейджем</span></span>
-          )}
           {earnedAchievements.length > 0 && (
             <span><span className="font-bold">{earnedAchievements.length}</span> <span className="text-muted-foreground">достижений</span></span>
           )}
@@ -115,6 +112,13 @@ function GiftProfileSection({ giftProfile }: { giftProfile: GiftProfileDto }) {
   );
 }
 
+const BLACKLIST_PRESETS = [
+  'Носки', 'Парфюм', 'Алкоголь', 'Цветы',
+  'Книги по саморазвитию', 'Дешёвые безделушки', 'Сладкое', 'Подарочные сертификаты',
+];
+
+const MAX_BLACKLIST_ITEMS = 5;
+
 export default function ProfilePage() {
   const { user, refreshUser, logout } = useAuth();
   const navigate = useNavigate();
@@ -123,6 +127,9 @@ export default function ProfilePage() {
   const [stats, setStats] = useState<Pick<UserProfile, 'receivedCount' | 'giftedCount'> | null>(null);
   const [giftProfile, setGiftProfile] = useState<GiftProfileDto | null>(null);
   const [fulfilledWishes, setFulfilledWishes] = useState<FulfilledWishRecordDto[]>([]);
+  const [blacklistItems, setBlacklistItems] = useState<BlacklistItemDto[]>([]);
+  const [blacklistInput, setBlacklistInput] = useState('');
+  const [blacklistSaving, setBlacklistSaving] = useState(false);
   const [loading, setLoading] = useState(true);
   const [calendarLoading, setCalendarLoading] = useState(false);
   const [deleteLoading, setDeleteLoading] = useState(false);
@@ -132,15 +139,40 @@ export default function ProfilePage() {
 
   useEffect(() => {
     if (!user) return;
-    Promise.all([getMyWishlists(), getUserProfile(user.id), getMyGiftProfile(), getMyFulfilledWishes()])
-      .then(([fetchedWishlists, profile, fetchedGiftProfile, fetchedFulfilledWishes]) => {
+    Promise.all([getMyWishlists(), getUserProfile(user.id), getMyGiftProfile(), getMyFulfilledWishes(), getMyBlacklist()])
+      .then(([fetchedWishlists, profile, fetchedGiftProfile, fetchedFulfilledWishes, fetchedBlacklist]) => {
         setWishlists(fetchedWishlists);
         setStats({ receivedCount: profile.receivedCount, giftedCount: profile.giftedCount });
         setGiftProfile(fetchedGiftProfile);
         setFulfilledWishes(fetchedFulfilledWishes);
+        setBlacklistItems(fetchedBlacklist);
       })
       .finally(() => setLoading(false));
   }, [user?.id]);
+
+  async function handleAddBlacklistItem(title: string) {
+    if (!title.trim() || blacklistItems.length >= MAX_BLACKLIST_ITEMS) return;
+    if (blacklistItems.some((item) => item.title === title.trim())) return;
+    setBlacklistSaving(true);
+    try {
+      const newItem = await addBlacklistItem(title.trim());
+      setBlacklistItems((prev) => [...prev, newItem]);
+      setBlacklistInput('');
+    } catch (e) {
+      toast.error(parseError(e));
+    } finally {
+      setBlacklistSaving(false);
+    }
+  }
+
+  async function handleRemoveBlacklistItem(itemId: string) {
+    try {
+      await deleteBlacklistItem(itemId);
+      setBlacklistItems((prev) => prev.filter((item) => item.id !== itemId));
+    } catch (e) {
+      toast.error(parseError(e));
+    }
+  }
 
   const connectCalendar = useGoogleLogin({
     flow: 'auth-code',
@@ -182,6 +214,7 @@ export default function ProfilePage() {
       navigate('/');
     } catch (e) {
       toast.error(parseError(e));
+    } finally {
       setDeleteLoading(false);
     }
   }
@@ -215,7 +248,7 @@ export default function ProfilePage() {
         <CardContent className="pt-6">
           <div className="flex items-center gap-6 flex-wrap">
             <Avatar className="h-20 w-20">
-              <AvatarImage src={getImageUrl(user.avatarUrl) ?? user.avatarUrl ?? undefined} alt={user.displayName} />
+              <AvatarImage src={getImageUrl(user.avatarPath) ?? user.avatarUrl ?? undefined} alt={user.displayName} />
               <AvatarFallback className="bg-primary text-primary-foreground text-2xl font-bold">
                 {user.displayName[0].toUpperCase()}
               </AvatarFallback>
@@ -288,6 +321,75 @@ export default function ProfilePage() {
                   </div>
                 )}
               </div>
+              <Card>
+                <CardContent className="pt-6">
+                  <div className="flex items-center justify-between mb-3">
+                    <div>
+                      <div className="text-base font-bold">Не хочу получать</div>
+                      <div className="text-xs text-muted-foreground">Видят только твои друзья</div>
+                    </div>
+                    <span className="text-xs text-muted-foreground">{blacklistItems.length}/{MAX_BLACKLIST_ITEMS}</span>
+                  </div>
+
+                  {blacklistItems.length > 0 && (
+                    <div className="flex flex-wrap gap-2 mb-3">
+                      {blacklistItems.map((item) => (
+                        <span
+                          key={item.id}
+                          className="flex items-center gap-1.5 px-3 py-1 rounded-full border border-destructive/30 bg-destructive/5 text-sm"
+                        >
+                          {item.title}
+                          <button
+                            type="button"
+                            onClick={() => handleRemoveBlacklistItem(item.id)}
+                            className="text-muted-foreground hover:text-destructive transition-colors ml-0.5"
+                            aria-label="Удалить"
+                          >
+                            ✕
+                          </button>
+                        </span>
+                      ))}
+                    </div>
+                  )}
+
+                  {blacklistItems.length < MAX_BLACKLIST_ITEMS && (
+                    <>
+                      <div className="flex flex-wrap gap-1.5 mb-3">
+                        {BLACKLIST_PRESETS.filter((preset) => !blacklistItems.some((item) => item.title === preset)).map((preset) => (
+                          <button
+                            key={preset}
+                            type="button"
+                            disabled={blacklistSaving}
+                            onClick={() => handleAddBlacklistItem(preset)}
+                            className="px-2.5 py-1 rounded-full border border-muted-foreground/30 text-xs hover:border-primary hover:bg-muted transition-colors"
+                          >
+                            + {preset}
+                          </button>
+                        ))}
+                      </div>
+                      <div className="flex gap-2">
+                        <Input
+                          placeholder="Своя позиция..."
+                          value={blacklistInput}
+                          onChange={(e) => setBlacklistInput(e.target.value)}
+                          onKeyDown={(e) => e.key === 'Enter' && (e.preventDefault(), handleAddBlacklistItem(blacklistInput))}
+                          maxLength={100}
+                          className="text-sm"
+                        />
+                        <Button
+                          type="button"
+                          variant="outline"
+                          size="sm"
+                          disabled={!blacklistInput.trim() || blacklistSaving}
+                          onClick={() => handleAddBlacklistItem(blacklistInput)}
+                        >
+                          +
+                        </Button>
+                      </div>
+                    </>
+                  )}
+                </CardContent>
+              </Card>
             </>
           )}
         </TabsContent>

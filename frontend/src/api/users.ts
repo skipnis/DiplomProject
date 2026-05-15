@@ -1,5 +1,5 @@
 import { apiGet, apiPut, apiPost, apiDelete, apiPostForm } from './client';
-import type { MyProfile, UserProfile, UserSearchResult, GiftProfileDto, FulfilledWishItem } from '../types';
+import type { MyProfile, UserProfile, UserSearchResult, GiftProfileDto, FulfilledWishItem, BlacklistItemDto } from '../types';
 
 export function getMyProfile(): Promise<MyProfile> {
   return apiGet<MyProfile>('/users/me');
@@ -59,4 +59,28 @@ export function getMyGiftProfile(): Promise<GiftProfileDto> {
 
 export function getUserGiftProfile(id: string): Promise<GiftProfileDto> {
   return apiGet<GiftProfileDto>(`/users/${id}/gift-profile`);
+}
+
+export function checkUsernameAvailability(username: string): Promise<void> {
+  return apiGet<void>(`/users/check-username?username=${encodeURIComponent(username)}`);
+}
+
+export function getMyBlacklist(): Promise<BlacklistItemDto[]> {
+  return apiGet<BlacklistItemDto[]>('/users/me/blacklist');
+}
+
+export function getUserBlacklist(id: string): Promise<BlacklistItemDto[]> {
+  return apiGet<BlacklistItemDto[]>(`/users/${id}/blacklist`);
+}
+
+export function addBlacklistItem(title: string): Promise<BlacklistItemDto> {
+  return apiPost<BlacklistItemDto>('/users/me/blacklist', { title });
+}
+
+export function deleteBlacklistItem(itemId: string): Promise<void> {
+  return apiDelete<void>(`/users/me/blacklist/${itemId}`);
+}
+
+export function updateBlacklistItem(itemId: string, title: string): Promise<void> {
+  return apiPut<void>(`/users/me/blacklist/${itemId}`, { title });
 }

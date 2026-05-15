@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from 'react';
 import { useParams, Link } from 'react-router-dom';
-import { getUserProfile, getUserGiftProfile, getUserFulfilledWishes } from '../api/users';
+import { getUserProfile, getUserGiftProfile, getUserFulfilledWishes, getUserBlacklist } from '../api/users';
 import { getUserWishlists } from '../api/wishlists';
 import { sendFriendRequest, acceptFriendRequest, removeFriend, getFriends, getFriendshipRequests } from '../api/friends';
 import { getImageUrl } from '../api/client';
@@ -8,7 +8,7 @@ import { useAuth } from '../context/AuthContext';
 import { useToast } from '../components/Toast';
 import { parseError } from '../utils/errors';
 import { VISIBILITY_LABELS, getWishlistEmoji } from '../types';
-import type { UserProfile, WishlistSummaryDto, GiftProfileDto, FulfilledWishItem } from '../types';
+import type { UserProfile, WishlistSummaryDto, GiftProfileDto, FulfilledWishItem, BlacklistItemDto } from '../types';
 import { Button, buttonVariants } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
@@ -96,6 +96,7 @@ export default function UserProfilePage() {
   const [wishlists, setWishlists] = useState<WishlistSummaryDto[]>([]);
   const [giftProfile, setGiftProfile] = useState<GiftProfileDto | null>(null);
   const [fulfilledWishes, setFulfilledWishes] = useState<FulfilledWishItem[]>([]);
+  const [friendBlacklist, setFriendBlacklist] = useState<BlacklistItemDto[] | null>(null);
   const [friendStatus, setFriendStatus] = useState<FriendStatus>('none');
   const [loading, setLoading] = useState(true);
   const [actionLoading, setActionLoading] = useState(false);
@@ -116,8 +117,13 @@ export default function UserProfilePage() {
     if (me && id !== me.id) {
       Promise.all([getFriends(), getFriendshipRequests()])
         .then(([friends, requests]) => {
-          if (friends.items.some((friend) => friend.userId === id)) setFriendStatus('friends');
-          else if (requests.items.some((request) => request.userId === id)) setFriendStatus('request_received');
+          const isFriend = friends.items.some((friend) => friend.userId === id);
+          if (isFriend) {
+            setFriendStatus('friends');
+            getUserBlacklist(id).then(setFriendBlacklist).catch(() => {});
+          } else if (requests.items.some((request) => request.userId === id)) {
+            setFriendStatus('request_received');
+          }
         })
         .catch(() => {});
     }
@@ -188,6 +194,24 @@ export default function UserProfilePage() {
       </Card>
 
       {giftProfile && <GiftProfileSection giftProfile={giftProfile} />}
+
+      {friendBlacklist && friendBlacklist.length > 0 && (
+        <Card className="mb-6">
+          <CardContent className="pt-6">
+            <div className="text-base font-bold mb-3">Не хочет получать</div>
+            <div className="flex flex-wrap gap-2">
+              {friendBlacklist.map((item) => (
+                <span
+                  key={item.id}
+                  className="px-3 py-1 rounded-full border border-destructive/30 bg-destructive/5 text-sm"
+                >
+                  {item.title}
+                </span>
+              ))}
+            </div>
+          </CardContent>
+        </Card>
+      )}
 
       {fulfilledWishes.length > 0 && (
         <div className="mb-6">
