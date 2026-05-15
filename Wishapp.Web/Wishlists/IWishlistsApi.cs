@@ -29,6 +29,7 @@ public interface IWishlistsApi
     Task<WishNotificationData?> GetWishNotificationDataAsync(Guid wishId, CancellationToken ct = default);
     Task<GiftBadgeEligibilityData?> GetGiftBadgeEligibilityAsync(Guid wishlistId, Guid wishId, CancellationToken ct = default);
     Task<List<PublicFulfilledWishDto>> GetPublicFulfilledWishesAsync(Guid userId, CancellationToken ct = default);
+    Task<IReadOnlyList<Guid>> GetNonSurpriseWishlistIdsByOwnerAsync(Guid ownerId, CancellationToken ct = default);
     Task DeleteUserDataAsync(Guid userId, CancellationToken ct = default);
 }
 

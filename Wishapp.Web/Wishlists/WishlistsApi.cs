@@ -13,11 +13,7 @@ public sealed class WishlistsApi(ApplicationDbContext db) : IWishlistsApi
     {
         var hidden = Wishlist.CreateSystem(userId, "Скрытые", WishlistVisibility.Private, SystemWishlistType.Hidden);
 
-        var blacklist = Wishlist.CreateSystem(userId, "Чёрный список", WishlistVisibility.Public, SystemWishlistType.Blacklist);
-
         db.Wishlists.Add(hidden);
-
-        db.Wishlists.Add(blacklist);
 
         return Task.CompletedTask;
     }
@@ -196,13 +192,17 @@ public sealed class WishlistsApi(ApplicationDbContext db) : IWishlistsApi
             .ToListAsync(ct);
     }
 
-    public async Task DeleteUserDataAsync(Guid userId, CancellationToken ct = default)
+    public async Task<IReadOnlyList<Guid>> GetNonSurpriseWishlistIdsByOwnerAsync(Guid ownerId, CancellationToken ct = default)
     {
-        var ownedWishlistIds = await db.Wishlists
-            .Where(wl => wl.OwnerId == userId)
+        return await db.Wishlists
+            .AsNoTracking()
+            .Where(wl => wl.OwnerId == ownerId && !wl.IsSurpriseModeEnabled && !wl.IsSystem)
             .Select(wl => wl.Id)
             .ToListAsync(ct);
+    }
 
+    public async Task DeleteUserDataAsync(Guid userId, CancellationToken ct = default)
+    {
         await db.Wishlists
             .Where(wl => wl.OwnerId == userId)
             .ExecuteDeleteAsync(ct);

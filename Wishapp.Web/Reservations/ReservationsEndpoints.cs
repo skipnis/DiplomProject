@@ -16,6 +16,8 @@ public static partial class ReservationsEndpoints
 
         reservations.MapGet("/my", GetMyReservations);
 
+        reservations.MapGet("/my-wishes", GetReservationsOnMyWishes);
+
         return app;
     }
 }

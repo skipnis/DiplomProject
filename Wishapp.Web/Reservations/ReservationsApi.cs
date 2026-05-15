@@ -46,6 +46,16 @@ public sealed class ReservationsApi(ApplicationDbContext db) : IReservationsApi
             .ExecuteDeleteAsync(ct);
     }
 
+    public async Task DeleteReservationsForWishesAsync(List<Guid> wishIds, CancellationToken ct = default)
+    {
+        if (wishIds.Count == 0)
+            return;
+
+        await db.WishReservations
+            .Where(r => wishIds.Contains(r.WishId))
+            .ExecuteDeleteAsync(ct);
+    }
+
     public async Task DeleteUserDataAsync(Guid userId, CancellationToken ct = default)
     {
         await db.WishReservations

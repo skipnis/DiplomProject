@@ -3,10 +3,11 @@ using Wishapp.Web.Common.Interfaces;
 using Wishapp.Web.Common.Types;
 using Wishapp.Web.Gamification;
 using Wishapp.Web.Infrastructure.Database;
+using Wishapp.Web.Reservations;
 
 namespace Wishapp.Web.Wishlists.Features.Wishlists.DeleteWishlist;
 
-public sealed class DeleteWishlistHandler(ApplicationDbContext db, IGamificationApi gamificationApi)
+public sealed class DeleteWishlistHandler(ApplicationDbContext db, IGamificationApi gamificationApi, IReservationsApi reservationsApi)
     : ICommandHandler<DeleteWishlistCommand>
 {
     public async Task<Result> HandleAsync(
@@ -34,6 +35,7 @@ public sealed class DeleteWishlistHandler(ApplicationDbContext db, IGamification
             .ToListAsync(ct);
 
         await gamificationApi.DeleteBadgesForWishesAsync(wishIds, ct);
+        await reservationsApi.DeleteReservationsForWishesAsync(wishIds, ct);
 
         db.Wishlists.Remove(wishlist);
 

@@ -2,6 +2,7 @@ using System.Security.Claims;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Http.HttpResults;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.EntityFrameworkCore;
 using Wishapp.Web.Common.Extensions;
 using Wishapp.Web.Common.Interfaces;
 using Wishapp.Web.Common.Types;
@@ -43,8 +44,17 @@ public static partial class WishlistsEndpoints
             .Succeeded;
 
         if (!authorized)
-        {
             return TypedResults.Forbid();
+
+        var isOwner = accessContext.OwnerId == userIdResult.Value;
+        if (!isOwner)
+        {
+            var wish = await db.Wishes.AsNoTracking()
+                .Where(w => w.Id == wishId && w.WishlistId == id)
+                .Select(w => new { w.CreatedByUserId })
+                .FirstOrDefaultAsync(ct);
+            if (wish is null || wish.CreatedByUserId != userIdResult.Value)
+                return TypedResults.Forbid();
         }
 
         var result = await handler.HandleAsync(new DeleteWishCommand(id, wishId), ct);
