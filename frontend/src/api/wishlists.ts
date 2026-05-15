@@ -10,13 +10,13 @@ import type {
   FulfilledWishRecordDto,
 } from '../types';
 
-export async function getMyWishlists(): Promise<WishlistSummaryDto[]> {
-  const res = await apiGet<PagedResponse<WishlistSummaryDto>>('/wishlists/');
+export async function getMyWishlists(sortBy = 'CreatedAt', direction = 'Desc'): Promise<WishlistSummaryDto[]> {
+  const res = await apiGet<PagedResponse<WishlistSummaryDto>>(`/wishlists/?sortBy=${sortBy}&direction=${direction}`);
   return res.items;
 }
 
-export async function getUserWishlists(userId: string): Promise<WishlistSummaryDto[]> {
-  const res = await apiGet<PagedResponse<WishlistSummaryDto>>(`/wishlists/users/${userId}`);
+export async function getUserWishlists(userId: string, sortBy = 'CreatedAt', direction = 'Desc'): Promise<WishlistSummaryDto[]> {
+  const res = await apiGet<PagedResponse<WishlistSummaryDto>>(`/wishlists/users/${userId}?sortBy=${sortBy}&direction=${direction}`);
   return res.items;
 }
 

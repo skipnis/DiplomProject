@@ -5,20 +5,35 @@ import { useToast } from '../components/Toast';
 import { parseError } from '../utils/errors';
 import { VISIBILITY_LABELS, getWishlistEmoji } from '../types';
 import type { WishlistSummaryDto } from '../types';
-import { Button, buttonVariants } from '@/components/ui/button';
+import { buttonVariants } from '@/components/ui/button';
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
+import { Select, SelectContent, SelectItem, SelectTrigger } from '@/components/ui/select';
+
+type SortOption = { label: string; sortBy: string; direction: string };
+
+const SORT_OPTIONS: SortOption[] = [
+  { label: 'По дате ↓', sortBy: 'CreatedAt', direction: 'Desc' },
+  { label: 'По дате ↑', sortBy: 'CreatedAt', direction: 'Asc' },
+  { label: 'По алфавиту ↑', sortBy: 'Name', direction: 'Asc' },
+  { label: 'По алфавиту ↓', sortBy: 'Name', direction: 'Desc' },
+];
 
 export default function WishlistsPage() {
   const navigate = useNavigate();
   const toast = useToast();
   const [wishlists, setWishlists] = useState<WishlistSummaryDto[]>([]);
   const [loading, setLoading] = useState(true);
+  const [sortKey, setSortKey] = useState('CreatedAt_Desc');
+
+  const currentSort = SORT_OPTIONS.find((o) => `${o.sortBy}_${o.direction}` === sortKey) ?? SORT_OPTIONS[0];
 
   useEffect(() => {
-    getMyWishlists()
+    setLoading(true);
+    getMyWishlists(currentSort.sortBy, currentSort.direction)
       .then(setWishlists)
       .catch((e) => toast.error(parseError(e)))
       .finally(() => setLoading(false));
-  }, []);
+  }, [sortKey]);
 
   const handleDelete = async (e: React.MouseEvent, id: string) => {
     e.preventDefault();
@@ -31,8 +46,6 @@ export default function WishlistsPage() {
     }
   };
 
-  const regular = wishlists.filter((w) => !w.isSystem);
-
   if (loading) return <div className="flex items-center justify-center min-h-[200px] text-muted-foreground">Загрузка...</div>;
 
   return (
@@ -40,9 +53,23 @@ export default function WishlistsPage() {
       <div className="flex items-center justify-between mb-7 gap-4 flex-wrap">
         <div>
           <h1 className="text-2xl font-extrabold tracking-tight">Мои вишлисты</h1>
-          <p className="text-sm text-muted-foreground mt-0.5">{regular.length} вишлист(ов)</p>
+          <p className="text-sm text-muted-foreground mt-0.5">{wishlists.length} вишлист(ов)</p>
         </div>
-        <Link to="/wishlists/new" className={buttonVariants()}>+ Создать</Link>
+        <div className="flex items-center gap-2">
+          <Select value={sortKey} onValueChange={(value) => { if (value) setSortKey(value); }}>
+            <SelectTrigger className="w-40 h-8 text-xs">
+              <span>{currentSort.label}</span>
+            </SelectTrigger>
+            <SelectContent>
+              {SORT_OPTIONS.map((o) => (
+                <SelectItem key={`${o.sortBy}_${o.direction}`} value={`${o.sortBy}_${o.direction}`} className="text-xs">
+                  {o.label}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+          <Link to="/wishlists/new" className={buttonVariants()}>+ Создать</Link>
+        </div>
       </div>
 
       {wishlists.length === 0 ? (
@@ -68,9 +95,17 @@ export default function WishlistsPage() {
                 {!w.isSystem && <span>{VISIBILITY_LABELS[w.visibility]}</span>}
               </div>
               {!w.isSystem && (
-                <div className="flex gap-1 mt-3" onClick={(e) => e.stopPropagation()}>
-                  <Link to={`/wishlists/${w.id}/edit`} className={buttonVariants({ variant: 'ghost', size: 'sm' })}>Изменить</Link>
-                  <Button variant="destructive" size="sm" onClick={(e) => handleDelete(e, w.id)}>Удалить</Button>
+                <div className="absolute top-3 right-3" onClick={(e) => e.stopPropagation()}>
+                  <DropdownMenu>
+                    <DropdownMenuTrigger className={`${buttonVariants({ variant: 'ghost', size: 'sm' })} h-7 w-7 p-0 text-muted-foreground`}>⋯</DropdownMenuTrigger>
+                    <DropdownMenuContent align="end">
+                      <DropdownMenuItem onClick={() => navigate(`/wishlists/${w.id}/edit`)}>Изменить</DropdownMenuItem>
+                      <DropdownMenuSeparator />
+                      <DropdownMenuItem className="text-destructive focus:text-destructive" onClick={(e) => handleDelete(e as unknown as React.MouseEvent, w.id)}>
+                        Удалить
+                      </DropdownMenuItem>
+                    </DropdownMenuContent>
+                  </DropdownMenu>
                 </div>
               )}
             </div>

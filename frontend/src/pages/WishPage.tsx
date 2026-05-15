@@ -15,6 +15,7 @@ import { Button, buttonVariants } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { Separator } from '@/components/ui/separator';
 import { Dialog, DialogContent, DialogTitle } from '@/components/ui/dialog';
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
 
 const PRIORITY_BADGE: Record<number, string> = {
   0: 'bg-muted text-muted-foreground',
@@ -144,6 +145,31 @@ function GiftBadgesModal({ open, onClose, onSubmit, definitions }: {
   );
 }
 
+function ConfirmModal({ open, onClose, onConfirm, title, description, confirmLabel, confirmVariant }: {
+  open: boolean;
+  onClose: () => void;
+  onConfirm: () => void;
+  title: string;
+  description?: string;
+  confirmLabel: string;
+  confirmVariant?: 'default' | 'destructive' | 'secondary';
+}) {
+  return (
+    <Dialog open={open} onOpenChange={onClose}>
+      <DialogContent className="max-w-sm">
+        <DialogTitle>{title}</DialogTitle>
+        {description && <p className="text-sm text-muted-foreground">{description}</p>}
+        <div className="flex gap-2 justify-end mt-2">
+          <Button variant="ghost" onClick={onClose}>Отмена</Button>
+          <Button variant={confirmVariant ?? 'default'} onClick={() => { onConfirm(); onClose(); }}>
+            {confirmLabel}
+          </Button>
+        </div>
+      </DialogContent>
+    </Dialog>
+  );
+}
+
 export default function WishPage() {
   const { id: wishlistId, wishId } = useParams<{ id: string; wishId: string }>();
   const navigate = useNavigate();
@@ -161,6 +187,9 @@ export default function WishPage() {
   const [showGiftBadgesModal, setShowGiftBadgesModal] = useState(false);
   const [existingGiftBadges, setExistingGiftBadges] = useState<FulfilledWishBadgeDto[] | null>(null);
   const [fulfilledBadgeDefinitions, setFulfilledBadgeDefinitions] = useState<FulfilledBadgeDefinitionDto[]>([]);
+  const [showFulfillConfirm, setShowFulfillConfirm] = useState(false);
+  const [showUnfulfillConfirm, setShowUnfulfillConfirm] = useState(false);
+  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
 
   const myRole = wishlist?.members.find((member) => member.userId === me?.id)?.role ?? null;
   const isOwner = myRole === 2;
@@ -199,21 +228,33 @@ export default function WishPage() {
     } catch (e) { toast.error(parseError(e)); }
   };
 
-  const handleFulfill = async () => {
+  const executeFulfill = async () => {
     if (!wishlistId || !wishId || !wish) return;
     try {
-      if (wish.isFulfilled) {
-        await unfulfillWish(wishlistId, wishId);
-        setWish((prev) => prev ? { ...prev, isFulfilled: false } : prev);
-      } else {
-        await fulfillWish(wishlistId, wishId);
-        const refreshedWish = await getWish(wishlistId, wishId);
-        setWish(refreshedWish);
-        if (refreshedWish.fulfilledByReserverId && !refreshedWish.hasGiftBadges) {
-          setShowGiftBadgesModal(true);
-        }
+      await fulfillWish(wishlistId, wishId);
+      const refreshedWish = await getWish(wishlistId, wishId);
+      setWish(refreshedWish);
+      if (refreshedWish.fulfilledByReserverId && !refreshedWish.hasGiftBadges) {
+        setShowGiftBadgesModal(true);
       }
     } catch (e) { toast.error(parseError(e)); }
+  };
+
+  const executeUnfulfill = async () => {
+    if (!wishlistId || !wishId || !wish) return;
+    try {
+      await unfulfillWish(wishlistId, wishId);
+      setWish((prev) => prev ? { ...prev, isFulfilled: false } : prev);
+    } catch (e) { toast.error(parseError(e)); }
+  };
+
+  const handleFulfillClick = () => {
+    if (!wish) return;
+    if (wish.isFulfilled) {
+      setShowUnfulfillConfirm(true);
+    } else {
+      setShowFulfillConfirm(true);
+    }
   };
 
   const handleGiftBadgesSubmit = async (badgeTypes: number[]) => {
@@ -247,8 +288,8 @@ export default function WishPage() {
     catch (e) { toast.error(parseError(e)); }
   };
 
-  const handleDelete = async () => {
-    if (!wishlistId || !wishId || !confirm('Удалить желание?')) return;
+  const executeDelete = async () => {
+    if (!wishlistId || !wishId) return;
     try { await deleteWish(wishlistId, wishId); navigate(`/wishlists/${wishlistId}`); }
     catch (e) { toast.error(parseError(e)); }
   };
@@ -280,15 +321,27 @@ export default function WishPage() {
 
   return (
     <div className="max-w-xl mx-auto">
-      <div className="flex items-center justify-between mb-7 gap-3 flex-wrap">
+      <div className="flex items-center justify-between mb-7 gap-3">
         <Link to={`/wishlists/${wishlistId}`} className={buttonVariants({ variant: 'ghost', size: 'sm' })}>← Назад</Link>
-        <div className="flex flex-wrap gap-2">
-          {!isSystem && <Button variant="ghost" size="sm" onClick={() => setShowQr(true)}>📷 QR</Button>}
-          {canEdit && <Button variant="ghost" size="sm" onClick={handleDuplicate}>Дублировать</Button>}
-          {me && <Button variant="ghost" size="sm" onClick={handleOpenCopy}>Копировать</Button>}
-          {canEdit && <Link to={`/wishlists/${wishlistId}/wishes/${wishId}/edit`} className={buttonVariants({ variant: 'secondary', size: 'sm' })}>Изменить</Link>}
-          {isOwner && <Button variant="destructive" size="sm" onClick={handleDelete}>Удалить</Button>}
-        </div>
+        {(me || !isSystem) && (
+          <DropdownMenu>
+            <DropdownMenuTrigger className={`${buttonVariants({ variant: 'ghost', size: 'sm' })} h-8 w-8 p-0 text-muted-foreground text-lg`}>⋯</DropdownMenuTrigger>
+            <DropdownMenuContent align="end">
+              {!isSystem && <DropdownMenuItem onClick={() => setShowQr(true)}>📷 QR-код</DropdownMenuItem>}
+              {canEdit && <DropdownMenuItem onClick={handleDuplicate}>Дублировать</DropdownMenuItem>}
+              {me && <DropdownMenuItem onClick={handleOpenCopy}>Копировать в вишлист</DropdownMenuItem>}
+              {(isOwner || (canEdit && wish.createdByUserId === me?.id)) && (
+                <DropdownMenuItem onClick={() => navigate(`/wishlists/${wishlistId}/wishes/${wishId}/edit`)}>Изменить</DropdownMenuItem>
+              )}
+              {(isOwner || (canEdit && wish.createdByUserId === me?.id)) && (
+                <>
+                  <DropdownMenuSeparator />
+                  <DropdownMenuItem className="text-destructive focus:text-destructive" onClick={() => setShowDeleteConfirm(true)}>Удалить</DropdownMenuItem>
+                </>
+              )}
+            </DropdownMenuContent>
+          </DropdownMenu>
+        )}
       </div>
 
       <Card>
@@ -296,7 +349,12 @@ export default function WishPage() {
           {imageUrl && <img src={imageUrl} alt={wish.name} className="w-full max-h-72 object-contain rounded-lg mb-5 bg-muted" />}
 
           <h1 className="text-xl font-extrabold tracking-tight mb-2">{wish.name}</h1>
-          {wish.description && <p className="text-muted-foreground text-sm mb-4">{wish.description}</p>}
+          {wish.description && (
+            <div className="mb-4">
+              <div className="text-xs font-semibold text-muted-foreground uppercase tracking-wide mb-1.5">Описание</div>
+              <p className="text-muted-foreground text-sm">{wish.description}</p>
+            </div>
+          )}
 
           <div className="flex flex-wrap gap-6 mb-4">
             {wish.price != null && (
@@ -331,7 +389,7 @@ export default function WishPage() {
                     const def = fulfilledBadgeDefinitions.find((d) => d.id === badge.badgeType);
                     return (
                       <span key={badge.badgeType} className="text-sm px-3 py-1 rounded-full bg-primary/10 text-primary border border-primary/20">
-                        {def ? `${def.emoji} ${def.label}` : `Бейдж #${badge.badgeType}`}
+                        {def ? <>{def.emoji}<span className="hidden sm:inline"> {def.label}</span></> : `Бейдж #${badge.badgeType}`}
                       </span>
                     );
                   })}
@@ -344,7 +402,7 @@ export default function WishPage() {
 
           <div className="flex flex-wrap gap-2">
             {isOwner && (
-              <Button variant="secondary" onClick={handleFulfill}>
+              <Button variant="secondary" onClick={handleFulfillClick}>
                 {wish.isFulfilled ? '↩ Отметить не исполненным' : '✓ Отметить исполненным'}
               </Button>
             )}
@@ -391,6 +449,32 @@ export default function WishPage() {
           definitions={fulfilledBadgeDefinitions}
         />
       )}
+      <ConfirmModal
+        open={showFulfillConfirm}
+        onClose={() => setShowFulfillConfirm(false)}
+        onConfirm={executeFulfill}
+        title="Отметить желание исполненным?"
+        description="Это действие изменит статус желания. Если у желания есть бронирование, вам будет предложено оценить подарок."
+        confirmLabel="Отметить исполненным"
+      />
+      <ConfirmModal
+        open={showUnfulfillConfirm}
+        onClose={() => setShowUnfulfillConfirm(false)}
+        onConfirm={executeUnfulfill}
+        title="Снять отметку исполнения?"
+        description="Желание вернётся в статус ожидания."
+        confirmLabel="Снять отметку"
+        confirmVariant="secondary"
+      />
+      <ConfirmModal
+        open={showDeleteConfirm}
+        onClose={() => setShowDeleteConfirm(false)}
+        onConfirm={executeDelete}
+        title="Удалить желание?"
+        description="Это действие нельзя отменить."
+        confirmLabel="Удалить"
+        confirmVariant="destructive"
+      />
     </div>
   );
 }

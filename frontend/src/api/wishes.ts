@@ -1,8 +1,16 @@
 import { apiGet, apiPost, apiPut, apiDelete, apiPatch, apiPostForm } from './client';
 import type { WishDto, WishSummaryDto, WishPriority, Currency, ParsedWishData, PagedResponse, FulfilledWishBadgeDto } from '../types';
 
-export function getWishes(wishlistId: string, page = 1, pageSize = 20): Promise<PagedResponse<WishSummaryDto>> {
-  return apiGet<PagedResponse<WishSummaryDto>>(`/wishlists/${wishlistId}/wishes?page=${page}&pageSize=${pageSize}`);
+export function getWishes(
+  wishlistId: string,
+  page = 1,
+  pageSize = 20,
+  sortBy = 'CreatedAt',
+  direction = 'Desc',
+): Promise<PagedResponse<WishSummaryDto>> {
+  return apiGet<PagedResponse<WishSummaryDto>>(
+    `/wishlists/${wishlistId}/wishes?page=${page}&pageSize=${pageSize}&sortBy=${sortBy}&direction=${direction}`,
+  );
 }
 
 export function getWish(wishlistId: string, wishId: string): Promise<WishDto> {
