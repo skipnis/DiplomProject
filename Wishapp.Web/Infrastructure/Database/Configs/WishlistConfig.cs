@@ -43,6 +43,7 @@ public class WishlistConfig : IEntityTypeConfiguration<Wishlist>
             .OnDelete(DeleteBehavior.Cascade);
 
         builder.HasIndex(w => new { w.OwnerId, w.CreatedAt });
+        builder.HasIndex(w => new { w.OwnerId, w.Name });
 
         builder.HasIndex(w => w.Visibility);
 

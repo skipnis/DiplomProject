@@ -20,6 +20,7 @@ public sealed class Wish
     public Guid? FulfilledByUserId { get; private set; }
     public Guid? FulfilledByReserverId { get; private set; }
     public Guid ShareToken { get; private set; }
+    public Guid? CreatedByUserId { get; private set; }
 
     private Wish() { }
 
@@ -30,7 +31,8 @@ public sealed class Wish
         decimal? price,
         Currency? currency,
         WishPriority priority,
-        string? url)
+        string? url,
+        Guid? createdByUserId = null)
     {
         var now = DateTimeOffset.UtcNow;
         return new Wish
@@ -45,7 +47,8 @@ public sealed class Wish
             Url = url,
             CreatedAt = now,
             UpdatedAt = now,
-            ShareToken = Guid.CreateVersion7()
+            ShareToken = Guid.CreateVersion7(),
+            CreatedByUserId = createdByUserId
         };
     }
 
@@ -101,7 +104,7 @@ public sealed class Wish
         ShareToken = Guid.CreateVersion7();
     }
 
-    public Wish Duplicate(Guid wishlistId)
+    public Wish Duplicate(Guid wishlistId, Guid createdByUserId)
     {
         var now = DateTimeOffset.UtcNow;
         return new Wish
@@ -119,11 +122,12 @@ public sealed class Wish
             FulfilledAt = null,
             CreatedAt = now,
             UpdatedAt = now,
-            ShareToken = Guid.CreateVersion7()
+            ShareToken = Guid.CreateVersion7(),
+            CreatedByUserId = createdByUserId
         };
     }
 
-    public Wish CopyTo(Guid targetWishlistId)
+    public Wish CopyTo(Guid targetWishlistId, Guid createdByUserId)
     {
         var now = DateTimeOffset.UtcNow;
         return new Wish
@@ -141,7 +145,8 @@ public sealed class Wish
             FulfilledAt = null,
             CreatedAt = now,
             UpdatedAt = now,
-            ShareToken = Guid.CreateVersion7()
+            ShareToken = Guid.CreateVersion7(),
+            CreatedByUserId = createdByUserId
         };
     }
 }

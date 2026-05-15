@@ -44,6 +44,7 @@ public sealed class GetWishHandler(
             reservedIds.Contains(wish.Id),
             query.IsOwner ? wish.ShareToken : null,
             wish.FulfilledByReserverId,
-            hasGiftBadges);
+            hasGiftBadges,
+            wish.CreatedByUserId);
     }
 }

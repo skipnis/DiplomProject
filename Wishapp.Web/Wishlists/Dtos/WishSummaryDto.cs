@@ -11,4 +11,6 @@ public record WishSummaryDto(
     string? ImagePath,
     bool IsFulfilled,
     bool IsReserved,
-    bool HasGiftBadges);
+    bool HasGiftBadges,
+    Guid? CreatedByUserId,
+    DateTimeOffset CreatedAt);

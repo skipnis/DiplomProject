@@ -48,9 +48,11 @@ public static partial class WishlistsEndpoints
 
         wishlists.MapDelete("/{id:guid}/wishes/{wishId:guid}", DeleteWish);
 
-        wishlists.MapGet("/{id:guid}/wishes/{wishId:guid}", GetWish);
+        wishlists.MapGet("/{id:guid}/wishes/{wishId:guid}", GetWish)
+            .AllowAnonymous();
 
-        wishlists.MapGet("/{id:guid}/wishes", GetWishes);
+        wishlists.MapGet("/{id:guid}/wishes", GetWishes)
+            .AllowAnonymous();
 
         wishlists.MapPatch("/{id:guid}/wishes/{wishId:guid}/fulfill", FulfillWish);
 

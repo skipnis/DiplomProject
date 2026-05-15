@@ -34,7 +34,8 @@ public sealed class AddWishFromCatalogHandler(ApplicationDbContext db, ICatalogA
             catalogItem.Price,
             catalogItem.Currency,
             Entities.WishPriority.None,
-            catalogItem.Url);
+            catalogItem.Url,
+            command.UserId);
 
         if (result.IsFailure)
         {

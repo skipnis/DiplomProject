@@ -21,15 +21,24 @@ public sealed class GetUserWishlistsHandler(
         var areFriends = query.CurrentUserId.HasValue && 
                          await friendshipsApi.AreFriendsAsync(query.CurrentUserId.Value, query.TargetUserId, ct);
         
-        var result = await db.Wishlists
+        var wishlists = db.Wishlists
             .AsNoTracking()
             .Where(w => w.OwnerId == query.TargetUserId)
             .Where(w =>
                 w.OwnerId == query.CurrentUserId ||
                 w.Visibility == WishlistVisibility.Public ||
                 (w.Visibility == WishlistVisibility.Friends && areFriends) ||
-                w.Members.Any(m => m.UserId == query.CurrentUserId))
-            .OrderByDescending(w => w.CreatedAt)
+                w.Members.Any(m => m.UserId == query.CurrentUserId));
+
+        wishlists = (query.SortBy, query.Direction) switch
+        {
+            (WishlistSortBy.Name, SortDirection.Asc)  => wishlists.OrderBy(w => w.Name),
+            (WishlistSortBy.Name, SortDirection.Desc) => wishlists.OrderByDescending(w => w.Name),
+            (_, SortDirection.Asc)                    => wishlists.OrderBy(w => w.CreatedAt),
+            _                                         => wishlists.OrderByDescending(w => w.CreatedAt),
+        };
+
+        var result = await wishlists
             .Select(w => new WishlistSummaryDto(
                 w.Id,
                 w.Name,
@@ -38,7 +47,8 @@ public sealed class GetUserWishlistsHandler(
                 w.Visibility,
                 w.IsSystem,
                 w.Wishes.Count,
-                w.Wishes.Count(wish => wish.IsFulfilled)))
+                w.Wishes.Count(wish => wish.IsFulfilled),
+                w.CreatedAt))
             .ToPagedResponseAsync(query.Request, ct);
 
         return result;

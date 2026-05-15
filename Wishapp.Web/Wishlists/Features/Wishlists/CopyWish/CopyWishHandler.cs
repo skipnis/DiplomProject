@@ -40,7 +40,7 @@ public sealed class CopyWishHandler(ApplicationDbContext db, IStorageService sto
             return Error.NotFound("Wishes.NotFound", "Wish not found");
         }
 
-        var result = targetWishlist.CopyWishFrom(wish);
+        var result = targetWishlist.CopyWishFrom(wish, command.UserId);
 
         if (result.IsFailure)
         {

@@ -14,6 +14,8 @@ public static partial class WishlistsEndpoints
     private static async Task<Ok<PagedResponse<WishlistSummaryDto>>> GetUserWishlists(
         [FromRoute] Guid userId,
         [AsParameters] PagedRequest request,
+        WishlistSortBy sortBy,
+        SortDirection direction,
         ClaimsPrincipal user,
         [FromServices] IQueryHandler<GetUserWishlistsQuery, PagedResponse<WishlistSummaryDto>> handler,
         CancellationToken ct)
@@ -23,7 +25,7 @@ public static partial class WishlistsEndpoints
         var currentUserId = userIdResult.IsSuccess ? userIdResult.Value : (Guid?)null;
 
         var result = await handler.HandleAsync(
-            new GetUserWishlistsQuery(currentUserId, userId, request), ct);
+            new GetUserWishlistsQuery(currentUserId, userId, request, sortBy, direction), ct);
 
         return TypedResults.Ok(result.Value);
     }

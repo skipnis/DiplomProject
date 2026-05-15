@@ -49,7 +49,7 @@ public static partial class WishlistsEndpoints
             return TypedResults.Forbid();
         }
 
-        var result = await handler.HandleAsync(new DuplicateWishCommand(id, wishId), ct);
+        var result = await handler.HandleAsync(new DuplicateWishCommand(id, wishId, userIdResult.Value), ct);
 
         if (!result.IsSuccess)
         {

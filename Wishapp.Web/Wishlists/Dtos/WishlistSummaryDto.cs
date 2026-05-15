@@ -10,4 +10,5 @@ public record WishlistSummaryDto(
     WishlistVisibility Visibility,
     bool IsSystem,
     int WishCount,
-    int FulfilledWishCount);
+    int FulfilledWishCount,
+    DateTimeOffset CreatedAt);

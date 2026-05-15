@@ -28,7 +28,8 @@ public sealed class AddWishHandler(ApplicationDbContext db)
             command.Price,
             command.Currency,
             command.Priority,
-            command.Url);
+            command.Url,
+            command.UserId);
 
         if (result.IsFailure)
         {

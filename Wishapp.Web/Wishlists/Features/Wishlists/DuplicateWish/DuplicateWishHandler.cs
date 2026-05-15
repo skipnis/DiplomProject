@@ -25,7 +25,7 @@ public sealed class DuplicateWishHandler(ApplicationDbContext db, IStorageServic
 
         var original = wishlist.Wishes.FirstOrDefault(w => w.Id == command.WishId);
 
-        var result = wishlist.DuplicateWish(command.WishId);
+        var result = wishlist.DuplicateWish(command.WishId, command.UserId);
 
         if (result.IsFailure)
         {

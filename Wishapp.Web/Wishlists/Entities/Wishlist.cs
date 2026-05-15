@@ -176,12 +176,13 @@ public sealed class Wishlist
         decimal? price,
         Currency? currency,
         WishPriority priority,
-        string? url)
+        string? url,
+        Guid? createdByUserId = null)
     {
-        var wish = Wish.Create(Id, name, description, price, currency, priority, url);
-        
+        var wish = Wish.Create(Id, name, description, price, currency, priority, url, createdByUserId);
+
         _wishes.Add(wish);
-        
+
         return Result.Success(wish);
     }
 
@@ -220,7 +221,7 @@ public sealed class Wishlist
         return Result.Success();
     }
 
-    public Result<Wish> DuplicateWish(Guid wishId)
+    public Result<Wish> DuplicateWish(Guid wishId, Guid createdByUserId)
     {
         var wish = _wishes.FirstOrDefault(w => w.Id == wishId);
 
@@ -229,8 +230,8 @@ public sealed class Wishlist
             return Error.NotFound("Wishes.NotFound", "Wish not found");
         }
 
-        var duplicate = wish.Duplicate(Id);
-        
+        var duplicate = wish.Duplicate(Id, createdByUserId);
+
         _wishes.Add(duplicate);
 
         return Result.Success(duplicate);
@@ -264,12 +265,12 @@ public sealed class Wishlist
         return Result.Success();
     }
 
-    public Result<Wish> CopyWishFrom(Wish wish)
+    public Result<Wish> CopyWishFrom(Wish wish, Guid createdByUserId)
     {
-        var copy = wish.CopyTo(Id);
-        
+        var copy = wish.CopyTo(Id, createdByUserId);
+
         _wishes.Add(copy);
-        
+
         return Result.Success(copy);
     }
 }

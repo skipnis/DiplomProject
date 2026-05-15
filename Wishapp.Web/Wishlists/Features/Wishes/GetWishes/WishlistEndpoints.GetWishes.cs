@@ -21,6 +21,8 @@ public static partial class WishlistsEndpoints
     private static async Task<Results<Ok<PagedResponse<WishSummaryDto>>, ForbidHttpResult, UnauthorizedHttpResult>> GetWishes(
         [FromRoute] Guid id,
         [AsParameters] PagedRequest request,
+        WishSortBy sortBy,
+        SortDirection direction,
         ClaimsPrincipal user,
         ApplicationDbContext db,
         IAuthorizationService authorizationService,
@@ -61,7 +63,7 @@ public static partial class WishlistsEndpoints
             return TypedResults.Forbid();
         }
 
-        var result = await handler.HandleAsync(new GetWishesQuery(id, request, isOwner && accessContext.IsSurpriseModeEnabled), ct);
+        var result = await handler.HandleAsync(new GetWishesQuery(id, request, accessContext.IsSurpriseModeEnabled, sortBy, direction), ct);
 
         return TypedResults.Ok(result.Value);
     }

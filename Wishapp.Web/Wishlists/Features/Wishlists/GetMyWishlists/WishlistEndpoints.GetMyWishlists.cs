@@ -13,6 +13,8 @@ public static partial class WishlistsEndpoints
 {
     private static async Task<Results<Ok<PagedResponse<WishlistSummaryDto>>, UnauthorizedHttpResult>> GetMyWishlists(
         [AsParameters] PagedRequest request,
+        WishlistSortBy sortBy,
+        SortDirection direction,
         ClaimsPrincipal user,
         [FromServices] IQueryHandler<GetMyWishlistsQuery, PagedResponse<WishlistSummaryDto>> handler,
         CancellationToken ct)
@@ -25,7 +27,7 @@ public static partial class WishlistsEndpoints
         }
 
         var result = await handler.HandleAsync(
-            new GetMyWishlistsQuery(userIdResult.Value, request), ct);
+            new GetMyWishlistsQuery(userIdResult.Value, request, sortBy, direction), ct);
 
         return TypedResults.Ok(result.Value);
     }

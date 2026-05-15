@@ -19,11 +19,23 @@ public sealed class GetWishesHandler(
         GetWishesQuery query,
         CancellationToken ct = default)
     {
-        var pagedData = await db.Wishes
+        var wishes = db.Wishes
             .AsNoTracking()
-            .Where(w => w.WishlistId == query.WishlistId)
-            .OrderByDescending(w => w.CreatedAt)
-            .Select(w => new { w.Id, w.Name, w.Price, w.Currency, w.Priority, w.ImagePath, w.IsFulfilled })
+            .Where(w => w.WishlistId == query.WishlistId);
+
+        wishes = (query.SortBy, query.Direction) switch
+        {
+            (WishSortBy.Name,     SortDirection.Asc)  => wishes.OrderBy(w => w.Name),
+            (WishSortBy.Name,     SortDirection.Desc) => wishes.OrderByDescending(w => w.Name),
+            (WishSortBy.Priority, SortDirection.Asc)  => wishes.OrderBy(w => w.Priority),
+            (WishSortBy.Priority, SortDirection.Desc) => wishes.OrderByDescending(w => w.Priority),
+            (WishSortBy.Status,   _)                  => wishes.OrderBy(w => w.IsFulfilled),
+            (_, SortDirection.Asc)                    => wishes.OrderBy(w => w.CreatedAt),
+            _                                         => wishes.OrderByDescending(w => w.CreatedAt),
+        };
+
+        var pagedData = await wishes
+            .Select(w => new { w.Id, w.Name, w.Price, w.Currency, w.Priority, w.ImagePath, w.IsFulfilled, w.CreatedByUserId, w.CreatedAt })
             .ToPagedResponseAsync(query.Request, ct);
 
         var wishIds = pagedData.Items.Select(w => w.Id).ToList();
@@ -39,7 +51,7 @@ public sealed class GetWishesHandler(
         var items = pagedData.Items
             .Select(w => new WishSummaryDto(
                 w.Id, w.Name, w.Price, w.Currency, w.Priority, w.ImagePath,
-                w.IsFulfilled, reservedIds.Contains(w.Id), wishesWithBadgeIds.Contains(w.Id)))
+                w.IsFulfilled, reservedIds.Contains(w.Id), wishesWithBadgeIds.Contains(w.Id), w.CreatedByUserId, w.CreatedAt))
             .ToList();
 
         return new PagedResponse<WishSummaryDto>(items, pagedData.Page, pagedData.PageSize, pagedData.TotalCount);

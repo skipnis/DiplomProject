@@ -7,4 +7,6 @@ namespace Wishapp.Web.Wishlists.Features.Wishlists.GetUserWishlists;
 public record GetUserWishlistsQuery(
     Guid? CurrentUserId,
     Guid TargetUserId,
-    PagedRequest Request) : IQuery<PagedResponse<WishlistSummaryDto>>;
+    PagedRequest Request,
+    WishlistSortBy SortBy = WishlistSortBy.CreatedAt,
+    SortDirection Direction = SortDirection.Desc) : IQuery<PagedResponse<WishlistSummaryDto>>;
