@@ -10,7 +10,6 @@ import { VISIBILITY_LABELS, CURRENCY_LABELS, getWishlistEmoji } from '../types';
 import type { WishlistSummaryDto, UserProfile, GiftProfileDto, FulfilledWishRecordDto, BlacklistItemDto } from '../types';
 import { Button, buttonVariants } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
-import { Badge } from '@/components/ui/badge';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Input } from '@/components/ui/input';
@@ -118,7 +117,7 @@ const BLACKLIST_PRESETS = [
 const MAX_BLACKLIST_ITEMS = 5;
 
 export default function ProfilePage() {
-  const { user, refreshUser, logout } = useAuth();
+  const { user, logout } = useAuth();
   const navigate = useNavigate();
   const toast = useToast();
   const [wishlists, setWishlists] = useState<WishlistSummaryDto[]>([]);

@@ -1,8 +1,7 @@
 import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { useAuth } from '../context/AuthContext';
 import { createWishlist } from '../api/wishlists';
-import { createEvent, linkWishlist, syncToGoogleCalendar } from '../api/events';
+import { createEvent, linkWishlist } from '../api/events';
 import { getFriends } from '../api/friends';
 import { getImageUrl } from '../api/client';
 import { useToast } from '../components/Toast';
@@ -25,7 +24,6 @@ const EMOJIS = ['🎁', '🎂', '🎮', '👗', '📚', '🏠', '✈️', '💄'
 export default function NewWishlistPage() {
   const navigate = useNavigate();
   const toast = useToast();
-  const { user } = useAuth();
   const [name, setName] = useState('');
   const [description, setDescription] = useState('');
   const [emoji, setEmoji] = useState('🎁');
@@ -86,7 +84,6 @@ export default function NewWishlistPage() {
       if (createEventEnabled && eventTitle.trim() && eventDate) {
         const event = await createEvent({ title: eventTitle.trim(), description: eventDescription.trim() || null, date: eventDate });
         await linkWishlist(event.id, wishlist.id);
-        if (user?.isGoogleCalendarConnected) await syncToGoogleCalendar(event.id).catch(() => {});
       }
       navigate(`/wishlists/${wishlist.id}`);
     } catch (e) {
@@ -251,9 +248,6 @@ export default function NewWishlistPage() {
                     />
                     <FieldError message={errors.event_description} />
                   </div>
-                  {user?.isGoogleCalendarConnected && (
-                    <p className="text-xs text-muted-foreground">Событие будет автоматически добавлено в Google Calendar.</p>
-                  )}
                 </CardContent>
               </Card>
             )}
