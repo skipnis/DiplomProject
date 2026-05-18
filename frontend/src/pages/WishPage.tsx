@@ -4,7 +4,7 @@ import { getWish, deleteWish, fulfillWish, unfulfillWish, duplicateWish, copyWis
 import { getFulfilledBadgeDefinitions } from '../api/catalog';
 import { reserveWish, cancelReservation, getMyReservations } from '../api/reservations';
 import { getWishlist, getMyWishlists } from '../api/wishlists';
-import { getImageUrl, API_URL } from '../api/client';
+import { getImageUrl } from '../api/client';
 
 import { useAuth } from '../context/AuthContext';
 import { useToast } from '../components/Toast';
@@ -25,34 +25,6 @@ const PRIORITY_BADGE: Record<number, string> = {
   4: 'bg-purple-100 text-purple-700',
 };
 
-function QrModal({ url, open, onClose }: { url: string; open: boolean; onClose: () => void }) {
-  const [blobUrl, setBlobUrl] = useState<string | null>(null);
-  const [failed, setFailed] = useState(false);
-
-  useEffect(() => {
-    if (!open) return;
-    setBlobUrl(null);
-    setFailed(false);
-    fetch(url, { credentials: 'include' })
-      .then((res) => { if (!res.ok) throw new Error(); return res.blob(); })
-      .then((blob) => setBlobUrl(URL.createObjectURL(blob)))
-      .catch(() => setFailed(true));
-    return () => { setBlobUrl((prev) => { if (prev) URL.revokeObjectURL(prev); return null; }); };
-  }, [open, url]);
-
-  return (
-    <Dialog open={open} onOpenChange={onClose}>
-      <DialogContent className="max-w-sm">
-        <DialogTitle>QR-код желания</DialogTitle>
-        {failed
-          ? <p className="text-center text-sm text-muted-foreground py-4">Не удалось загрузить QR-код</p>
-          : blobUrl
-            ? <img src={blobUrl} alt="QR код" className="w-full rounded-lg" />
-            : <div className="h-48 flex items-center justify-center text-muted-foreground text-sm">Загрузка...</div>}
-      </DialogContent>
-    </Dialog>
-  );
-}
 
 function CopyModal({ wishlists, onSelect, open, onClose }: { wishlists: WishlistSummaryDto[]; onSelect: (id: string) => void; open: boolean; onClose: () => void }) {
   return (
@@ -181,7 +153,6 @@ export default function WishPage() {
   const [isMineReserved, setIsMineReserved] = useState(false);
   const [loading, setLoading] = useState(true);
   const [shareLoading, setShareLoading] = useState(false);
-  const [showQr, setShowQr] = useState(false);
   const [showCopy, setShowCopy] = useState(false);
   const [copyWishlists, setCopyWishlists] = useState<WishlistSummaryDto[]>([]);
   const [showGiftBadgesModal, setShowGiftBadgesModal] = useState(false);
@@ -327,7 +298,6 @@ export default function WishPage() {
           <DropdownMenu>
             <DropdownMenuTrigger className={`${buttonVariants({ variant: 'ghost', size: 'sm' })} h-8 w-8 p-0 text-muted-foreground text-lg`}>⋯</DropdownMenuTrigger>
             <DropdownMenuContent align="end">
-              {!isSystem && <DropdownMenuItem onClick={() => setShowQr(true)}>📷 QR-код</DropdownMenuItem>}
               {canEdit && <DropdownMenuItem onClick={handleDuplicate}>Дублировать</DropdownMenuItem>}
               {me && <DropdownMenuItem onClick={handleOpenCopy}>Копировать в вишлист</DropdownMenuItem>}
               {(isOwner || (canEdit && wish.createdByUserId === me?.id)) && (
@@ -440,7 +410,6 @@ export default function WishPage() {
       </Card>
 
       <CopyModal wishlists={copyWishlists} onSelect={handleCopy} open={showCopy} onClose={() => setShowCopy(false)} />
-      {wishId && <QrModal url={`${API_URL}/wishlists/${wishlistId}/wishes/${wishId}/qr`} open={showQr} onClose={() => setShowQr(false)} />}
       {wishlistId && wishId && (
         <GiftBadgesModal
           open={showGiftBadgesModal}

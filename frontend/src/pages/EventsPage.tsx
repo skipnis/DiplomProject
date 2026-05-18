@@ -43,10 +43,11 @@ function EventCard({ event, highlighted }: { event: EventDto; highlighted: boole
       </div>
       <span className="text-xs text-muted-foreground">{formatDate(event.date)}</span>
       {event.description && <p className="text-xs text-muted-foreground mt-1 line-clamp-2">{event.description}</p>}
-      <div className="flex gap-1 mt-2 flex-wrap">
-        {event.isLinkedToGoogleCalendar && <Badge variant="secondary" className="text-xs">Google Calendar</Badge>}
-        {event.linkedWishlistId && <Badge variant="secondary" className="text-xs">Вишлист привязан</Badge>}
-      </div>
+      {event.linkedWishlistId && (
+        <div className="flex gap-1 mt-2">
+          <Badge variant="secondary" className="text-xs">Вишлист привязан</Badge>
+        </div>
+      )}
     </Link>
   );
 }

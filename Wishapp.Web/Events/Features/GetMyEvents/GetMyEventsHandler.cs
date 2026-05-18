@@ -23,7 +23,6 @@ public sealed class GetMyEventsHandler(ApplicationDbContext db)
                 e.Title,
                 e.Description,
                 e.Date,
-                e.GoogleCalendarEventId != null,
                 e.LinkedWishlistId,
                 e.CreatedAt))
             .ToPagedResponseAsync(query.Request, ct);

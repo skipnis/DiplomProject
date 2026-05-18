@@ -1,7 +1,6 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { useAuth } from '../context/AuthContext';
-import { createEvent, syncToGoogleCalendar } from '../api/events';
+import { createEvent } from '../api/events';
 import { useToast } from '../components/Toast';
 import { parseError } from '../utils/errors';
 import { eventSchema, parseZodErrors, type FormErrors } from '../lib/schemas';
@@ -16,7 +15,6 @@ import { FieldError } from '@/components/ui/field-error';
 export default function NewEventPage() {
   const navigate = useNavigate();
   const toast = useToast();
-  const { user } = useAuth();
 
   const [title, setTitle] = useState('');
   const [description, setDescription] = useState('');
@@ -36,7 +34,6 @@ export default function NewEventPage() {
     setSaving(true);
     try {
       const result = await createEvent({ title: title.trim(), description: description.trim() || null, date });
-      if (user?.isGoogleCalendarConnected) await syncToGoogleCalendar(result.id).catch(() => {});
       navigate(`/events/${result.id}`);
     } catch (e) {
       const fieldErrors = parseApiFieldErrors(e);

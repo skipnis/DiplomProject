@@ -9,6 +9,5 @@ public record GetMyProfileResponse(
     string? AvatarUrl,
     string? Bio,
     DateOnly? BirthDate,
-    bool IsGoogleCalendarConnected,
     bool IsOnboarded,
     bool ShowFulfilledWishes);

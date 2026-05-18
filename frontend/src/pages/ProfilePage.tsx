@@ -1,10 +1,8 @@
 import { useEffect, useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import { useGoogleLogin } from '@react-oauth/google';
 import { useAuth } from '../context/AuthContext';
 import { getMyWishlists, getMyFulfilledWishes } from '../api/wishlists';
-import { connectGoogleCalendar, disconnectGoogleCalendar, deleteMyAccount, requestAccountDeletion, getUserProfile, getMyGiftProfile, getMyBlacklist, addBlacklistItem, deleteBlacklistItem } from '../api/users';
-import { syncAllEvents } from '../api/events';
+import { deleteMyAccount, requestAccountDeletion, getUserProfile, getMyGiftProfile, getMyBlacklist, addBlacklistItem, deleteBlacklistItem } from '../api/users';
 import { getImageUrl } from '../api/client';
 import { useToast } from '../components/Toast';
 import { parseError } from '../utils/errors';
@@ -131,7 +129,6 @@ export default function ProfilePage() {
   const [blacklistInput, setBlacklistInput] = useState('');
   const [blacklistSaving, setBlacklistSaving] = useState(false);
   const [loading, setLoading] = useState(true);
-  const [calendarLoading, setCalendarLoading] = useState(false);
   const [deleteLoading, setDeleteLoading] = useState(false);
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [deleteStep, setDeleteStep] = useState<'confirm' | 'code'>('confirm');
@@ -174,25 +171,6 @@ export default function ProfilePage() {
     }
   }
 
-  const connectCalendar = useGoogleLogin({
-    flow: 'auth-code',
-    scope: 'https://www.googleapis.com/auth/calendar.events',
-    onSuccess: async (response) => {
-      setCalendarLoading(true);
-      try {
-        await connectGoogleCalendar(response.code);
-        await refreshUser();
-        await syncAllEvents().catch(() => {});
-        toast.success('Google Calendar подключён');
-      } catch (e) {
-        toast.error(parseError(e));
-      } finally {
-        setCalendarLoading(false);
-      }
-    },
-    onError: () => toast.error('Не удалось подключить Google Calendar'),
-  });
-
   async function handleRequestDeletion() {
     setDeleteLoading(true);
     try {
@@ -224,19 +202,6 @@ export default function ProfilePage() {
     if (!open) {
       setDeleteStep('confirm');
       setDeleteCode('');
-    }
-  }
-
-  async function handleDisconnectCalendar() {
-    setCalendarLoading(true);
-    try {
-      await disconnectGoogleCalendar();
-      await refreshUser();
-      toast.success('Google Calendar отключён');
-    } catch (e) {
-      toast.error(parseError(e));
-    } finally {
-      setCalendarLoading(false);
     }
   }
 
@@ -452,32 +417,6 @@ export default function ProfilePage() {
             <CardContent className="pt-6 space-y-3">
               <div className="font-semibold mb-1">Аккаунт</div>
               <Link to="/profile/edit" className={buttonVariants({ variant: 'secondary', size: 'sm' })}>Редактировать профиль</Link>
-            </CardContent>
-          </Card>
-
-          <Card>
-            <CardContent className="pt-6">
-              <div className="flex items-center justify-between mb-3">
-                <span className="font-semibold">Google Calendar</span>
-                {user.isGoogleCalendarConnected && <Badge variant="secondary" className="bg-green-100 text-green-700">Подключён</Badge>}
-              </div>
-              {user.isGoogleCalendarConnected ? (
-                <div className="flex items-center gap-3 flex-wrap">
-                  <span className="text-sm text-muted-foreground">Синхронизация событий работает автоматически.</span>
-                  <Button variant="ghost" size="sm" onClick={handleDisconnectCalendar} disabled={calendarLoading}>
-                    {calendarLoading ? 'Отключение...' : 'Отключить'}
-                  </Button>
-                </div>
-              ) : (
-                <div className="flex flex-col gap-2">
-                  <p className="text-sm text-muted-foreground">Подключите Google Calendar, чтобы синхронизировать события.</p>
-                  <div>
-                    <Button size="sm" onClick={() => connectCalendar()} disabled={calendarLoading}>
-                      {calendarLoading ? 'Подключение...' : 'Подключить Google Calendar'}
-                    </Button>
-                  </div>
-                </div>
-              )}
             </CardContent>
           </Card>
 

@@ -7,7 +7,6 @@ public sealed class Event
     public string Title { get; private set; } = null!;
     public string? Description { get; private set; }
     public DateOnly Date { get; private set; }
-    public string? GoogleCalendarEventId { get; private set; }
     public Guid? LinkedWishlistId { get; private set; }
     public DateTimeOffset CreatedAt { get; private set; }
 
@@ -32,10 +31,6 @@ public sealed class Event
         Description = description;
         Date = date;
     }
-
-    public void SetGoogleCalendarEventId(string id) => GoogleCalendarEventId = id;
-
-    public void ClearGoogleCalendarSync() => GoogleCalendarEventId = null;
 
     public void LinkWishlist(Guid wishlistId) => LinkedWishlistId = wishlistId;
 

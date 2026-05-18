@@ -5,6 +5,5 @@ public record EventDto(
     string Title,
     string? Description,
     DateOnly Date,
-    bool IsLinkedToGoogleCalendar,
     Guid? LinkedWishlistId,
     DateTimeOffset CreatedAt);

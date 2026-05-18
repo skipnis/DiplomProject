@@ -32,7 +32,6 @@ public sealed class GetEventHandler(ApplicationDbContext db)
             @event.Title,
             @event.Description,
             @event.Date,
-            @event.GoogleCalendarEventId != null,
             @event.LinkedWishlistId,
             @event.CreatedAt);
     }

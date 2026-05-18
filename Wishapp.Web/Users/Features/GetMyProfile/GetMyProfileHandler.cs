@@ -24,10 +24,6 @@ public sealed class GetMyProfileHandler(
             return Error.NotFound("Users.NotFound", "User not found");
         }
 
-        var isGoogleCalendarConnected = await db.UserExternalTokens
-            .AsNoTracking()
-            .AnyAsync(t => t.UserId == userId && t.Provider == "google" && t.Scope == "calendar", ct);
-
         return new GetMyProfileResponse(
             user.Id,
             user.DisplayName,
@@ -37,7 +33,6 @@ public sealed class GetMyProfileHandler(
             user.AvatarUrl,
             user.Bio ?? string.Empty,
             user.BirthDate,
-            isGoogleCalendarConnected,
             user.IsOnboarded,
             user.ShowFulfilledWishes);
     }

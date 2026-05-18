@@ -10,5 +10,4 @@ public interface IUsersApi
     Task<List<Guid>> FilterExistingIdsAsync(List<Guid> userIds, CancellationToken ct = default);
     Task<Dictionary<Guid, string>> GetUsernamesAsync(List<Guid> userIds, CancellationToken ct = default);
     Task<Dictionary<Guid, UserPublicInfo>> GetUsersPublicInfoAsync(List<Guid> userIds, CancellationToken ct = default);
-    Task<Result<string>> GetExternalRefreshTokenAsync(Guid userId, string provider, string scope, CancellationToken ct = default);
 }

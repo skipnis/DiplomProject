@@ -51,7 +51,6 @@ export interface MyProfile {
   avatarUrl: string | null;
   bio: string | null;
   birthDate: string | null;
-  isGoogleCalendarConnected: boolean;
   isOnboarded: boolean;
   showFulfilledWishes: boolean;
 }
@@ -229,7 +228,6 @@ export interface EventDto {
   title: string;
   description: string | null;
   date: string;
-  isLinkedToGoogleCalendar: boolean;
   linkedWishlistId: string | null;
   createdAt: string;
 }

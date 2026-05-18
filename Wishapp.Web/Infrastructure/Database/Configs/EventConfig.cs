@@ -19,10 +19,6 @@ public class EventConfig : IEntityTypeConfiguration<Event>
             .HasMaxLength(2000)
             .HasColumnType("text");
 
-        builder.Property(e => e.GoogleCalendarEventId)
-            .HasMaxLength(200)
-            .HasColumnType("text");
-
         builder.HasIndex(e => e.OwnerId);
 
         builder.HasIndex(e => new { e.OwnerId, e.Date });

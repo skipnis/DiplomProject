@@ -79,12 +79,6 @@ public static partial class WishlistsEndpoints
         wishlists.MapPut("/{id:guid}/members/{userId:guid}/role", UpdateMemberRole)
             .AddEndpointFilter<ValidationFilter<UpdateMemberRoleRequest>>();
         
-        wishlists.MapGet("/{id:guid}/qr", GetWishlistQr)
-            .AllowAnonymous();
-        
-        wishlists.MapGet("/{id:guid}/wishes/{wishId:guid}/qr", GetWishQr)
-            .AllowAnonymous();
-
         wishlists.MapPost("/{id:guid}/wishes/{wishId:guid}/share/regenerate", RegenerateWishShareToken);
 
         wishlists.MapGet("/fulfilled", GetMyFulfilledWishes);

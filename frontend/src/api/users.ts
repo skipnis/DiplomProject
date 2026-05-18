@@ -27,14 +27,6 @@ export function searchUsers(displayName: string): Promise<{ items: UserSearchRes
   return apiGet<{ items: UserSearchResult[] }>(`/users/search?displayName=${encodeURIComponent(displayName)}`);
 }
 
-export function connectGoogleCalendar(code: string): Promise<void> {
-  return apiPost<void>('/users/me/google-calendar', { code });
-}
-
-export function disconnectGoogleCalendar(): Promise<void> {
-  return apiDelete<void>('/users/me/google-calendar');
-}
-
 export function uploadAvatar(file: File): Promise<{ avatarUrl: string }> {
   const formData = new FormData();
   formData.append('file', file);

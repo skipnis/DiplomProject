@@ -32,14 +32,3 @@ export function linkWishlist(id: string, wishlistId: string | null): Promise<voi
   return apiPut(`/events/${id}/wishlist`, { wishlistId });
 }
 
-export function syncAllEvents(): Promise<void> {
-  return apiPost('/events/google-calendar/sync-all', {});
-}
-
-export function syncToGoogleCalendar(id: string): Promise<void> {
-  return apiPost(`/events/${id}/google-calendar/sync`, {});
-}
-
-export function unsyncFromGoogleCalendar(id: string): Promise<void> {
-  return apiDelete(`/events/${id}/google-calendar/sync`);
-}

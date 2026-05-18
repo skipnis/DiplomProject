@@ -17,7 +17,6 @@ using Wishapp.Web.Infrastructure.Interfaces;
 using Wishapp.Web.Infrastructure.Minio;
 using Wishapp.Web.Infrastructure.Parser;
 using Wishapp.Web.Infrastructure.Email;
-using Wishapp.Web.Infrastructure.QrCode;
 using Wishapp.Web.Users.Features.GoogleSignIn;
 
 namespace Wishapp.Web.Infrastructure;
@@ -48,8 +47,6 @@ public static class DependencyInjection
             services.AddHandlers();
 
             services.AddParsing();
-
-            services.AddQrCodeGeneration();
 
             services.AddApiDocumentation();
             
@@ -219,12 +216,6 @@ public static class DependencyInjection
             return services;
         }
 
-        private IServiceCollection AddQrCodeGeneration()
-        {
-            services.AddSingleton<IQrCodeService, QrCodeService>();
-
-            return services;
-        }
         
         private IServiceCollection AddApiDocumentation()
         {

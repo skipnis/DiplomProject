@@ -1,7 +1,6 @@
 using Wishapp.Web.Infrastructure.Authentication;
 using Wishapp.Web.Infrastructure.Validation;
 using Wishapp.Web.Users.Features.AddBlacklistItem;
-using Wishapp.Web.Users.Features.ConnectGoogleCalendar;
 using Wishapp.Web.Users.Features.DeleteAvatar;
 using Wishapp.Web.Users.Features.DeleteMyAccount;
 using Wishapp.Web.Users.Features.RequestDeleteMyAccount;
@@ -40,11 +39,6 @@ public static partial class UsersEndpoints
         usersEndpoints.MapGet("/{id:guid}/fulfilled-wishes", GetUserFulfilledWishes).AllowAnonymous();
 
         usersEndpoints.MapGet("/search", SearchUsers).Produces(401);;
-
-        usersEndpoints.MapPost("/me/google-calendar", ConnectGoogleCalendar).Produces(401)
-            .AddEndpointFilter<ValidationFilter<ConnectGoogleCalendarRequest>>();
-
-        usersEndpoints.MapDelete("/me/google-calendar", DisconnectGoogleCalendar).Produces(401);
 
         usersEndpoints.MapPost("/me/avatar", UploadAvatar).Produces(401)
             .DisableAntiforgery();

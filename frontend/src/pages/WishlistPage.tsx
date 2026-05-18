@@ -6,7 +6,7 @@ import { getFulfilledBadgeDefinitions } from '../api/catalog';
 import { Select, SelectContent, SelectItem, SelectTrigger } from '@/components/ui/select';
 import { reserveWish, cancelReservation, getMyReservations } from '../api/reservations';
 import { getUserProfile } from '../api/users';
-import { getImageUrl, API_URL } from '../api/client';
+import { getImageUrl } from '../api/client';
 import { useAuth } from '../context/AuthContext';
 import { useToast } from '../components/Toast';
 import { parseError, ApiError } from '../utils/errors';
@@ -20,34 +20,6 @@ import { Separator } from '@/components/ui/separator';
 import { Dialog, DialogContent, DialogTitle } from '@/components/ui/dialog';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
 
-function QrModal({ url, open, onClose }: { url: string; open: boolean; onClose: () => void }) {
-  const [blobUrl, setBlobUrl] = useState<string | null>(null);
-  const [failed, setFailed] = useState(false);
-
-  useEffect(() => {
-    if (!open) return;
-    setBlobUrl(null);
-    setFailed(false);
-    fetch(url, { credentials: 'include' })
-      .then((res) => { if (!res.ok) throw new Error(); return res.blob(); })
-      .then((blob) => setBlobUrl(URL.createObjectURL(blob)))
-      .catch(() => setFailed(true));
-    return () => { setBlobUrl((prev) => { if (prev) URL.revokeObjectURL(prev); return null; }); };
-  }, [open, url]);
-
-  return (
-    <Dialog open={open} onOpenChange={onClose}>
-      <DialogContent className="max-w-sm">
-        <DialogTitle>QR-код</DialogTitle>
-        {failed
-          ? <p className="text-center text-sm text-muted-foreground py-4">Не удалось загрузить QR-код</p>
-          : blobUrl
-            ? <img src={blobUrl} alt="QR код" className="w-full rounded-lg" />
-            : <div className="h-48 flex items-center justify-center text-muted-foreground text-sm">Загрузка...</div>}
-      </DialogContent>
-    </Dialog>
-  );
-}
 
 function GiftBadgesModal({ open, onClose, onSubmit, definitions }: {
   open: boolean;
@@ -180,7 +152,6 @@ export default function WishlistPage() {
   const [myReservationIds, setMyReservationIds] = useState<Set<string>>(new Set());
   const [loading, setLoading] = useState(true);
   const [wishesLoading, setWishesLoading] = useState(false);
-  const [showQr, setShowQr] = useState(false);
   const [accessDenied, setAccessDenied] = useState(false);
   const [notFound, setNotFound] = useState(false);
   const [wishSortKey, setWishSortKey] = useState('CreatedAt_Desc');
@@ -406,9 +377,6 @@ export default function WishlistPage() {
               <DropdownMenu>
                 <DropdownMenuTrigger className={`${buttonVariants({ variant: 'ghost', size: 'sm' })} h-8 w-8 p-0 text-muted-foreground text-lg`}>⋯</DropdownMenuTrigger>
                 <DropdownMenuContent align="end">
-                  {wishlist.visibility === 0 && !isSystem && (
-                    <DropdownMenuItem onClick={() => setShowQr(true)}>📷 QR-код</DropdownMenuItem>
-                  )}
                   {(wishlist.visibility === 0 || isOwner) && !isSystem && (
                     <DropdownMenuItem onClick={handleShare}>Поделиться</DropdownMenuItem>
                   )}
@@ -555,7 +523,6 @@ export default function WishlistPage() {
         </>
       )}
 
-      <QrModal url={`${API_URL}/wishlists/${id}/qr`} open={showQr} onClose={() => setShowQr(false)} />
 
       <GiftBadgesModal
         open={showGiftBadgesModal}

@@ -1,8 +1,7 @@
 import { useEffect, useState } from 'react';
 import { Link, useNavigate, useParams } from 'react-router-dom';
-import { getEvent, deleteEvent, syncToGoogleCalendar, linkWishlist } from '../api/events';
+import { getEvent, deleteEvent, linkWishlist } from '../api/events';
 import { getMyWishlists } from '../api/wishlists';
-import { useAuth } from '../context/AuthContext';
 import { useToast } from '../components/Toast';
 import { parseError } from '../utils/errors';
 import type { EventDto, WishlistSummaryDto } from '../types';
@@ -20,12 +19,9 @@ export default function EventPage() {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
   const toast = useToast();
-  const { user } = useAuth();
-
   const [event, setEvent] = useState<EventDto | null>(null);
   const [wishlists, setWishlists] = useState<WishlistSummaryDto[]>([]);
   const [loading, setLoading] = useState(true);
-  const [syncing, setSyncing] = useState(false);
   const [deleting, setDeleting] = useState(false);
   const [linkingWishlist, setLinkingWishlist] = useState(false);
   const [showWishlistPicker, setShowWishlistPicker] = useState(false);
@@ -37,14 +33,6 @@ export default function EventPage() {
       .catch((e) => toast.error(parseError(e)))
       .finally(() => setLoading(false));
   }, [id]);
-
-  async function handleSync() {
-    if (!id) return;
-    setSyncing(true);
-    try { await syncToGoogleCalendar(id); setEvent(await getEvent(id)); toast.success('Добавлено в Google Calendar'); }
-    catch (e) { toast.error(parseError(e)); }
-    finally { setSyncing(false); }
-  }
 
   async function handleDelete() {
     if (!id || !window.confirm('Удалить это событие?')) return;
@@ -108,18 +96,6 @@ export default function EventPage() {
               </div>
             </>
           )}
-          <Separator />
-          <div className="flex items-center justify-between gap-4">
-            <span className="text-sm text-muted-foreground">Google Calendar</span>
-            <span>
-              {event.isLinkedToGoogleCalendar
-                ? <Badge className="bg-green-100 text-green-700 hover:bg-green-100">Синхронизировано</Badge>
-                : user?.isGoogleCalendarConnected
-                ? <Button variant="secondary" size="sm" onClick={handleSync} disabled={syncing}>{syncing ? 'Добавление...' : 'Добавить в Google Calendar'}</Button>
-                : <span className="text-sm text-muted-foreground">Не синхронизировано</span>
-              }
-            </span>
-          </div>
         </CardContent>
       </Card>
 
