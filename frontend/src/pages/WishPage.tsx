@@ -192,6 +192,7 @@ export default function WishPage() {
   }, [wishlistId, wishId, me]);
 
   const handleReserve = async () => {
+    if (!me) { toast.warning('Войдите в аккаунт, чтобы забронировать желание'); return; }
     if (!wishlistId || !wishId || !wish) return;
     try {
       if (isMineReserved) { await cancelReservation(wishId); setIsMineReserved(false); setWish((prev) => prev ? { ...prev, isReserved: false } : prev); }
@@ -376,7 +377,7 @@ export default function WishPage() {
                 {wish.isFulfilled ? '↩ Отметить не исполненным' : '✓ Отметить исполненным'}
               </Button>
             )}
-            {me && !isOwner && !wish.isFulfilled && !isSystem && (
+            {!isOwner && !wish.isFulfilled && !isSystem && (
               <Button
                 variant={isMineReserved ? 'destructive' : wish.isReserved ? 'ghost' : 'default'}
                 onClick={handleReserve}

@@ -377,7 +377,7 @@ export default function WishlistPage() {
               <DropdownMenu>
                 <DropdownMenuTrigger className={`${buttonVariants({ variant: 'ghost', size: 'sm' })} h-8 w-8 p-0 text-muted-foreground text-lg`}>⋯</DropdownMenuTrigger>
                 <DropdownMenuContent align="end">
-                  {(wishlist.visibility === 0 || isOwner) && !isSystem && (
+                  {(wishlist.visibility === 0 || isOwner) && wishlist.visibility !== 3 && !isSystem && (
                     <DropdownMenuItem onClick={handleShare}>Поделиться</DropdownMenuItem>
                   )}
                   {canEdit && (
@@ -473,9 +473,9 @@ export default function WishlistPage() {
                     </Button>
                   </div>
                 )}
-                {me && !isOwner && !wish.isFulfilled && !isSystem && (
+                {!isOwner && !wish.isFulfilled && !isSystem && (
                   <div className="flex items-center gap-1 mt-2">
-                    <Button size="sm" variant={iMineReserved ? 'destructive' : wish.isReserved ? 'ghost' : 'secondary'} onClick={() => { if (iMineReserved) { setPendingCancelReserveWish(wish); } else if (!wish.isReserved) { setPendingReserveWish(wish); } }} disabled={wish.isReserved && !iMineReserved}>
+                    <Button size="sm" variant={iMineReserved ? 'destructive' : wish.isReserved ? 'ghost' : 'secondary'} onClick={() => { if (!me) { toast.warning('Войдите в аккаунт, чтобы забронировать желание'); return; } if (iMineReserved) { setPendingCancelReserveWish(wish); } else if (!wish.isReserved) { setPendingReserveWish(wish); } }} disabled={wish.isReserved && !iMineReserved}>
                       {iMineReserved ? 'Отменить бронь' : wish.isReserved ? 'Забронировано' : 'Забронировать'}
                     </Button>
                   </div>
