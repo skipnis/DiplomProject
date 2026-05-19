@@ -5,6 +5,8 @@
 
 # dotenv files
 .env
+.env.dev
+.env.demo
 .env.test
 
 # User-specific files
