@@ -14,7 +14,7 @@ using Wishapp.Web.Infrastructure.Authorization.Handlers;
 using Wishapp.Web.Infrastructure.Database;
 using Wishapp.Web.Infrastructure.Exceptions;
 using Wishapp.Web.Infrastructure.Interfaces;
-using Wishapp.Web.Infrastructure.Minio;
+using Wishapp.Web.Infrastructure.ObjectStorage;
 using Wishapp.Web.Infrastructure.Parser;
 using Wishapp.Web.Infrastructure.Email;
 using Wishapp.Web.Users.Features.GoogleSignIn;
@@ -34,7 +34,7 @@ public static class DependencyInjection
 
             services.AddDatabase(connectionString);
             
-            services.AddMinio(configuration);
+            services.AddObjectStorage(configuration);
 
             services.AddHealthChecks(connectionString);
 
@@ -143,22 +143,22 @@ public static class DependencyInjection
             return services;
         }
         
-        private IServiceCollection AddMinio(IConfiguration configuration)
+        private IServiceCollection AddObjectStorage(IConfiguration configuration)
         {
-            services.AddOptions<MinioOptions>()
-                .BindConfiguration(MinioOptions.SectionName)
+            services.AddOptions<ObjectStorageOptions>()
+                .BindConfiguration(ObjectStorageOptions.SectionName)
                 .ValidateDataAnnotations()
                 .ValidateOnStart();
 
-            var minioOptions = configuration.GetSection(MinioOptions.SectionName).Get<MinioOptions>()!;
+            var storageOptions = configuration.GetSection(ObjectStorageOptions.SectionName).Get<ObjectStorageOptions>()!;
 
             services.AddMinio(configureClient => configureClient
-                .WithEndpoint(minioOptions.Endpoint)
-                .WithCredentials(minioOptions.AccessKey, minioOptions.SecretKey)
-                .WithSSL(false)
+                .WithEndpoint(storageOptions.Endpoint)
+                .WithCredentials(storageOptions.AccessKey, storageOptions.SecretKey)
+                .WithSSL(storageOptions.UseSSL)
                 .Build());
 
-            services.AddSingleton<IStorageService, MinioStorageService>();
+            services.AddSingleton<IStorageService, ObjectStorageService>();
 
             return services;
         }

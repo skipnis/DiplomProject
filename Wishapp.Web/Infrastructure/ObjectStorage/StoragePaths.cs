@@ -1,4 +1,4 @@
-namespace Wishapp.Web.Infrastructure.Minio;
+namespace Wishapp.Web.Infrastructure.ObjectStorage;
 
 public static class StoragePaths
 {

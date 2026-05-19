@@ -3,13 +3,13 @@ using Minio;
 using Minio.DataModel.Args;
 using Wishapp.Web.Infrastructure.Interfaces;
 
-namespace Wishapp.Web.Infrastructure.Minio;
+namespace Wishapp.Web.Infrastructure.ObjectStorage;
 
-public sealed class MinioStorageService(
+public sealed class ObjectStorageService(
     IMinioClient client,
-    IOptions<MinioOptions> options) : IStorageService
+    IOptions<ObjectStorageOptions> options) : IStorageService
 {
-    private readonly MinioOptions _options = options.Value;
+    private readonly ObjectStorageOptions _options = options.Value;
 
     public async Task<string> UploadAsync(
         string path,
@@ -27,7 +27,7 @@ public sealed class MinioStorageService(
 
         await client.PutObjectAsync(args, ct);
 
-        return $"{_options.PublicUrl}/{_options.BucketName}/{path}";
+        return $"{_options.PublicUrl}/{path}";
     }
 
     public async Task DeleteAsync(string path, CancellationToken ct = default)

@@ -4,7 +4,7 @@ using Wishapp.Web.Common.Types;
 using Wishapp.Web.Infrastructure.Database;
 using Wishapp.Web.Infrastructure.Interfaces;
 using Wishapp.Web.Common;
-using Wishapp.Web.Infrastructure.Minio;
+using Wishapp.Web.Infrastructure.ObjectStorage;
 
 namespace Wishapp.Web.Admin.Features.Collections.UploadCover;
 

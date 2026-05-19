@@ -3,7 +3,7 @@ using Wishapp.Web.Common.Interfaces;
 using Wishapp.Web.Common.Types;
 using Wishapp.Web.Infrastructure.Database;
 using Wishapp.Web.Infrastructure.Interfaces;
-using Wishapp.Web.Infrastructure.Minio;
+using Wishapp.Web.Infrastructure.ObjectStorage;
 
 namespace Wishapp.Web.Wishlists.Features.Wishlists.CopyWish;
 
