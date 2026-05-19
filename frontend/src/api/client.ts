@@ -1,12 +1,12 @@
 import { ApiError } from '../utils/errors';
 
 export const API_URL = import.meta.env.VITE_API_URL || '/api';
-export const MINIO_URL = import.meta.env.VITE_MINIO_URL || 'http://192.168.1.11:9000/wishapp';
+export const STORAGE_URL = import.meta.env.VITE_STORAGE_URL || 'http://localhost:9000/wishes';
 
 export function getImageUrl(imagePath: string | null | undefined): string | null {
   if (!imagePath) return null;
   if (imagePath.startsWith('http')) return imagePath;
-  return `${MINIO_URL}/${imagePath}`;
+  return `${STORAGE_URL}/${imagePath}`;
 }
 
 export function getQrImageUrl(path: string): string {

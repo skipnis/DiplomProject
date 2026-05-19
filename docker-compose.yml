@@ -46,7 +46,7 @@ services:
       context: ./frontend
       args:
         VITE_API_URL: /api
-        VITE_MINIO_URL: /storage/wishes
+        VITE_STORAGE_URL: ${ObjectStorage__PublicUrl}
     restart: unless-stopped
 
   nginx:
