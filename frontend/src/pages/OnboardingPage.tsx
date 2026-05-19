@@ -61,6 +61,17 @@ export default function OnboardingPage() {
 
   const [saving, setSaving] = useState(false);
 
+  const validateBirthDate = (date: string): string | null => {
+    const parsed = new Date(date);
+    const minAgeDate = new Date();
+    minAgeDate.setFullYear(minAgeDate.getFullYear() - 6);
+    const maxAgeDate = new Date();
+    maxAgeDate.setFullYear(maxAgeDate.getFullYear() - 120);
+    if (parsed > minAgeDate) return 'Возраст должен быть не менее 6 лет';
+    if (parsed < maxAgeDate) return 'Введите корректную дату рождения';
+    return null;
+  };
+
   useEffect(() => {
     if (user) setDisplayName(user.displayName);
   }, [user]);
@@ -135,6 +146,18 @@ export default function OnboardingPage() {
     setBlacklistItems((prev) => prev.filter((i) => i !== item));
   };
 
+  const handleStep3Next = () => {
+    if (birthDate) {
+      const dateError = validateBirthDate(birthDate);
+      if (dateError) {
+        setErrors((prev) => ({ ...prev, birthDate: dateError }));
+        return;
+      }
+    }
+    setErrors((prev) => ({ ...prev, birthDate: '' }));
+    setStep(4);
+  };
+
   const handleFinish = async (skipBlacklist = false) => {
     setSaving(true);
     try {
@@ -158,8 +181,13 @@ export default function OnboardingPage() {
         setStep(1);
       } else {
         const fieldErrors = parseApiFieldErrors(err);
-        if (fieldErrors) { setErrors((prev) => ({ ...prev, ...fieldErrors })); setStep(1); }
-        else toast.error(parseError(err));
+        if (fieldErrors) {
+          setErrors((prev) => ({ ...prev, ...fieldErrors }));
+          if (fieldErrors.birthDate) setStep(3);
+          else setStep(1);
+        } else {
+          toast.error(parseError(err));
+        }
       }
     } finally {
       setSaving(false);
@@ -285,8 +313,8 @@ export default function OnboardingPage() {
                   />
                 </div>
                 <div className="flex gap-2 mt-2">
-                  <Button variant="outline" className="flex-1" onClick={() => setStep(3)}>
-                    Пропустить
+                  <Button variant="outline" className="flex-none" onClick={() => setStep(1)}>
+                    ← Назад
                   </Button>
                   <Button className="flex-1" disabled={avatarUploading} onClick={() => setStep(3)}>
                     Далее →
@@ -307,14 +335,16 @@ export default function OnboardingPage() {
                     id="birthDate"
                     type="date"
                     value={birthDate}
-                    onChange={(e) => setBirthDate(e.target.value)}
+                    onChange={(e) => { setBirthDate(e.target.value); clearError('birthDate'); }}
+                    aria-invalid={!!errors.birthDate}
                   />
+                  <FieldError message={errors.birthDate} />
                 </div>
                 <div className="flex gap-2 mt-2">
-                  <Button variant="outline" className="flex-1" onClick={() => setStep(4)}>
-                    Пропустить
+                  <Button variant="outline" className="flex-none" onClick={() => setStep(2)}>
+                    ← Назад
                   </Button>
-                  <Button className="flex-1" onClick={() => setStep(4)}>
+                  <Button className="flex-1" onClick={handleStep3Next}>
                     Далее →
                   </Button>
                 </div>
@@ -390,22 +420,32 @@ export default function OnboardingPage() {
 
                 <p className="text-xs text-muted-foreground text-right">{blacklistItems.length}/{MAX_BLACKLIST_ITEMS}</p>
 
-                <div className="flex gap-2 mt-2">
+                <div className="flex items-center gap-2 mt-2">
                   <Button
                     variant="outline"
-                    className="flex-1"
+                    className="flex-none"
                     disabled={saving}
-                    onClick={() => handleFinish(true)}
+                    onClick={() => setStep(3)}
                   >
-                    Пропустить
+                    ← Назад
                   </Button>
-                  <Button
-                    className="flex-1"
-                    disabled={saving}
-                    onClick={() => handleFinish(false)}
-                  >
-                    {saving ? 'Сохранение...' : 'Завершить'}
-                  </Button>
+                  <div className="flex gap-2 flex-1">
+                    <Button
+                      variant="outline"
+                      className="flex-1"
+                      disabled={saving}
+                      onClick={() => handleFinish(true)}
+                    >
+                      Пропустить
+                    </Button>
+                    <Button
+                      className="flex-1"
+                      disabled={saving}
+                      onClick={() => handleFinish(false)}
+                    >
+                      {saving ? 'Сохранение...' : 'Завершить'}
+                    </Button>
+                  </div>
                 </div>
               </div>
             )}
