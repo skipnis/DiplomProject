@@ -26,7 +26,6 @@ export default function LoginPage() {
   const [code, setCode] = useState('');
   const [loading, setLoading] = useState(false);
   const [cooldown, setCooldown] = useState(0);
-  const [rememberMe, setRememberMe] = useState(false);
   const intervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
   useEffect(() => {
@@ -51,7 +50,7 @@ export default function LoginPage() {
   const handleGoogleSuccess = async (credential: { credential?: string }) => {
     if (!credential.credential) return;
     try {
-      await googleSignIn(credential.credential, rememberMe);
+      await googleSignIn(credential.credential);
       await login();
       navigate('/wishlists', { replace: true });
     } catch (e) {
@@ -81,7 +80,7 @@ export default function LoginPage() {
   const handleVerifyOtp = async () => {
     setLoading(true);
     try {
-      await verifyOtp(email, code, rememberMe);
+      await verifyOtp(email, code);
       await login();
       navigate('/wishlists', { replace: true });
     } catch (e) {
@@ -152,15 +151,7 @@ export default function LoginPage() {
               >
                 Войти по email
               </button>
-              <label className="flex items-center gap-2 cursor-pointer self-center">
-                <input
-                  type="checkbox"
-                  checked={rememberMe}
-                  onChange={e => setRememberMe(e.target.checked)}
-                  className="w-4 h-4 rounded border-border accent-primary cursor-pointer"
-                />
-                <span className="text-sm text-muted-foreground">Запомнить меня</span>
-              </label>
+
             </div>
           )}
 

@@ -66,7 +66,7 @@ public static partial class UsersEndpoints
         return app;
     }
 
-    private static void SetAuthCookies(HttpContext httpContext, string accessToken, string refreshToken, bool rememberMe)
+    private static void SetAuthCookies(HttpContext httpContext, string accessToken, string refreshToken)
     {
         var isSecure = httpContext.Request.IsHttps;
 
@@ -76,26 +76,17 @@ public static partial class UsersEndpoints
             Secure = isSecure,
             SameSite = SameSiteMode.Lax,
             Path = "/",
-            Expires = rememberMe ? DateTimeOffset.UtcNow.AddDays(30) : null
+            Expires = DateTimeOffset.UtcNow.AddDays(30)
         };
 
         httpContext.Response.Cookies.Append(CookieNames.AccessToken, accessToken, cookieOptions);
         httpContext.Response.Cookies.Append(CookieNames.RefreshToken, refreshToken, cookieOptions);
-        httpContext.Response.Cookies.Append(CookieNames.RememberMe, "true", new CookieOptions
-        {
-            HttpOnly = true,
-            Secure = isSecure,
-            SameSite = SameSiteMode.Lax,
-            Path = "/",
-            Expires = rememberMe ? DateTimeOffset.UtcNow.AddDays(30) : null
-        });
     }
 
     private static IResult Logout(HttpContext httpContext)
     {
         httpContext.Response.Cookies.Delete(CookieNames.AccessToken);
         httpContext.Response.Cookies.Delete(CookieNames.RefreshToken);
-        httpContext.Response.Cookies.Delete(CookieNames.RememberMe);
         return Results.Ok();
     }
 }
