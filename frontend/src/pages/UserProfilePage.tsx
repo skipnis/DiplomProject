@@ -129,6 +129,11 @@ export default function UserProfilePage() {
     }
   }, [id, me]);
 
+  const handleShareProfile = () => {
+    navigator.clipboard.writeText(`${window.location.origin}/users/${id}`);
+    toast.success('Ссылка скопирована');
+  };
+
   const handleFriendAction = async () => {
     if (!id) return;
     setActionLoading(true);
@@ -176,19 +181,22 @@ export default function UserProfilePage() {
                 </div>
               )}
             </div>
-            {me && !isMe && (
-              <Button
-                variant={friendStatus === 'friends' ? 'destructive' : friendStatus === 'request_sent' ? 'ghost' : 'default'}
-                onClick={handleFriendAction}
-                disabled={actionLoading}
-              >
-                {friendStatus === 'none' && '+ Добавить в друзья'}
-                {friendStatus === 'friends' && 'Убрать из друзей'}
-                {friendStatus === 'request_sent' && 'Заявка отправлена'}
-                {friendStatus === 'request_received' && '✓ Принять заявку'}
-              </Button>
-            )}
-            {isMe && <Link to="/profile/edit" className={buttonVariants({ variant: 'secondary' })}>Редактировать</Link>}
+            <div className="flex gap-2">
+              <Button variant="outline" onClick={handleShareProfile}>Поделиться</Button>
+              {me && !isMe && (
+                <Button
+                  variant={friendStatus === 'friends' ? 'destructive' : friendStatus === 'request_sent' ? 'ghost' : 'default'}
+                  onClick={handleFriendAction}
+                  disabled={actionLoading}
+                >
+                  {friendStatus === 'none' && '+ Добавить в друзья'}
+                  {friendStatus === 'friends' && 'Убрать из друзей'}
+                  {friendStatus === 'request_sent' && 'Заявка отправлена'}
+                  {friendStatus === 'request_received' && '✓ Принять заявку'}
+                </Button>
+              )}
+              {isMe && <Link to="/profile/edit" className={buttonVariants({ variant: 'secondary' })}>Редактировать</Link>}
+            </div>
           </div>
         </CardContent>
       </Card>

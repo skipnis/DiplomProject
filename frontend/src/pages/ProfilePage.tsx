@@ -196,6 +196,11 @@ export default function ProfilePage() {
     }
   }
 
+  function handleShareProfile() {
+    navigator.clipboard.writeText(`${window.location.origin}/users/${user!.id}`);
+    toast.success('Ссылка скопирована');
+  }
+
   function handleDeleteDialogOpenChange(open: boolean) {
     setDeleteDialogOpen(open);
     if (!open) {
@@ -233,6 +238,7 @@ export default function ProfilePage() {
                 </div>
               )}
             </div>
+            <Button variant="outline" onClick={handleShareProfile}>Поделиться</Button>
           </div>
         </CardContent>
       </Card>
