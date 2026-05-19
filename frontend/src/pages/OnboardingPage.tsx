@@ -88,6 +88,7 @@ export default function OnboardingPage() {
     setAvatarUploading(true);
     try {
       await uploadAvatar(file);
+      setPreviewAvatarUrl(null);
       await refreshUser();
     } catch (err) {
       setPreviewAvatarUrl(null);

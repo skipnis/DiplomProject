@@ -55,6 +55,7 @@ export default function EditProfilePage() {
 
     try {
       await uploadAvatar(file);
+      setPreviewAvatarUrl(null);
       await refreshUser();
       toast.success('Аватар обновлён');
     } catch (err) {

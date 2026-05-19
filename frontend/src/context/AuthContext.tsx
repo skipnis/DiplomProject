@@ -51,7 +51,12 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   };
 
   const refreshUser = async () => {
-    await fetchUser();
+    try {
+      const profile = await getMyProfile();
+      setUser(profile);
+    } catch {
+      // keep existing user state on refresh failure
+    }
   };
 
   return (
