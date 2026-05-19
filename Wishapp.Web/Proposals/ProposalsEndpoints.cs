@@ -22,7 +22,8 @@ public static partial class ProposalsEndpoints
         proposals.MapPatch("/{id:guid}/react", ReactToProposal)
             .AddEndpointFilter<ValidationFilter<ReactToProposalRequest>>();
 
-        proposals.MapPost("/{id:guid}/image", UploadImage);
+        proposals.MapPost("/{id:guid}/image", UploadImage)
+            .DisableAntiforgery();
 
         return app;
     }

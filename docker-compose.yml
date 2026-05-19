@@ -47,6 +47,7 @@ services:
       args:
         VITE_API_URL: /api
         VITE_STORAGE_URL: ${ObjectStorage__PublicUrl}
+        VITE_GOOGLE_CLIENT_ID: ${VITE_GOOGLE_CLIENT_ID}
     restart: unless-stopped
 
   nginx:
