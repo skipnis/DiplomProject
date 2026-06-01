@@ -1,8 +1,6 @@
 <Solution>
   <Folder Name="/Solution Items/">
     <File Path=".env" />
-    <File Path=".env.demo" />
-    <File Path=".env.example" />
     <File Path="Directory.Packages.props" />
     <File Path="docker-compose.yml" />
     <File Path="docs\use-cases.puml" />
