@@ -1,5 +1,3 @@
-using Wishapp.Web.Wishlists.Entities;
-
 namespace Wishapp.Web.Reservations.Dtos;
 
 public record MyReservationDto(

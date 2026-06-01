@@ -1,5 +1,4 @@
 using Wishapp.Web.Common.Interfaces;
-using Wishapp.Web.Wishlists.Entities;
 
 namespace Wishapp.Web.Admin.Features.Items.Update;
 

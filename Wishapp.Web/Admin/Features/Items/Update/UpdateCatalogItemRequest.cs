@@ -1,5 +1,3 @@
-using Wishapp.Web.Wishlists.Entities;
-
 namespace Wishapp.Web.Admin.Features.Items.Update;
 
 public record UpdateCatalogItemRequest(

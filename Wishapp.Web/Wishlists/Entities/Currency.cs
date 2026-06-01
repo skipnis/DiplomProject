@@ -1,3 +1,1 @@
-namespace Wishapp.Web.Wishlists.Entities;
-
-public enum Currency { BYN, RUB, USD, EUR }
+global using Currency = Wishapp.Web.Common.Types.Currency;
