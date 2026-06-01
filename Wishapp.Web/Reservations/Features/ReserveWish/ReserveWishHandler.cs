@@ -6,7 +6,6 @@ using Wishapp.Web.Infrastructure.Database;
 using Wishapp.Web.Notifications;
 using Wishapp.Web.Notifications.Entities;
 using Wishapp.Web.Reservations.Entities;
-using Wishapp.Web.Users;
 using Wishapp.Web.Wishlists;
 using Wishapp.Web.Wishlists.Dtos;
 using Wishapp.Web.Wishlists.Entities;
@@ -17,8 +16,7 @@ public sealed class ReserveWishHandler(
     ApplicationDbContext db,
     IWishlistsApi wishlistsApi,
     IFriendshipsApi friendshipsApi,
-    INotificationsApi notificationsApi,
-    IUsersApi usersApi)
+    INotificationsApi notificationsApi)
     : ICommandHandler<ReserveWishCommand>
 {
     public async Task<Result> HandleAsync(
@@ -80,15 +78,11 @@ public sealed class ReserveWishHandler(
         if (!accessData.IsSurpriseModeEnabled)
         {
             var notificationData = await wishlistsApi.GetWishNotificationDataAsync(command.WishId, ct);
-            var reserverUsernames = await usersApi.GetUsernamesAsync([command.UserId], ct);
-            var reserverName = reserverUsernames.GetValueOrDefault(command.UserId);
+            var recipientId = notificationData?.CreatedByUserId ?? accessData.OwnerId;
 
-            await notificationsApi.EnqueueAsync(accessData.OwnerId, NotificationType.WishReserved, new
+            await notificationsApi.EnqueueAsync(recipientId, NotificationType.WishReserved, new
             {
                 wishId = command.WishId,
-                wishName = notificationData?.WishName,
-                reservedByUserId = command.UserId,
-                reservedByDisplayName = reserverName,
                 wishlistId = command.WishlistId,
                 wishlistName = notificationData?.WishlistName,
             }, ct);

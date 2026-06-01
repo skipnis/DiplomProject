@@ -4,7 +4,6 @@ using Wishapp.Web.Common.Types;
 using Wishapp.Web.Infrastructure.Database;
 using Wishapp.Web.Notifications;
 using Wishapp.Web.Notifications.Entities;
-using Wishapp.Web.Users;
 using Wishapp.Web.Wishlists;
 
 namespace Wishapp.Web.Reservations.Features.CancelReservation;
@@ -12,8 +11,7 @@ namespace Wishapp.Web.Reservations.Features.CancelReservation;
 public sealed class CancelReservationHandler(
     ApplicationDbContext db,
     IWishlistsApi wishlistsApi,
-    INotificationsApi notificationsApi,
-    IUsersApi usersApi)
+    INotificationsApi notificationsApi)
     : ICommandHandler<CancelReservationCommand>
 {
     public async Task<Result> HandleAsync(
@@ -48,15 +46,11 @@ public sealed class CancelReservationHandler(
 
         if (notificationData is not null && !notificationData.IsSurpriseModeEnabled)
         {
-            var cancellerUsernames = await usersApi.GetUsernamesAsync([command.UserId], ct);
-            var cancellerName = cancellerUsernames.GetValueOrDefault(command.UserId);
+            var recipientId = notificationData.CreatedByUserId ?? notificationData.OwnerId;
 
-            await notificationsApi.EnqueueAsync(notificationData.OwnerId, NotificationType.ReservationCancelled, new
+            await notificationsApi.EnqueueAsync(recipientId, NotificationType.ReservationCancelled, new
             {
                 wishId = command.WishId,
-                wishName = notificationData.WishName,
-                cancelledByUserId = command.UserId,
-                cancelledByDisplayName = cancellerName,
                 wishlistId = notificationData.WishlistId,
                 wishlistName = notificationData.WishlistName,
             }, ct);

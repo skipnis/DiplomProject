@@ -4,11 +4,11 @@ using Wishapp.Web.Wishlists.Dtos;
 namespace Wishapp.Web.Wishlists;
 
 public record WishNotificationData(
-    string WishName,
     Guid WishlistId,
     string WishlistName,
     Guid OwnerId,
-    bool IsSurpriseModeEnabled);
+    bool IsSurpriseModeEnabled,
+    Guid? CreatedByUserId = null);
 
 public record GiftBadgeEligibilityData(
     Guid WishlistOwnerId,
