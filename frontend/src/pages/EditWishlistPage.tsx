@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useCallback } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { getWishlist, updateWishlist, getWishlistMembers, addWishlistMembers, removeWishlistMember } from '../api/wishlists';
 import { getMyEvents, linkWishlist } from '../api/events';
@@ -18,6 +18,7 @@ import { Card, CardContent } from '@/components/ui/card';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { FieldError } from '@/components/ui/field-error';
+import { EmojiPickerPopover } from '../components/EmojiPickerPopover';
 
 const EMOJIS = ['🎁', '🎂', '🎮', '👗', '📚', '🏠', '✈️', '💄', '🎵', '🍕', '⚽', '🌸', '💻', '📷', '🎨'];
 
@@ -37,9 +38,12 @@ export default function EditWishlistPage() {
   const [friends, setFriends] = useState<FriendInfo[]>([]);
   const [memberUserIds, setMemberUserIds] = useState<Set<string>>(new Set());
   const [friendFilter, setFriendFilter] = useState('');
+  const [showEmojiPicker, setShowEmojiPicker] = useState(false);
   const [saving, setSaving] = useState(false);
   const [loading, setLoading] = useState(true);
   const [errors, setErrors] = useState<FormErrors>({});
+
+  const closeEmojiPicker = useCallback(() => setShowEmojiPicker(false), []);
 
   useEffect(() => {
     if (!id) return;
@@ -85,10 +89,8 @@ export default function EditWishlistPage() {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!id) return;
-    if (!isSystem) {
-      const result = wishlistSchema.safeParse({ name, description: description || undefined });
-      if (!result.success) { setErrors(parseZodErrors(result.error)); return; }
-    }
+    const result = wishlistSchema.safeParse({ name, description: description || undefined });
+    if (!result.success) { setErrors(parseZodErrors(result.error)); return; }
     setErrors({});
     setSaving(true);
     try {
@@ -118,28 +120,34 @@ export default function EditWishlistPage() {
       <Card>
         <CardContent className="pt-6">
           <form onSubmit={handleSubmit} className="flex flex-col gap-4">
-            {!isSystem && (
-              <>
-                <div className="flex flex-col gap-1.5">
-                  <Label>Эмодзи</Label>
-                  <div className="flex flex-wrap gap-1">
-                    {EMOJIS.map((e) => (
-                      <button key={e} type="button" className={`text-2xl p-1.5 rounded-md border-2 transition-colors ${emoji === e ? 'border-primary' : 'border-transparent hover:border-muted'}`} onClick={() => setEmoji(e)}>{e}</button>
-                    ))}
-                  </div>
-                </div>
-                <div className="flex flex-col gap-1.5">
-                  <Label htmlFor="name">Название *</Label>
-                  <Input
-                    id="name"
-                    value={name}
-                    onChange={(e) => { setName(e.target.value); clearError('name'); }}
-                    aria-invalid={!!errors.name}
-                  />
-                  <FieldError message={errors.name} />
-                </div>
-              </>
-            )}
+            <div className="flex flex-col gap-1.5">
+              <Label>Эмодзи</Label>
+              <div className="flex flex-wrap gap-1 items-center">
+                <span className={`text-2xl p-1.5 rounded-md border-2 transition-colors ${!EMOJIS.includes(emoji) ? 'border-primary' : 'border-transparent'}`}>{emoji}</span>
+                <span className="w-px h-6 bg-border mx-1" />
+                {EMOJIS.map((e) => (
+                  <button key={e} type="button" className={`text-2xl p-1.5 rounded-md border-2 transition-colors ${emoji === e ? 'border-primary' : 'border-transparent hover:border-muted'}`} onClick={() => setEmoji(e)}>{e}</button>
+                ))}
+                <button
+                  type="button"
+                  className="text-sm px-2.5 py-1.5 rounded-md border-2 border-transparent hover:border-muted text-muted-foreground hover:text-foreground transition-colors"
+                  onClick={() => setShowEmojiPicker((v) => !v)}
+                >
+                  Ещё...
+                </button>
+                <EmojiPickerPopover open={showEmojiPicker} onClose={closeEmojiPicker} onSelect={setEmoji} />
+              </div>
+            </div>
+            <div className="flex flex-col gap-1.5">
+              <Label htmlFor="name">Название *</Label>
+              <Input
+                id="name"
+                value={name}
+                onChange={(e) => { setName(e.target.value); clearError('name'); }}
+                aria-invalid={!!errors.name}
+              />
+              <FieldError message={errors.name} />
+            </div>
             <div className="flex flex-col gap-1.5">
               <Label htmlFor="description">Описание</Label>
               <Textarea

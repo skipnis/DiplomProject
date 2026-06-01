@@ -94,20 +94,22 @@ export default function WishlistsPage() {
                 <span>{w.wishCount} желаний</span>
                 {!w.isSystem && <span>{VISIBILITY_LABELS[w.visibility]}</span>}
               </div>
-              {!w.isSystem && (
-                <div className="absolute top-3 right-3" onClick={(e) => e.stopPropagation()}>
-                  <DropdownMenu>
-                    <DropdownMenuTrigger className={`${buttonVariants({ variant: 'ghost', size: 'sm' })} h-7 w-7 p-0 text-muted-foreground`}>⋯</DropdownMenuTrigger>
-                    <DropdownMenuContent align="end">
-                      <DropdownMenuItem onClick={() => navigate(`/wishlists/${w.id}/edit`)}>Изменить</DropdownMenuItem>
-                      <DropdownMenuSeparator />
-                      <DropdownMenuItem className="text-destructive focus:text-destructive" onClick={(e) => handleDelete(e as unknown as React.MouseEvent, w.id)}>
-                        Удалить
-                      </DropdownMenuItem>
-                    </DropdownMenuContent>
-                  </DropdownMenu>
-                </div>
-              )}
+              <div className="absolute top-3 right-3" onClick={(e) => e.stopPropagation()}>
+                <DropdownMenu>
+                  <DropdownMenuTrigger className={`${buttonVariants({ variant: 'ghost', size: 'sm' })} h-7 w-7 p-0 text-muted-foreground`}>⋯</DropdownMenuTrigger>
+                  <DropdownMenuContent align="end">
+                    <DropdownMenuItem onClick={() => navigate(`/wishlists/${w.id}/edit`)}>Изменить</DropdownMenuItem>
+                    {!w.isSystem && (
+                      <>
+                        <DropdownMenuSeparator />
+                        <DropdownMenuItem className="text-destructive focus:text-destructive" onClick={(e) => handleDelete(e as unknown as React.MouseEvent, w.id)}>
+                          Удалить
+                        </DropdownMenuItem>
+                      </>
+                    )}
+                  </DropdownMenuContent>
+                </DropdownMenu>
+              </div>
             </div>
           ))}
         </div>

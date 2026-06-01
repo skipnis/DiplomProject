@@ -357,7 +357,6 @@ export default function WishlistPage() {
               {wishlist.description && <p className="text-sm text-muted-foreground mt-1">{wishlist.description}</p>}
               <div className="flex flex-wrap gap-1 mt-2">
                 <Badge variant="secondary">{VISIBILITY_LABELS[wishlist.visibility]}</Badge>
-                {isOwner && wishlist.isSystem && <Badge variant="secondary">⚙️ Системный</Badge>}
                 {isOwner && wishlist.isSurpriseModeEnabled && <Badge variant="secondary">🎁 Сюрприз</Badge>}
               </div>
               {ownerProfile && !isOwner && ownerMember && (
@@ -383,7 +382,7 @@ export default function WishlistPage() {
                   {canEdit && (
                     <DropdownMenuItem onClick={() => navigate(`/wishlists/${id}/edit`)}>Изменить</DropdownMenuItem>
                   )}
-                  {isOwner && (
+                  {isOwner && !isSystem && (
                     <>
                       <DropdownMenuSeparator />
                       <DropdownMenuItem className="text-destructive focus:text-destructive" onClick={() => setShowDeleteWishlistConfirm(true)}>Удалить</DropdownMenuItem>

@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { createWishlist } from '../api/wishlists';
 import { createEvent, linkWishlist } from '../api/events';
@@ -18,6 +18,7 @@ import { Card, CardContent } from '@/components/ui/card';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { FieldError } from '@/components/ui/field-error';
+import { EmojiPickerPopover } from '../components/EmojiPickerPopover';
 
 const EMOJIS = ['🎁', '🎂', '🎮', '👗', '📚', '🏠', '✈️', '💄', '🎵', '🍕', '⚽', '🌸', '💻', '📷', '🎨'];
 
@@ -31,8 +32,11 @@ export default function NewWishlistPage() {
   const [friends, setFriends] = useState<FriendInfo[]>([]);
   const [selectedFriends, setSelectedFriends] = useState<FriendInfo[]>([]);
   const [friendFilter, setFriendFilter] = useState('');
+  const [showEmojiPicker, setShowEmojiPicker] = useState(false);
   const [surpriseMode, setSurpriseMode] = useState(false);
   const [saving, setSaving] = useState(false);
+
+  const closeEmojiPicker = useCallback(() => setShowEmojiPicker(false), []);
   const [createEventEnabled, setCreateEventEnabled] = useState(false);
   const [eventTitle, setEventTitle] = useState('');
   const [eventDate, setEventDate] = useState('');
@@ -105,7 +109,9 @@ export default function NewWishlistPage() {
           <form onSubmit={handleSubmit} className="flex flex-col gap-4">
             <div className="flex flex-col gap-1.5">
               <Label>Эмодзи</Label>
-              <div className="flex flex-wrap gap-1">
+              <div className="flex flex-wrap gap-1 items-center">
+                <span className={`text-2xl p-1.5 rounded-md border-2 transition-colors ${!EMOJIS.includes(emoji) ? 'border-primary' : 'border-transparent'}`}>{emoji}</span>
+                <span className="w-px h-6 bg-border mx-1" />
                 {EMOJIS.map((e) => (
                   <button
                     key={e}
@@ -116,6 +122,14 @@ export default function NewWishlistPage() {
                     {e}
                   </button>
                 ))}
+                <button
+                  type="button"
+                  className="text-sm px-2.5 py-1.5 rounded-md border-2 border-transparent hover:border-muted text-muted-foreground hover:text-foreground transition-colors"
+                  onClick={() => setShowEmojiPicker((v) => !v)}
+                >
+                  Ещё...
+                </button>
+                <EmojiPickerPopover open={showEmojiPicker} onClose={closeEmojiPicker} onSelect={setEmoji} />
               </div>
             </div>
 
