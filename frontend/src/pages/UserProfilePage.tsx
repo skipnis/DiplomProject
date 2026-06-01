@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from 'react';
-import { useParams, Link } from 'react-router-dom';
+import { useParams, Link, useNavigate } from 'react-router-dom';
 import { getUserProfile, getUserGiftProfile, getUserFulfilledWishes, getUserBlacklist } from '../api/users';
 import { getUserWishlists } from '../api/wishlists';
 import { sendFriendRequest, acceptFriendRequest, removeFriend, getFriends, getFriendshipRequests } from '../api/friends';
@@ -91,6 +91,7 @@ export default function UserProfilePage() {
   const { id } = useParams<{ id: string }>();
   const { user: me } = useAuth();
   const toast = useToast();
+  const navigate = useNavigate();
 
   const [profile, setProfile] = useState<UserProfile | null>(null);
   const [wishlists, setWishlists] = useState<WishlistSummaryDto[]>([]);
@@ -128,6 +129,12 @@ export default function UserProfilePage() {
         .catch(() => {});
     }
   }, [id, me]);
+
+  const handleProposeGift = () => {
+    if (!me) { toast.warning('Войдите в аккаунт, чтобы предложить подарок'); return; }
+    if (friendStatus !== 'friends') { toast.warning(`Сначала добавьте ${profile?.displayName ?? 'пользователя'} в друзья`); return; }
+    navigate(`/proposals/new?recipientId=${id}`);
+  };
 
   const handleShareProfile = () => {
     navigator.clipboard.writeText(`${window.location.origin}/users/${id}`);
@@ -181,8 +188,11 @@ export default function UserProfilePage() {
                 </div>
               )}
             </div>
-            <div className="flex gap-2">
+            <div className="flex flex-wrap gap-2">
               <Button variant="outline" onClick={handleShareProfile}>Поделиться</Button>
+              {!isMe && (
+                <Button variant="secondary" onClick={handleProposeGift}>🎁 Предложить подарок</Button>
+              )}
               {me && !isMe && (
                 <Button
                   variant={friendStatus === 'friends' ? 'destructive' : friendStatus === 'request_sent' ? 'ghost' : 'default'}
