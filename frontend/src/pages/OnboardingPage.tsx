@@ -14,6 +14,7 @@ import { Label } from '@/components/ui/label';
 import { Card, CardContent } from '@/components/ui/card';
 import { FieldError } from '@/components/ui/field-error';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
+import { QUOTES, pickRandom } from '../lib/quotes';
 
 const BLACKLIST_PRESETS = [
   'Носки',
@@ -26,14 +27,6 @@ const BLACKLIST_PRESETS = [
   'Подарочные сертификаты',
 ];
 
-const ONBOARDING_QUOTES = [
-  '«Самый лучший подарок — тот, о котором мечтают»',
-  '«Давать другим — значит обогащать себя»',
-  '«Подарок от сердца стоит больше любых денег»',
-  '«Счастье — делать счастливыми других»',
-  '«Мечты сбываются — особенно когда есть вишлист»',
-];
-
 const MAX_BLACKLIST_ITEMS = 5;
 
 export default function OnboardingPage() {
@@ -43,7 +36,7 @@ export default function OnboardingPage() {
 
   const [step, setStep] = useState(1);
   const [showFinalScreen, setShowFinalScreen] = useState(false);
-  const [randomQuote] = useState(() => ONBOARDING_QUOTES[Math.floor(Math.random() * ONBOARDING_QUOTES.length)]);
+  const [randomQuote] = useState(() => pickRandom(QUOTES));
 
   const [displayName, setDisplayName] = useState('');
   const [username, setUsername] = useState('');
@@ -204,7 +197,7 @@ export default function OnboardingPage() {
         <div className="w-full max-w-md text-center">
           <div className="text-5xl mb-4">🎉</div>
           <h1 className="text-2xl font-extrabold tracking-tight mb-2">Добро пожаловать!</h1>
-          <p className="text-muted-foreground text-base italic mb-8">{randomQuote}</p>
+          <p className="text-muted-foreground text-base italic mb-8">«{randomQuote}»</p>
           <Button className="w-full mb-3" size="lg" onClick={() => navigate('/wishlists/new')}>
             Создать первый вишлист
           </Button>
