@@ -68,6 +68,7 @@ function AppRoutes() {
         <Suspense fallback={<PageLoader />}>
           <Routes>
             <Route path="/" element={user ? <Navigate to="/wishlists" replace /> : <LandingPage />} />
+            <Route path="/about" element={<LandingPage />} />
             <Route path="/login" element={user ? <Navigate to="/wishlists" replace /> : <LoginPage />} />
             <Route path="/profile" element={<PrivateRoute><ProfilePage /></PrivateRoute>} />
             <Route path="/profile/edit" element={<PrivateRoute><EditProfilePage /></PrivateRoute>} />
