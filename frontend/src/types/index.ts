@@ -123,6 +123,7 @@ export interface WishSummaryDto {
   isReserved: boolean;
   hasGiftBadges: boolean;
   createdByUserId: string | null;
+  createdByDisplayName: string | null;
   createdAt: string;
 }
 
@@ -143,6 +144,7 @@ export interface WishDto {
   fulfilledByReserverId: string | null;
   hasGiftBadges: boolean;
   createdByUserId: string | null;
+  createdByDisplayName: string | null;
 }
 
 export interface SharedWishResponse {

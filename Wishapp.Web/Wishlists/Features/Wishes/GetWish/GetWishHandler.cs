@@ -4,6 +4,7 @@ using Wishapp.Web.Common.Types;
 using Wishapp.Web.Gamification;
 using Wishapp.Web.Infrastructure.Database;
 using Wishapp.Web.Reservations;
+using Wishapp.Web.Users;
 using Wishapp.Web.Wishlists.Dtos;
 
 namespace Wishapp.Web.Wishlists.Features.Wishes.GetWish;
@@ -11,7 +12,8 @@ namespace Wishapp.Web.Wishlists.Features.Wishes.GetWish;
 public sealed class GetWishHandler(
     ApplicationDbContext db,
     IReservationsApi reservationsApi,
-    IGamificationApi gamificationApi)
+    IGamificationApi gamificationApi,
+    IUsersApi usersApi)
     : IQueryHandler<GetWishQuery, WishDto>
 {
     public async Task<Result<WishDto>> HandleAsync(
@@ -29,6 +31,13 @@ public sealed class GetWishHandler(
         var reservedIds = await reservationsApi.GetReservedWishIdsAsync([wish.Id], ct);
         var hasGiftBadges = await gamificationApi.HasGiftBadgesAsync(wish.Id, ct);
 
+        string? createdByDisplayName = null;
+        if (wish.CreatedByUserId.HasValue)
+        {
+            var displayNames = await usersApi.GetUsernamesAsync([wish.CreatedByUserId.Value], ct);
+            displayNames.TryGetValue(wish.CreatedByUserId.Value, out createdByDisplayName);
+        }
+
         return new WishDto(
             wish.Id,
             wish.Name,
@@ -45,6 +54,7 @@ public sealed class GetWishHandler(
             query.IsOwner ? wish.ShareToken : null,
             wish.FulfilledByReserverId,
             hasGiftBadges,
-            wish.CreatedByUserId);
+            wish.CreatedByUserId,
+            createdByDisplayName);
     }
 }

@@ -13,4 +13,5 @@ public record WishSummaryDto(
     bool IsReserved,
     bool HasGiftBadges,
     Guid? CreatedByUserId,
+    string? CreatedByDisplayName,
     DateTimeOffset CreatedAt);

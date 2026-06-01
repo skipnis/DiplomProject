@@ -319,7 +319,10 @@ export default function WishPage() {
         <CardContent className="pt-6">
           {imageUrl && <img src={imageUrl} alt={wish.name} className="w-full max-h-72 object-contain rounded-lg mb-5 bg-muted" />}
 
-          <h1 className="text-xl font-extrabold tracking-tight mb-2">{wish.name}</h1>
+          <h1 className="text-xl font-extrabold tracking-tight mb-1">{wish.name}</h1>
+          {wishlist && wishlist.members.length > 1 && wish.createdByDisplayName && (
+            <div className="text-xs text-muted-foreground mb-2">Добавил: {wish.createdByDisplayName}</div>
+          )}
           {wish.description && (
             <div className="mb-4">
               <div className="text-xs font-semibold text-muted-foreground uppercase tracking-wide mb-1.5">Описание</div>

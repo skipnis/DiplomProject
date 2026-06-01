@@ -5,6 +5,7 @@ using Wishapp.Web.Common.Types;
 using Wishapp.Web.Gamification;
 using Wishapp.Web.Infrastructure.Database;
 using Wishapp.Web.Reservations;
+using Wishapp.Web.Users;
 using Wishapp.Web.Wishlists.Dtos;
 
 namespace Wishapp.Web.Wishlists.Features.Wishes.GetWishes;
@@ -12,7 +13,8 @@ namespace Wishapp.Web.Wishlists.Features.Wishes.GetWishes;
 public sealed class GetWishesHandler(
     ApplicationDbContext db,
     IReservationsApi reservationsApi,
-    IGamificationApi gamificationApi)
+    IGamificationApi gamificationApi,
+    IUsersApi usersApi)
     : IQueryHandler<GetWishesQuery, PagedResponse<WishSummaryDto>>
 {
     public async Task<Result<PagedResponse<WishSummaryDto>>> HandleAsync(
@@ -48,10 +50,27 @@ public sealed class GetWishesHandler(
 
         var wishesWithBadgeIds = await gamificationApi.GetWishIdsWithBadgesAsync(wishIds, ct);
 
+        var creatorIds = pagedData.Items
+            .Where(w => w.CreatedByUserId.HasValue)
+            .Select(w => w.CreatedByUserId!.Value)
+            .Distinct()
+            .ToList();
+
+        var displayNames = creatorIds.Count > 0
+            ? await usersApi.GetUsernamesAsync(creatorIds, ct)
+            : [];
+
         var items = pagedData.Items
-            .Select(w => new WishSummaryDto(
-                w.Id, w.Name, w.Price, w.Currency, w.Priority, w.ImagePath,
-                w.IsFulfilled, reservedIds.Contains(w.Id), wishesWithBadgeIds.Contains(w.Id), w.CreatedByUserId, w.CreatedAt))
+            .Select(w =>
+            {
+                string? createdByDisplayName = w.CreatedByUserId.HasValue && displayNames.TryGetValue(w.CreatedByUserId.Value, out var name)
+                    ? name
+                    : null;
+                return new WishSummaryDto(
+                    w.Id, w.Name, w.Price, w.Currency, w.Priority, w.ImagePath,
+                    w.IsFulfilled, reservedIds.Contains(w.Id), wishesWithBadgeIds.Contains(w.Id),
+                    w.CreatedByUserId, createdByDisplayName, w.CreatedAt);
+            })
             .ToList();
 
         return new PagedResponse<WishSummaryDto>(items, pagedData.Page, pagedData.PageSize, pagedData.TotalCount);

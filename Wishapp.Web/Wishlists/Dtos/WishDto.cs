@@ -18,4 +18,5 @@ public record WishDto(
     Guid? ShareToken,
     Guid? FulfilledByReserverId,
     bool HasGiftBadges,
-    Guid? CreatedByUserId);
+    Guid? CreatedByUserId,
+    string? CreatedByDisplayName);
