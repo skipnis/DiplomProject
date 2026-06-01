@@ -3,13 +3,14 @@ import { Link } from 'react-router-dom';
 import { getCatalogItems } from '../api/catalog';
 import { getImageUrl } from '../api/client';
 import { buttonVariants } from '@/components/ui/button';
+import { useAuth } from '../context/AuthContext';
 import type { CatalogItemSummaryDto } from '../types';
 
 const FEATURES = [
   {
     icon: '📝',
     title: 'Создавай вишлисты',
-    description: 'Добавляй желания вручную или парси ссылки из любого магазина — цена и фото подтянутся автоматически.',
+    description: 'Добавляй желания вручную или по ссылке из магазина — цена и фото подтянутся автоматически.',
   },
   {
     icon: '🤝',
@@ -26,9 +27,15 @@ const FEATURES = [
     title: 'События и напоминания',
     description: 'Привязывай вишлисты к праздникам и следи за предстоящими событиями в удобном календаре.',
   },
+  {
+    icon: '📱',
+    title: 'На любом устройстве',
+    description: 'Добавь на главный экран и открывай в один клик — без скачивания.',
+  },
 ];
 
 export default function LandingPage() {
+  const { user } = useAuth();
   const [carouselItems, setCarouselItems] = useState<CatalogItemSummaryDto[]>([]);
 
   useEffect(() => {
@@ -50,10 +57,12 @@ export default function LandingPage() {
           Больше никаких одинаковых презентов и мучительных вопросов «что подарить?»
         </p>
         <div className="flex gap-3 justify-center flex-wrap">
-          <Link to="/login" className={buttonVariants({ size: 'lg', className: 'text-base px-8' })}>
-            Начать бесплатно
-          </Link>
-          <Link to="/catalog" className={buttonVariants({ variant: 'outline', size: 'lg', className: 'text-base px-8' })}>
+          {!user && (
+            <Link to="/login" className={buttonVariants({ size: 'lg', className: 'text-base px-8' })}>
+              Начать бесплатно
+            </Link>
+          )}
+          <Link to="/catalog" className={buttonVariants({ variant: user ? 'default' : 'outline', size: 'lg', className: 'text-base px-8' })}>
             Смотреть каталог
           </Link>
         </div>
@@ -61,7 +70,7 @@ export default function LandingPage() {
 
       <section className="space-y-8">
         <h2 className="text-2xl font-bold text-center">Как это работает</h2>
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
           {FEATURES.map((feature) => (
             <div
               key={feature.title}
@@ -112,7 +121,7 @@ export default function LandingPage() {
             </div>
             <ol className="space-y-4">
               {[
-                { step: '1', text: 'Приходит уведомление: «Кто-то анонимно предлагает тебе подарок»' },
+                { step: '1', text: 'Тебе анонимно предложили идею подарка' },
                 { step: '2', text: 'Открываешь интригу постепенно — сначала название, потом описание, потом фото' },
                 { step: '3', text: 'Нажимаешь «Хочу» или «Не моё» — и можешь оставить комментарий' },
                 { step: '4', text: 'Отправитель узнаёт твою реакцию, ты по-прежнему не знаешь кто это' },
@@ -128,7 +137,7 @@ export default function LandingPage() {
 
         <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
           {[
-            { icon: '🎭', title: 'Полная анонимность', description: 'Имя отправителя никогда не раскрывается — даже после реакции. Только выбранный псевдоним.' },
+            { icon: '🎭', title: 'Полная анонимность', description: 'Имя отправителя никогда не раскрывается — даже после реакции.' },
             { icon: '🎁', title: 'Три источника идей', description: 'Предложи товар из каталога, желание из своего вишлиста или опиши подарок своими словами.' },
             { icon: '✨', title: 'Честная реакция', description: 'Именинник оценивает идею до покупки — без вежливости ради вежливости. Ты получаешь настоящий ответ.' },
           ].map(({ icon, title, description }) => (
@@ -154,7 +163,7 @@ export default function LandingPage() {
             <div className="text-3xl">🏅</div>
             <h3 className="font-bold text-lg">Бейджи дарителя</h3>
             <p className="text-sm text-muted-foreground leading-relaxed">
-              Именинник оценивает подарок и выставляет тебе бейдж — «Читает мысли», «Самый щедрый», «Открыватель новинок» и другие.
+              Именинник оценивает подарок и выставляет тебе бейдж.
               Каждый бейдж отражает твой стиль дарения.
             </p>
             <div className="flex flex-wrap gap-2 pt-1">
@@ -196,7 +205,7 @@ export default function LandingPage() {
             <div className="text-3xl">⚡</div>
             <h3 className="font-bold text-lg">Уровень дарителя</h3>
             <p className="text-sm text-muted-foreground leading-relaxed">
-              Чем больше желаний исполняешь и чем разнообразнее твои бейджи — тем выше твой уровень. Публичный профиль дарителя виден друзьям.
+              Чем больше желаний исполняешь и чем разнообразнее твои бейджи — тем выше твой уровень.
             </p>
             <div className="space-y-2 pt-1">
               <div className="flex items-center justify-between text-sm">
@@ -242,15 +251,17 @@ export default function LandingPage() {
         </section>
       )}
 
-      <section className="rounded-2xl bg-primary/5 border border-primary/20 p-10 text-center space-y-5">
-        <h2 className="text-2xl font-bold">Готовы попробовать?</h2>
-        <p className="text-muted-foreground max-w-md mx-auto">
-          Зарегистрируйтесь за 30 секунд через Google или по email — никакого пароля.
-        </p>
-        <Link to="/login" className={buttonVariants({ size: 'lg', className: 'text-base px-10' })}>
-          Войти / Зарегистрироваться
-        </Link>
-      </section>
+      {!user && (
+        <section className="rounded-2xl bg-primary/5 border border-primary/20 p-10 text-center space-y-5">
+          <h2 className="text-2xl font-bold">Готовы попробовать?</h2>
+          <p className="text-muted-foreground max-w-md mx-auto">
+            Зарегистрируйтесь за 30 секунд через Google или по email — никакого пароля.
+          </p>
+          <Link to="/login" className={buttonVariants({ size: 'lg', className: 'text-base px-10' })}>
+            Войти / Зарегистрироваться
+          </Link>
+        </section>
+      )}
     </div>
   );
 }
