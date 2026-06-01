@@ -25,7 +25,7 @@ public sealed class GetCatalogItemsHandler(ApplicationDbContext db, IGamificatio
             .WhereIf(query.Filter.CategoryId.HasValue, i => i.CategoryId == query.Filter.CategoryId!.Value)
             .WhereIf(!string.IsNullOrWhiteSpace(query.Filter.Search),
                 i => EF.Property<NpgsqlTsVector>(i, "SearchVector")
-                    .Matches(EF.Functions.WebSearchToTsQuery("russian", query.Filter.Search!)))
+                    .Matches(EF.Functions.ToTsQuery("russian", BuildPrefixQuery(query.Filter.Search!))))
             .WhereIf(query.Filter.MinPrice.HasValue, i => i.Price >= query.Filter.MinPrice!.Value)
             .WhereIf(query.Filter.MaxPrice.HasValue, i => i.Price <= query.Filter.MaxPrice!.Value)
             .WhereIf(hasOccasionFilter,
@@ -62,5 +62,16 @@ public sealed class GetCatalogItemsHandler(ApplicationDbContext db, IGamificatio
             .ToList();
 
         return new PagedResponse<CatalogItemSummaryDto>(items, query.Request.Page, query.Request.PageSize, totalCount);
+    }
+
+    private static string BuildPrefixQuery(string search)
+    {
+        var words = search.Trim()
+            .Split(' ', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries);
+        var terms = words
+            .Select(word => System.Text.RegularExpressions.Regex.Replace(word, @"[^\w]", ""))
+            .Where(word => word.Length > 0)
+            .Select(word => word + ":*");
+        return string.Join(" & ", terms);
     }
 }
