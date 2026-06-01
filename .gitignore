@@ -8,6 +8,7 @@
 .env.dev
 .env.demo
 .env.test
+appsettings.Development.json
 
 # User-specific files
 *.rsuser
