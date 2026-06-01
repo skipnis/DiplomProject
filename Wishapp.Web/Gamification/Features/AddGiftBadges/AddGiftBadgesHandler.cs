@@ -41,16 +41,67 @@ public sealed class AddGiftBadgesHandler(ApplicationDbContext db, IWishlistsApi 
         if (alreadyRated)
             return Error.Conflict("Wishes.GiftBadges.AlreadyRated", "Gift badges have already been given for this wish");
 
+        var gifterId = eligibility.FulfilledByReserverId.Value;
+
         foreach (var badgeType in command.BadgeTypes)
         {
             db.FulfilledWishBadges.Add(FulfilledWishBadge.Create(
                 command.WishId,
                 command.UserId,
-                eligibility.FulfilledByReserverId.Value,
+                gifterId,
                 badgeType));
         }
 
         await db.SaveChangesAsync(ct);
+
+        await RecalculateAchievementsAsync(db, gifterId, ct);
+        await db.SaveChangesAsync(ct);
+
         return Result.Success();
+    }
+
+    private static async Task RecalculateAchievementsAsync(
+        ApplicationDbContext db,
+        Guid gifterId,
+        CancellationToken ct)
+    {
+        var badgeCounts = await db.FulfilledWishBadges
+            .Where(b => b.GifterUserId == gifterId)
+            .GroupBy(b => b.BadgeType)
+            .Select(g => new { BadgeType = g.Key, Count = g.Count() })
+            .ToListAsync(ct);
+
+        var countsByBadgeType = badgeCounts.ToDictionary(b => b.BadgeType, b => b.Count);
+        var uniqueBadgeTypeCount = countsByBadgeType.Count;
+
+        var achievementDefinitions = await db.AchievementDefinitions
+            .Where(d => d.IsActive)
+            .ToListAsync(ct);
+
+        var existingAchievements = await db.UserAchievements
+            .Where(a => a.UserId == gifterId)
+            .ToListAsync(ct);
+
+        var achievementsByDefinitionId = existingAchievements.ToDictionary(a => a.DefinitionId);
+
+        foreach (var definition in achievementDefinitions)
+        {
+            var progress = definition.RuleType switch
+            {
+                AchievementRuleType.SpecificBadgeCount when definition.LinkedBadgeTypeId.HasValue
+                    => countsByBadgeType.GetValueOrDefault(definition.LinkedBadgeTypeId.Value, 0),
+                AchievementRuleType.UniqueBadgeTypes
+                    => uniqueBadgeTypeCount,
+                _ => 0
+            };
+
+            if (!achievementsByDefinitionId.TryGetValue(definition.Id, out var achievement))
+            {
+                achievement = UserAchievement.Create(gifterId, definition.Id);
+                db.UserAchievements.Add(achievement);
+            }
+
+            achievement.UpdateProgress(progress, definition.Threshold);
+        }
     }
 }
