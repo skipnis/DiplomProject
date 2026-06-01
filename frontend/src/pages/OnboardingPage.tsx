@@ -152,7 +152,7 @@ export default function OnboardingPage() {
     setStep(4);
   };
 
-  const handleFinish = async (skipBlacklist = false) => {
+  const handleFinish = async () => {
     setSaving(true);
     try {
       await updateMyProfile({
@@ -163,7 +163,7 @@ export default function OnboardingPage() {
         showFulfilledWishes: true,
       });
 
-      if (!skipBlacklist && blacklistItems.length > 0) {
+      if (blacklistItems.length > 0) {
         await Promise.all(blacklistItems.map((title) => addBlacklistItem(title)));
       }
 
@@ -202,7 +202,7 @@ export default function OnboardingPage() {
             Создать первый вишлист
           </Button>
           <Button variant="ghost" className="w-full" onClick={() => navigate('/wishlists')}>
-            Пропустить
+            Позже
           </Button>
         </div>
       </div>
@@ -331,6 +331,7 @@ export default function OnboardingPage() {
                     value={birthDate}
                     onChange={(e) => { setBirthDate(e.target.value); clearError('birthDate'); }}
                     aria-invalid={!!errors.birthDate}
+                    className="pr-3"
                   />
                   <FieldError message={errors.birthDate} />
                 </div>
@@ -414,7 +415,7 @@ export default function OnboardingPage() {
 
                 <p className="text-xs text-muted-foreground text-right">{blacklistItems.length}/{MAX_BLACKLIST_ITEMS}</p>
 
-                <div className="flex items-center gap-2 mt-2">
+                <div className="flex gap-2 mt-2">
                   <Button
                     variant="outline"
                     className="flex-none"
@@ -423,23 +424,13 @@ export default function OnboardingPage() {
                   >
                     ← Назад
                   </Button>
-                  <div className="flex gap-2 flex-1">
-                    <Button
-                      variant="outline"
-                      className="flex-1"
-                      disabled={saving}
-                      onClick={() => handleFinish(true)}
-                    >
-                      Пропустить
-                    </Button>
-                    <Button
-                      className="flex-1"
-                      disabled={saving}
-                      onClick={() => handleFinish(false)}
-                    >
-                      {saving ? 'Сохранение...' : 'Завершить'}
-                    </Button>
-                  </div>
+                  <Button
+                    className="flex-1"
+                    disabled={saving}
+                    onClick={() => handleFinish()}
+                  >
+                    {saving ? 'Сохранение...' : 'Завершить'}
+                  </Button>
                 </div>
               </div>
             )}
