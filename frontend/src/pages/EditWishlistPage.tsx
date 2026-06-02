@@ -123,8 +123,17 @@ export default function EditWishlistPage() {
             <div className="flex flex-col gap-1.5">
               <Label>Эмодзи</Label>
               <div className="flex flex-wrap gap-1 items-center">
-                <span className={`text-2xl p-1.5 rounded-md border-2 transition-colors ${!EMOJIS.includes(emoji) ? 'border-primary' : 'border-transparent'}`}>{emoji}</span>
-                <span className="w-px h-6 bg-border mx-1" />
+                {!EMOJIS.includes(emoji) && (
+                  <button
+                    type="button"
+                    className="relative text-2xl p-1.5 rounded-md border-2 border-primary bg-primary/10 transition-colors"
+                    onClick={() => setShowEmojiPicker((v) => !v)}
+                  >
+                    {emoji}
+                    <span className="absolute -top-1 -right-1 text-[10px] bg-primary text-primary-foreground rounded-full w-3.5 h-3.5 flex items-center justify-center leading-none">✓</span>
+                  </button>
+                )}
+                {!EMOJIS.includes(emoji) && <span className="w-px h-6 bg-border mx-1" />}
                 {EMOJIS.map((e) => (
                   <button key={e} type="button" className={`text-2xl p-1.5 rounded-md border-2 transition-colors ${emoji === e ? 'border-primary' : 'border-transparent hover:border-muted'}`} onClick={() => setEmoji(e)}>{e}</button>
                 ))}
