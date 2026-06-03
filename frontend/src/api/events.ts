@@ -32,3 +32,7 @@ export function linkWishlist(id: string, wishlistId: string | null): Promise<voi
   return apiPut(`/events/${id}/wishlist`, { wishlistId });
 }
 
+export function getEventByWishlist(wishlistId: string): Promise<EventDto> {
+  return apiGet(`/events/wishlist/${wishlistId}`);
+}
+

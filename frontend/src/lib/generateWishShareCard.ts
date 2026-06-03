@@ -1,11 +1,11 @@
 import QRCode from 'qrcode';
+import { QUOTES, pickRandom } from './quotes';
 
 interface WishShareCardOptions {
   name: string;
   priority: number;
   imagePath: string | null;
   shareToken: string;
-  wishlistName: string;
   ownerDisplayName: string;
   storageUrl: string;
 }
@@ -56,7 +56,7 @@ function loadImage(url: string): Promise<HTMLImageElement | null> {
 }
 
 export async function generateWishShareCard(options: WishShareCardOptions): Promise<Blob> {
-  const { name, priority, imagePath, shareToken, wishlistName, ownerDisplayName, storageUrl } = options;
+  const { name, priority, imagePath, shareToken, ownerDisplayName, storageUrl } = options;
 
   const WIDTH = 600;
   const PADDING = 40;
@@ -85,7 +85,6 @@ export async function generateWishShareCard(options: WishShareCardOptions): Prom
     16 +                                  // gap after owner
     (priority > 0 ? 26 + 20 : 0) +       // badge + gap
     28 + (nameLineCount - 1) * 46 + 24 + // name + gap
-    (wishlistName ? 20 + 12 : 0) +        // wishlist name + gap
     20 +                                  // tagline
     32;                                   // gap before footer
 
@@ -167,14 +166,6 @@ export async function generateWishShareCard(options: WishShareCardOptions): Prom
   });
   currentY += 28 + (nameLineCount - 1) * 46 + 24;
 
-  // Wishlist name
-  if (wishlistName) {
-    ctx.font = `15px ${FONT}`;
-    ctx.fillStyle = 'rgba(255, 255, 255, 0.4)';
-    ctx.fillText(wishlistName, PADDING, currentY + 15);
-    currentY += 20 + 12;
-  }
-
   // Tagline
   ctx.font = `italic 14px ${FONT}`;
   ctx.fillStyle = 'rgba(255, 255, 255, 0.3)';
@@ -218,9 +209,14 @@ export async function generateWishShareCard(options: WishShareCardOptions): Prom
   ctx.fillStyle = 'rgba(255, 255, 255, 0.5)';
   ctx.fillText('Открой и исполни', brandX, brandY + 34);
   ctx.fillText('желание друга', brandX, brandY + 56);
-  ctx.font = `13px ${FONT}`;
+  ctx.font = `italic 12px ${FONT}`;
   ctx.fillStyle = 'rgba(255, 255, 255, 0.25)';
-  ctx.fillText(window.location.host, brandX, brandY + 94);
+  const quote = `«${pickRandom(QUOTES)}»`;
+  const maxQuoteWidth = WIDTH - brandX - PADDING;
+  const quoteLines = wrapText(ctx, quote, maxQuoteWidth).slice(0, 3);
+  quoteLines.forEach((line, index) => {
+    ctx.fillText(line, brandX, brandY + 88 + index * 16);
+  });
 
   return new Promise((resolve, reject) => {
     canvas.toBlob((blob) => {

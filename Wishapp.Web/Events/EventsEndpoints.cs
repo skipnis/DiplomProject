@@ -20,6 +20,7 @@ public static partial class EventsEndpoints
         events.MapDelete("/{id:guid}", DeleteEvent).Produces(401);
         events.MapPut("/{id:guid}/wishlist", LinkWishlist).Produces(401)
             .AddEndpointFilter<ValidationFilter<LinkWishlistRequest>>();
+        events.MapGet("/wishlist/{wishlistId:guid}", GetEventByWishlist).Produces(401);
         return app;
     }
 }
