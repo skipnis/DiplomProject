@@ -11,7 +11,6 @@ import type { ReactNode } from 'react';
 
 const LoginPage = lazy(() => import('./pages/LoginPage'));
 const ProfilePage = lazy(() => import('./pages/ProfilePage'));
-const EditProfilePage = lazy(() => import('./pages/EditProfilePage'));
 const UserProfilePage = lazy(() => import('./pages/UserProfilePage'));
 const FriendsPage = lazy(() => import('./pages/FriendsPage'));
 const WishlistsPage = lazy(() => import('./pages/WishlistsPage'));
@@ -71,7 +70,6 @@ function AppRoutes() {
             <Route path="/about" element={<LandingPage />} />
             <Route path="/login" element={user ? <Navigate to="/wishlists" replace /> : <LoginPage />} />
             <Route path="/profile" element={<PrivateRoute><ProfilePage /></PrivateRoute>} />
-            <Route path="/profile/edit" element={<PrivateRoute><EditProfilePage /></PrivateRoute>} />
             <Route path="/users/:id" element={<UserProfilePage />} />
             <Route path="/friends" element={<PrivateRoute><FriendsPage /></PrivateRoute>} />
             <Route path="/wishlists" element={<PrivateRoute><WishlistsPage /></PrivateRoute>} />

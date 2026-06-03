@@ -15,6 +15,11 @@ import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 
 type FriendStatus = 'none' | 'friends' | 'request_sent' | 'request_received';
 
+function formatBirthDate(dateStr: string): string {
+  const [, month, day] = dateStr.split('-').map(Number);
+  return new Date(2000, month - 1, day).toLocaleDateString('ru-RU', { day: 'numeric', month: 'long' });
+}
+
 const LEVEL_COLORS: Record<number, string> = {
   1: 'bg-muted text-muted-foreground',
   2: 'bg-green-100 text-green-700',
@@ -176,6 +181,11 @@ export default function UserProfilePage() {
               <h1 className="text-xl font-extrabold tracking-tight">{profile.displayName}</h1>
               {profile.username && <div className="text-sm text-muted-foreground">@{profile.username}</div>}
               {profile.bio && <div className="text-sm mt-1">{profile.bio}</div>}
+              {profile.birthDate && (
+                <div className="text-sm text-muted-foreground mt-1">
+                  🎂 {formatBirthDate(profile.birthDate)}
+                </div>
+              )}
               <div className="flex gap-4 mt-2 text-sm">
                 <span><span className="font-bold">{profile.receivedCount}</span> <span className="text-muted-foreground">получено</span></span>
                 <span><span className="font-bold">{profile.giftedCount}</span> <span className="text-muted-foreground">подарено</span></span>
@@ -205,7 +215,7 @@ export default function UserProfilePage() {
                   {friendStatus === 'request_received' && '✓ Принять заявку'}
                 </Button>
               )}
-              {isMe && <Link to="/profile/edit" className={buttonVariants({ variant: 'secondary' })}>Редактировать</Link>}
+              {isMe && <Link to="/profile?tab=settings" className={buttonVariants({ variant: 'secondary' })}>Редактировать</Link>}
             </div>
           </div>
         </CardContent>

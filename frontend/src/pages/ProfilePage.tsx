@@ -1,11 +1,15 @@
-import { useEffect, useState } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
+import { useEffect, useState, useRef } from 'react';
+import { Link, useNavigate, useSearchParams } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { getMyWishlists, getMyFulfilledWishes } from '../api/wishlists';
-import { deleteMyAccount, requestAccountDeletion, getUserProfile, getMyGiftProfile, getMyBlacklist, addBlacklistItem, deleteBlacklistItem } from '../api/users';
+import {
+  deleteMyAccount, requestAccountDeletion, getUserProfile, getMyGiftProfile, getMyBlacklist,
+  addBlacklistItem, deleteBlacklistItem, updateMyProfile, uploadAvatar, deleteAvatar,
+} from '../api/users';
 import { getImageUrl } from '../api/client';
 import { useToast } from '../components/Toast';
-import { parseError } from '../utils/errors';
+import { parseError, parseApiFieldErrors, ApiError } from '../utils/errors';
+import { profileSchema, parseZodErrors, type FormErrors } from '../lib/schemas';
 import { VISIBILITY_LABELS, CURRENCY_LABELS, getWishlistEmoji } from '../types';
 import type { WishlistSummaryDto, UserProfile, GiftProfileDto, FulfilledWishRecordDto, BlacklistItemDto } from '../types';
 import { Button, buttonVariants } from '@/components/ui/button';
@@ -13,6 +17,9 @@ import { Card, CardContent } from '@/components/ui/card';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Input } from '@/components/ui/input';
+import { Textarea } from '@/components/ui/textarea';
+import { Label } from '@/components/ui/label';
+import { FieldError } from '@/components/ui/field-error';
 import {
   Dialog,
   DialogContent,
@@ -117,9 +124,11 @@ const BLACKLIST_PRESETS = [
 const MAX_BLACKLIST_ITEMS = 5;
 
 export default function ProfilePage() {
-  const { user, logout } = useAuth();
+  const { user, logout, refreshUser } = useAuth();
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
   const toast = useToast();
+
   const [wishlists, setWishlists] = useState<WishlistSummaryDto[]>([]);
   const [stats, setStats] = useState<Pick<UserProfile, 'receivedCount' | 'giftedCount'> | null>(null);
   const [giftProfile, setGiftProfile] = useState<GiftProfileDto | null>(null);
@@ -128,10 +137,24 @@ export default function ProfilePage() {
   const [blacklistInput, setBlacklistInput] = useState('');
   const [blacklistSaving, setBlacklistSaving] = useState(false);
   const [loading, setLoading] = useState(true);
+
   const [deleteLoading, setDeleteLoading] = useState(false);
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [deleteStep, setDeleteStep] = useState<'confirm' | 'code'>('confirm');
   const [deleteCode, setDeleteCode] = useState('');
+
+  const [displayName, setDisplayName] = useState('');
+  const [username, setUsername] = useState('');
+  const [bio, setBio] = useState('');
+  const [birthDate, setBirthDate] = useState('');
+  const [showFulfilledWishes, setShowFulfilledWishes] = useState(false);
+  const [saving, setSaving] = useState(false);
+  const [avatarUploading, setAvatarUploading] = useState(false);
+  const [previewAvatarUrl, setPreviewAvatarUrl] = useState<string | null>(null);
+  const [formErrors, setFormErrors] = useState<FormErrors>({});
+  const avatarInputRef = useRef<HTMLInputElement>(null);
+
+  const defaultTab = searchParams.get('tab') ?? 'profile';
 
   useEffect(() => {
     if (!user) return;
@@ -145,6 +168,77 @@ export default function ProfilePage() {
       })
       .finally(() => setLoading(false));
   }, [user?.id]);
+
+  useEffect(() => {
+    if (!user) return;
+    setDisplayName(user.displayName);
+    setUsername(user.username ?? '');
+    setBio(user.bio ?? '');
+    setBirthDate(user.birthDate ?? '');
+    setShowFulfilledWishes(user.showFulfilledWishes);
+  }, [user]);
+
+  function clearFormError(field: string) {
+    if (formErrors[field]) setFormErrors((prev) => ({ ...prev, [field]: '' }));
+  }
+
+  async function handleAvatarChange(e: React.ChangeEvent<HTMLInputElement>) {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    const localPreview = URL.createObjectURL(file);
+    setPreviewAvatarUrl(localPreview);
+    setAvatarUploading(true);
+    try {
+      await uploadAvatar(file);
+      setPreviewAvatarUrl(null);
+      await refreshUser();
+      toast.success('Аватар обновлён');
+    } catch (err) {
+      setPreviewAvatarUrl(null);
+      toast.error(parseError(err));
+    } finally {
+      setAvatarUploading(false);
+      URL.revokeObjectURL(localPreview);
+      if (avatarInputRef.current) avatarInputRef.current.value = '';
+    }
+  }
+
+  async function handleDeleteAvatar() {
+    setAvatarUploading(true);
+    try {
+      await deleteAvatar();
+      await refreshUser();
+      setPreviewAvatarUrl(null);
+      toast.success('Аватар удалён');
+    } catch {
+      toast.error('Не удалось удалить аватар');
+    } finally {
+      setAvatarUploading(false);
+    }
+  }
+
+  async function handleSaveProfile(e: React.FormEvent) {
+    e.preventDefault();
+    const result = profileSchema.safeParse({ displayName, username, bio: bio || undefined });
+    if (!result.success) { setFormErrors(parseZodErrors(result.error)); return; }
+    setFormErrors({});
+    setSaving(true);
+    try {
+      await updateMyProfile({ displayName, username, bio: bio || null, birthDate: birthDate || null, showFulfilledWishes });
+      await refreshUser();
+      toast.success('Профиль сохранён');
+    } catch (err) {
+      if (err instanceof ApiError && err.status === 409) {
+        setFormErrors((prev) => ({ ...prev, username: 'Этот username уже занят' }));
+      } else {
+        const fieldErrors = parseApiFieldErrors(err);
+        if (fieldErrors) setFormErrors((prev) => ({ ...prev, ...fieldErrors }));
+        else toast.error(parseError(err));
+      }
+    } finally {
+      setSaving(false);
+    }
+  }
 
   async function handleAddBlacklistItem(title: string) {
     if (!title.trim() || blacklistItems.length >= MAX_BLACKLIST_ITEMS) return;
@@ -243,7 +337,7 @@ export default function ProfilePage() {
         </CardContent>
       </Card>
 
-      <Tabs defaultValue="profile">
+      <Tabs defaultValue={defaultTab}>
         <TabsList className="mb-5 w-full">
           <TabsTrigger value="profile" className="flex-1">Профиль</TabsTrigger>
           <TabsTrigger value="history" className="flex-1">История</TabsTrigger>
@@ -417,73 +511,179 @@ export default function ProfilePage() {
           )}
         </TabsContent>
 
-        <TabsContent value="settings" className="space-y-4">
+        <TabsContent value="settings" className="space-y-6">
           <Card>
-            <CardContent className="pt-6 space-y-3">
-              <div className="font-semibold mb-1">Аккаунт</div>
-              <Link to="/profile/edit" className={buttonVariants({ variant: 'secondary', size: 'sm' })}>Редактировать профиль</Link>
+            <CardContent className="pt-6">
+              <div className="font-semibold mb-5">Аккаунт</div>
+              <form onSubmit={handleSaveProfile} className="flex flex-col gap-4">
+                <div className="flex flex-col gap-1.5">
+                  <Label>Фото профиля</Label>
+                  <div className="flex items-center gap-4">
+                    <Avatar className="h-16 w-16">
+                      <AvatarImage
+                        src={previewAvatarUrl ?? getImageUrl(user.avatarPath) ?? user.avatarUrl ?? undefined}
+                        alt={user.displayName}
+                      />
+                      <AvatarFallback className="bg-primary text-primary-foreground text-xl font-bold">
+                        {user.displayName[0].toUpperCase()}
+                      </AvatarFallback>
+                    </Avatar>
+                    <div className="flex gap-2 flex-wrap">
+                      <input
+                        ref={avatarInputRef}
+                        type="file"
+                        accept="image/*"
+                        className="hidden"
+                        onChange={handleAvatarChange}
+                      />
+                      <Button
+                        type="button"
+                        variant="secondary"
+                        size="sm"
+                        disabled={avatarUploading}
+                        onClick={() => avatarInputRef.current?.click()}
+                      >
+                        {avatarUploading ? 'Загрузка...' : 'Загрузить фото'}
+                      </Button>
+                      {user.avatarPath && (
+                        <Button
+                          type="button"
+                          variant="ghost"
+                          size="sm"
+                          disabled={avatarUploading}
+                          onClick={handleDeleteAvatar}
+                        >
+                          Удалить
+                        </Button>
+                      )}
+                    </div>
+                  </div>
+                </div>
+
+                <div className="flex flex-col gap-1.5">
+                  <Label htmlFor="displayName">Имя</Label>
+                  <Input
+                    id="displayName"
+                    value={displayName}
+                    onChange={(e) => { setDisplayName(e.target.value); clearFormError('displayName'); }}
+                    placeholder="Алексей Кипнис"
+                    aria-invalid={!!formErrors.displayName}
+                  />
+                  <FieldError message={formErrors.displayName} />
+                </div>
+
+                <div className="flex flex-col gap-1.5">
+                  <Label htmlFor="username">Username</Label>
+                  <div className="relative">
+                    <span className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground select-none">@</span>
+                    <Input
+                      id="username"
+                      value={username}
+                      onChange={(e) => { setUsername(e.target.value); clearFormError('username'); }}
+                      placeholder="alexkipnis"
+                      className="pl-7"
+                      aria-invalid={!!formErrors.username}
+                    />
+                  </div>
+                  <FieldError message={formErrors.username} />
+                </div>
+
+                <div className="flex flex-col gap-1.5">
+                  <Label htmlFor="bio">О себе</Label>
+                  <Textarea
+                    id="bio"
+                    value={bio}
+                    onChange={(e) => { setBio(e.target.value); clearFormError('bio'); }}
+                    placeholder="Расскажи о себе..."
+                    rows={3}
+                    aria-invalid={!!formErrors.bio}
+                  />
+                  <FieldError message={formErrors.bio} />
+                </div>
+
+                <div className="flex flex-col gap-1.5">
+                  <Label htmlFor="birthDate">Дата рождения</Label>
+                  <Input id="birthDate" type="date" value={birthDate} onChange={(e) => setBirthDate(e.target.value)} />
+                </div>
+
+                <label className="flex items-center gap-3 cursor-pointer select-none">
+                  <input
+                    type="checkbox"
+                    checked={showFulfilledWishes}
+                    onChange={(e) => setShowFulfilledWishes(e.target.checked)}
+                    className="w-4 h-4 rounded border-input accent-primary"
+                  />
+                  <span className="text-sm font-medium leading-none">Показывать исполненные желания в профиле</span>
+                </label>
+
+                <div className="flex justify-end">
+                  <Button type="submit" disabled={saving}>{saving ? 'Сохранение...' : 'Сохранить'}</Button>
+                </div>
+              </form>
             </CardContent>
           </Card>
 
           <Card>
-            <CardContent className="pt-6">
-              <Button variant="destructive" size="sm" onClick={() => setDeleteDialogOpen(true)}>
+            <CardContent className="pt-6 flex items-center justify-between gap-4">
+              <p className="text-sm text-muted-foreground">Удаление аккаунта необратимо — все данные будут уничтожены.</p>
+              <Button variant="destructive" size="sm" className="shrink-0" onClick={() => setDeleteDialogOpen(true)}>
                 Удалить аккаунт
               </Button>
-              <Dialog open={deleteDialogOpen} onOpenChange={handleDeleteDialogOpenChange}>
-                <DialogContent>
-                  {deleteStep === 'confirm' ? (
-                    <>
-                      <DialogHeader>
-                        <DialogTitle>Удалить аккаунт?</DialogTitle>
-                        <DialogDescription>
-                          Это действие необратимо. Все вишлисты, желания и данные будут удалены навсегда.
-                          На ваш email придёт код подтверждения.
-                        </DialogDescription>
-                      </DialogHeader>
-                      <DialogFooter>
-                        <Button variant="outline" onClick={() => handleDeleteDialogOpenChange(false)}>
-                          Отмена
-                        </Button>
-                        <Button variant="destructive" onClick={handleRequestDeletion} disabled={deleteLoading}>
-                          {deleteLoading ? 'Отправка...' : 'Получить код'}
-                        </Button>
-                      </DialogFooter>
-                    </>
-                  ) : (
-                    <>
-                      <DialogHeader>
-                        <DialogTitle>Введите код подтверждения</DialogTitle>
-                        <DialogDescription>
-                          Код отправлен на {user.email}. Введите его, чтобы подтвердить удаление.
-                        </DialogDescription>
-                      </DialogHeader>
-                      <Input
-                        value={deleteCode}
-                        onChange={(e) => setDeleteCode(e.target.value)}
-                        placeholder="000000"
-                        maxLength={OTP_CODE_LENGTH}
-                        inputMode="numeric"
-                        autoFocus
-                      />
-                      <DialogFooter>
-                        <Button variant="outline" onClick={() => handleDeleteDialogOpenChange(false)}>
-                          Отмена
-                        </Button>
-                        <Button
-                          variant="destructive"
-                          onClick={handleConfirmDelete}
-                          disabled={deleteLoading || deleteCode.length !== 6}
-                        >
-                          {deleteLoading ? 'Удаление...' : 'Удалить аккаунт'}
-                        </Button>
-                      </DialogFooter>
-                    </>
-                  )}
-                </DialogContent>
-              </Dialog>
             </CardContent>
           </Card>
+
+          <Dialog open={deleteDialogOpen} onOpenChange={handleDeleteDialogOpenChange}>
+            <DialogContent>
+              {deleteStep === 'confirm' ? (
+                <>
+                  <DialogHeader>
+                    <DialogTitle>Удалить аккаунт?</DialogTitle>
+                    <DialogDescription>
+                      Это действие необратимо. Все вишлисты, желания и данные будут удалены навсегда.
+                      На ваш email придёт код подтверждения.
+                    </DialogDescription>
+                  </DialogHeader>
+                  <DialogFooter>
+                    <Button variant="outline" onClick={() => handleDeleteDialogOpenChange(false)}>
+                      Отмена
+                    </Button>
+                    <Button variant="destructive" onClick={handleRequestDeletion} disabled={deleteLoading}>
+                      {deleteLoading ? 'Отправка...' : 'Получить код'}
+                    </Button>
+                  </DialogFooter>
+                </>
+              ) : (
+                <>
+                  <DialogHeader>
+                    <DialogTitle>Введите код подтверждения</DialogTitle>
+                    <DialogDescription>
+                      Код отправлен на {user.email}. Введите его, чтобы подтвердить удаление.
+                    </DialogDescription>
+                  </DialogHeader>
+                  <Input
+                    value={deleteCode}
+                    onChange={(e) => setDeleteCode(e.target.value)}
+                    placeholder="000000"
+                    maxLength={OTP_CODE_LENGTH}
+                    inputMode="numeric"
+                    autoFocus
+                  />
+                  <DialogFooter>
+                    <Button variant="outline" onClick={() => handleDeleteDialogOpenChange(false)}>
+                      Отмена
+                    </Button>
+                    <Button
+                      variant="destructive"
+                      onClick={handleConfirmDelete}
+                      disabled={deleteLoading || deleteCode.length !== 6}
+                    >
+                      {deleteLoading ? 'Удаление...' : 'Удалить аккаунт'}
+                    </Button>
+                  </DialogFooter>
+                </>
+              )}
+            </DialogContent>
+          </Dialog>
         </TabsContent>
       </Tabs>
     </div>
