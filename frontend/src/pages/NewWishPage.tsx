@@ -84,7 +84,7 @@ export default function NewWishPage() {
       try {
         if (imageFile) await uploadWishImage(wishlistId, res.wishId, imageFile);
         else if (externalImageUrl) await uploadWishImage(wishlistId, res.wishId, externalImageUrl);
-      } catch { toast.error('Желание добавлено, но изображение не удалось загрузить'); }
+      } catch { toast.warning('Желание добавлено, но изображение не удалось загрузить'); }
       navigate(`/wishlists/${wishlistId}`);
     } catch (e) {
       const fieldErrors = parseApiFieldErrors(e);

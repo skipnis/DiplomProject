@@ -85,7 +85,7 @@ export default function EditWishPage() {
       if (removeImage && currentImagePath) await deleteWishImage(wishlistId, wishId);
       else if (imageFile) {
         try { await uploadWishImage(wishlistId, wishId, imageFile); }
-        catch { toast.error('Желание сохранено, но изображение не удалось загрузить'); }
+        catch { toast.warning('Желание сохранено, но изображение не удалось загрузить'); }
       }
       navigate(`/wishlists/${wishlistId}/wishes/${wishId}`);
     } catch (e) {

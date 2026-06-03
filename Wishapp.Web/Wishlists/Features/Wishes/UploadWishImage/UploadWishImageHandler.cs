@@ -108,7 +108,12 @@ public sealed class UploadWishImageHandler(
 
         if (contentType is null || !contentType.StartsWith("image/"))
         {
-            return Error.Validation("Image.InvalidContentType", "URL must point to an image");
+            contentType = InferContentTypeFromUrl(url);
+
+            if (contentType is null)
+            {
+                return Error.Validation("Image.InvalidContentType", "URL must point to an image");
+            }
         }
 
         if (response.Content.Headers.ContentLength > StorageLimits.MaxImageSizeBytes)
@@ -124,5 +129,19 @@ public sealed class UploadWishImageHandler(
         await storageService.UploadAsync(path, stream, contentType, size, ct);
 
         return Result.Success();
+    }
+
+    private static string? InferContentTypeFromUrl(string url)
+    {
+        var extension = Path.GetExtension(new Uri(url).AbsolutePath).ToLowerInvariant();
+
+        return extension switch
+        {
+            ".jpg" or ".jpeg" => "image/jpeg",
+            ".png" => "image/png",
+            ".webp" => "image/webp",
+            ".gif" => "image/gif",
+            _ => null
+        };
     }
 }
