@@ -8,6 +8,7 @@ public enum NotificationType
 
     FriendRequestReceived = 10,
     FriendRequestAccepted = 11,
+    FriendRequestDeclined = 12,
 
     AddedToWishlist = 20,
     RemovedFromWishlist = 21,

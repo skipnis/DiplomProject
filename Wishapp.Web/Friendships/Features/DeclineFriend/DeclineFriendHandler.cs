@@ -3,10 +3,16 @@ using Wishapp.Web.Common.Interfaces;
 using Wishapp.Web.Common.Types;
 using Wishapp.Web.Friendships.Entities;
 using Wishapp.Web.Infrastructure.Database;
+using Wishapp.Web.Notifications;
+using Wishapp.Web.Notifications.Entities;
+using Wishapp.Web.Users;
 
 namespace Wishapp.Web.Friendships.Features.DeclineFriend;
 
-public sealed class DeclineFriendHandler(ApplicationDbContext db)
+public sealed class DeclineFriendHandler(
+    ApplicationDbContext db,
+    INotificationsApi notificationsApi,
+    IUsersApi usersApi)
     : ICommandHandler<DeclineFriendCommand>
 {
     public async Task<Result> HandleAsync(
@@ -27,6 +33,16 @@ public sealed class DeclineFriendHandler(ApplicationDbContext db)
         friendship.Decline();
 
         await db.SaveChangesAsync(ct);
+
+        var userInfos = await usersApi.GetUsersPublicInfoAsync([command.UserId], ct);
+        var decliner = userInfos.GetValueOrDefault(command.UserId);
+
+        await notificationsApi.EnqueueAsync(command.RequesterId, NotificationType.FriendRequestDeclined, new
+        {
+            declinedByUserId = command.UserId,
+            declinedByDisplayName = decliner?.DisplayName,
+            declinedByAvatarUrl = decliner?.AvatarUrl,
+        }, ct);
 
         return Result.Success();
     }

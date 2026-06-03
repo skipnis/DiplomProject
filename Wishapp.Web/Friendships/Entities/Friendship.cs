@@ -37,6 +37,14 @@ public sealed class Friendship
         UpdatedAt = DateTimeOffset.UtcNow;
     }
 
+    public void ResetToPending(Guid newRequesterId, Guid newAddresseeId)
+    {
+        RequesterId = newRequesterId;
+        AddresseeId = newAddresseeId;
+        Status = FriendshipStatus.Pending;
+        UpdatedAt = DateTimeOffset.UtcNow;
+    }
+
     public static Expression<Func<Friendship, bool>> AcceptedBetween(Guid userId, Guid targetId) =>
         f => f.Status == FriendshipStatus.Accepted &&
              ((f.RequesterId == userId && f.AddresseeId == targetId) ||

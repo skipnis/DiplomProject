@@ -34,14 +34,23 @@ public sealed class MakeFriendHandler(
         var existingFriendship = await db.Friendships
             .FirstOrDefaultAsync(Friendship.Between(command.RequesterId, command.AddresseeId), ct);
 
+        Friendship friendship;
+
         if (existingFriendship is not null)
         {
-            return Error.Conflict("Friendships.AlreadyExists", "Friendship already exists");
+            if (existingFriendship.Status != FriendshipStatus.Declined)
+            {
+                return Error.Conflict("Friendships.AlreadyExists", "Friendship already exists");
+            }
+
+            existingFriendship.ResetToPending(command.RequesterId, command.AddresseeId);
+            friendship = existingFriendship;
         }
-
-        var friendship = Friendship.Create(command.RequesterId, command.AddresseeId);
-
-        db.Friendships.Add(friendship);
+        else
+        {
+            friendship = Friendship.Create(command.RequesterId, command.AddresseeId);
+            db.Friendships.Add(friendship);
+        }
 
         await db.SaveChangesAsync(ct);
 

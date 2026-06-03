@@ -37,6 +37,7 @@ function NotificationItem({
     if (p.wishlistId) return `/wishlists/${p.wishlistId}`;
     if (p.requesterId) return `/users/${p.requesterId}`;
     if (p.acceptedByUserId) return `/users/${p.acceptedByUserId}`;
+    if (p.declinedByUserId) return `/users/${p.declinedByUserId}`;
     return null;
   };
 
@@ -47,6 +48,7 @@ function NotificationItem({
       case 3: return `«${p.wishName ?? '...'}» отмечено как подаренное в «${p.wishlistName ?? '...'}»`;
       case 10: return `${p.requesterDisplayName ?? 'Пользователь'} отправил вам заявку в друзья`;
       case 11: return `${p.acceptedByDisplayName ?? 'Пользователь'} принял вашу заявку в друзья`;
+      case 12: return `${p.declinedByDisplayName ?? 'Пользователь'} отклонил вашу заявку в друзья`;
       case 20: return `${p.addedByDisplayName ?? 'Кто-то'} добавил вас в вишлист «${p.wishlistName ?? '...'}» с ролью ${ROLE_LABELS[p.role as number] ?? ''}`;
       case 21: return `${p.removedByDisplayName ?? 'Кто-то'} удалил вас из вишлиста «${p.wishlistName ?? '...'}»`;
       case 22: return `Ваша роль в вишлисте «${p.wishlistName ?? '...'}» изменена на ${p.customRoleName ? `«${p.customRoleName}»` : (ROLE_LABELS[p.newRole as number] ?? '')}`;
