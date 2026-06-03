@@ -30,11 +30,6 @@ public sealed class FulfillWishHandler(
             return Error.NotFound("Wishlists.NotFound", "Wishlist not found");
         }
 
-        if (wishlist.IsSystem)
-        {
-            return Error.Forbidden("Wishes.SystemWishlist", "Cannot fulfill wishes from a system wishlist");
-        }
-
         var reserverId = await reservationsApi.GetReserverForWishAsync(command.WishId, ct);
 
         var result = wishlist.FulfillWish(command.WishId, command.UserId, reserverId);
@@ -56,6 +51,7 @@ public sealed class FulfillWishHandler(
             fulfilledWish.Currency,
             fulfilledWish.ImagePath,
             wishlist.Name,
+            wishlist.SystemType == SystemWishlistType.Hidden,
             fulfilledWish.FulfilledAt!.Value);
 
         db.FulfilledWishRecords.Add(record);

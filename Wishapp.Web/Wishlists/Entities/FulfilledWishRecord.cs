@@ -12,6 +12,7 @@ public sealed class FulfilledWishRecord
     public Currency? Currency { get; private set; }
     public string? ImagePath { get; private set; }
     public string WishlistName { get; private set; } = null!;
+    public bool IsFromHiddenWishlist { get; private set; }
     public DateTimeOffset FulfilledAt { get; private set; }
 
     private FulfilledWishRecord() { }
@@ -26,6 +27,7 @@ public sealed class FulfilledWishRecord
         Currency? currency,
         string? imagePath,
         string wishlistName,
+        bool isFromHiddenWishlist,
         DateTimeOffset fulfilledAt)
     {
         return new FulfilledWishRecord
@@ -40,6 +42,7 @@ public sealed class FulfilledWishRecord
             Currency = currency,
             ImagePath = imagePath,
             WishlistName = wishlistName,
+            IsFromHiddenWishlist = isFromHiddenWishlist,
             FulfilledAt = fulfilledAt,
         };
     }

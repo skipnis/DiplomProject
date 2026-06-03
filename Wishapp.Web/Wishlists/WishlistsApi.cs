@@ -181,7 +181,7 @@ public sealed class WishlistsApi(ApplicationDbContext db) : IWishlistsApi
     {
         return await db.FulfilledWishRecords
             .AsNoTracking()
-            .Where(record => record.OwnerId == userId)
+            .Where(record => record.OwnerId == userId && !record.IsFromHiddenWishlist)
             .OrderByDescending(record => record.FulfilledAt)
             .Select(record => new PublicFulfilledWishDto(
                 record.Id,
