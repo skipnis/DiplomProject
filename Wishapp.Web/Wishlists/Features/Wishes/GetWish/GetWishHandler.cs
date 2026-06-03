@@ -50,7 +50,7 @@ public sealed class GetWishHandler(
             wish.CreatedAt,
             wish.IsFulfilled,
             wish.FulfilledAt,
-            reservedIds.Contains(wish.Id),
+            !query.HideReservations && reservedIds.Contains(wish.Id),
             query.IsOwner ? wish.ShareToken : null,
             wish.FulfilledByReserverId,
             hasGiftBadges,
