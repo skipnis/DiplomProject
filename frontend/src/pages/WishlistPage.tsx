@@ -2,6 +2,8 @@ import { useEffect, useState, useCallback } from 'react';
 import { useParams, Link, useNavigate } from 'react-router-dom';
 import { getWishlist, deleteWishlist } from '../api/wishlists';
 import { getWishes, deleteWish, fulfillWish, unfulfillWish, getWish, addGiftBadges } from '../api/wishes';
+import { getEventByWishlist } from '../api/events';
+import { generateWishlistShareCard } from '../lib/generateWishlistShareCard';
 import { getFulfilledBadgeDefinitions } from '../api/catalog';
 import { Select, SelectContent, SelectItem, SelectTrigger } from '@/components/ui/select';
 import { reserveWish, cancelReservation, getMyReservations } from '../api/reservations';
@@ -49,11 +51,12 @@ function WishImagePlaceholder({ name }: { name: string }) {
   );
 }
 
-function GiftBadgesModal({ open, onClose, onSubmit, definitions }: {
+function GiftBadgesModal({ open, onClose, onSubmit, definitions, description }: {
   open: boolean;
   onClose: () => void;
   onSubmit: (badges: number[]) => Promise<void>;
   definitions: FulfilledBadgeDefinitionDto[];
+  description?: string;
 }) {
   const [selected, setSelected] = useState<number[]>([]);
   const [submitting, setSubmitting] = useState(false);
@@ -83,7 +86,7 @@ function GiftBadgesModal({ open, onClose, onSubmit, definitions }: {
     <Dialog open={open} onOpenChange={onClose}>
       <DialogContent className="max-w-sm">
         <DialogTitle>Оцените подарок</DialogTitle>
-        <p className="text-sm text-muted-foreground">Отметьте до 3 характеристик, которые лучше всего описывают впечатление от этого подарка.</p>
+        <p className="text-sm text-muted-foreground">{description ?? 'Отметьте до 3 характеристик, которые лучше всего описывают впечатление от этого подарка.'}</p>
         <div className="flex flex-wrap gap-2 mt-1">
           {activeDefinitions.map((def) => {
             const isSelected = selected.includes(def.id);
@@ -191,6 +194,8 @@ export default function WishlistPage() {
   const [pendingCancelReserveWish, setPendingCancelReserveWish] = useState<WishSummaryDto | null>(null);
   const [pendingDeleteWish, setPendingDeleteWish] = useState<WishSummaryDto | null>(null);
   const [showDeleteWishlistConfirm, setShowDeleteWishlistConfirm] = useState(false);
+  const [shareCardLoading, setShareCardLoading] = useState(false);
+  const [shareCardBlobUrl, setShareCardBlobUrl] = useState<string | null>(null);
   const PAGE_SIZE = 12;
 
   const currentWishSort = WISH_SORT_OPTIONS.find((o) => `${o.sortBy}_${o.direction}` === wishSortKey) ?? WISH_SORT_OPTIONS[0];
@@ -257,21 +262,48 @@ export default function WishlistPage() {
   };
 
   const handleShare = async () => {
-    const url = `${window.location.origin}/wishlists/${id}`;
-    if (navigator.share) {
-      try {
-        await navigator.share({ title: wishlist?.name, url });
-      } catch {
-        // user cancelled — do nothing
-      }
-      return;
-    }
+    if (!wishlist || !id || shareCardLoading) return;
+    setShareCardLoading(true);
     try {
-      await navigator.clipboard.writeText(url);
-      toast.success('Ссылка скопирована');
-    } catch {
-      toast.error('Не удалось скопировать ссылку');
+      let linkedEvent: { title: string; date: string } | undefined;
+      if (isOwner) {
+        try {
+          const found = await getEventByWishlist(id);
+          linkedEvent = { title: found.title, date: found.date };
+        } catch {
+          // not critical — 404 means no linked event
+        }
+      }
+
+      const blob = await generateWishlistShareCard({
+        name: wishlist.name,
+        emoji: getWishlistEmoji(wishlist),
+        ownerDisplayName: isOwner ? (me?.displayName ?? '') : (ownerProfile?.displayName ?? ''),
+        wishlistId: id,
+        wishCount: wishTotalCount,
+        eventTitle: linkedEvent?.title,
+        eventDate: linkedEvent?.date,
+      });
+
+      const file = new File([blob], 'wishlist.png', { type: 'image/png' });
+      if (navigator.canShare?.({ files: [file] })) {
+        await navigator.share({ files: [file] });
+      } else {
+        const blobUrl = URL.createObjectURL(blob);
+        setShareCardBlobUrl(blobUrl);
+      }
+    } catch (error) {
+      if (error instanceof Error && error.name !== 'AbortError') {
+        toast.error('Не удалось поделиться');
+      }
+    } finally {
+      setShareCardLoading(false);
     }
+  };
+
+  const handleShareCardModalClose = () => {
+    if (shareCardBlobUrl) URL.revokeObjectURL(shareCardBlobUrl);
+    setShareCardBlobUrl(null);
   };
 
   const executeDeleteWish = async (wish: WishSummaryDto) => {
@@ -290,7 +322,7 @@ export default function WishlistPage() {
       setWishes((prev) => prev.map((w) => w.id === wish.id ? { ...w, isFulfilled: true, isReserved: false } : w));
       setMyReservationIds((prev) => { const s = new Set(prev); s.delete(wish.id); return s; });
       const fullWish = await getWish(id, wish.id);
-      if (fullWish.fulfilledByReserverId && !fullWish.hasGiftBadges) {
+      if (!fullWish.hasGiftBadges && (fullWish.fulfilledByReserverId || wishlist?.isSurpriseModeEnabled)) {
         setPendingGiftBadgeWishId(wish.id);
         setShowGiftBadgesModal(true);
       }
@@ -402,7 +434,7 @@ export default function WishlistPage() {
             </div>
             <div className="flex items-center gap-1">
               {(wishlist.visibility === 0 || isOwner) && wishlist.visibility !== 3 && !isSystem && (
-                <Button variant="ghost" size="sm" className="h-8 w-8 p-0 text-muted-foreground" onClick={handleShare} title="Поделиться">
+                <Button variant="ghost" size="sm" className="h-8 w-8 p-0 text-muted-foreground" onClick={handleShare} title="Поделиться" disabled={shareCardLoading}>
                   <Share2 size={16} />
                 </Button>
               )}
@@ -476,13 +508,11 @@ export default function WishlistPage() {
                       {wish.price != null && (
                         <div className="font-bold text-primary text-sm">{wish.price} {wish.currency != null ? ['BYN','RUB','USD','EUR'][wish.currency] : ''}</div>
                       )}
-                      {wish.priority > 0 && (
-                        <span className={`text-xs px-2 py-0.5 rounded-full font-semibold w-fit ${PRIORITY_BADGE[wish.priority]}`}>{PRIORITY_LABELS[wish.priority]}</span>
-                      )}
                     </div>
                   </div>
                   {shouldBlur && <div className="absolute inset-0 flex items-center justify-center font-bold text-muted-foreground text-sm bg-background/60">🔒 Забронировано</div>}
                   {wish.isFulfilled && <div className="absolute top-2 left-2 bg-green-500 text-white rounded-full px-2 py-0.5 text-xs font-semibold">Исполнено</div>}
+                  {wish.priority > 0 && <span className={`absolute top-2 right-2 text-xs px-2 py-0.5 rounded-full font-semibold ${PRIORITY_BADGE[wish.priority]}`}>{PRIORITY_LABELS[wish.priority]}</span>}
                 </Link>
                 {isOwner && !isSystem && (
                   <div className="flex items-center gap-1 mt-2">
@@ -547,6 +577,7 @@ export default function WishlistPage() {
         onClose={() => { setShowGiftBadgesModal(false); setPendingGiftBadgeWishId(null); }}
         onSubmit={handleGiftBadgesSubmit}
         definitions={fulfilledBadgeDefinitions}
+        description={wishlist?.isSurpriseModeEnabled ? 'Если это желание исполнили не вы — поставьте оценку. Если нет — пропустите.' : undefined}
       />
 
       <ConfirmModal
@@ -596,6 +627,24 @@ export default function WishlistPage() {
         confirmLabel="Удалить"
         confirmVariant="destructive"
       />
+
+      <Dialog open={!!shareCardBlobUrl} onOpenChange={(open) => { if (!open) handleShareCardModalClose(); }}>
+        <DialogContent className="max-w-sm p-4">
+          <DialogTitle className="text-base">Поделиться вишлистом</DialogTitle>
+          {shareCardBlobUrl && (
+            <>
+              <img src={shareCardBlobUrl} alt="Карточка вишлиста" className="w-full rounded-lg" />
+              <a
+                href={shareCardBlobUrl}
+                download={`wishlist-${wishlist?.name.slice(0, 30).replace(/\s+/g, '-')}.png`}
+                className={buttonVariants({ variant: 'secondary' })}
+              >
+                Сохранить изображение
+              </a>
+            </>
+          )}
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

@@ -33,7 +33,7 @@ public sealed class AddGiftBadgesHandler(ApplicationDbContext db, IWishlistsApi 
             return Error.Failure("Wishes.GiftBadges.NotFulfilled", "Cannot rate a wish that has not been fulfilled");
 
         if (!eligibility.FulfilledByReserverId.HasValue)
-            return Error.Failure("Wishes.GiftBadges.NoGifter", "This wish was not fulfilled by a reservation");
+            return Result.Success();
 
         var alreadyRated = await db.FulfilledWishBadges
             .AnyAsync(b => b.WishId == command.WishId, ct);

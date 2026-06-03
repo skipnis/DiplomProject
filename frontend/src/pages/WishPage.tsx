@@ -49,11 +49,12 @@ function CopyModal({ wishlists, onSelect, open, onClose }: { wishlists: Wishlist
   );
 }
 
-function GiftBadgesModal({ open, onClose, onSubmit, definitions }: {
+function GiftBadgesModal({ open, onClose, onSubmit, definitions, description }: {
   open: boolean;
   onClose: () => void;
   onSubmit: (badges: number[]) => Promise<void>;
   definitions: FulfilledBadgeDefinitionDto[];
+  description?: string;
 }) {
   const [selected, setSelected] = useState<number[]>([]);
   const [submitting, setSubmitting] = useState(false);
@@ -82,7 +83,7 @@ function GiftBadgesModal({ open, onClose, onSubmit, definitions }: {
     <Dialog open={open} onOpenChange={onClose}>
       <DialogContent className="max-w-sm">
         <DialogTitle>Оцените подарок</DialogTitle>
-        <p className="text-sm text-muted-foreground">Отметьте до 3 характеристик, которые лучше всего описывают впечатление от этого подарка.</p>
+        <p className="text-sm text-muted-foreground">{description ?? 'Отметьте до 3 характеристик, которые лучше всего описывают впечатление от этого подарка.'}</p>
         <div className="flex flex-wrap gap-2 mt-1">
           {activeDefinitions.map((def) => {
             const isSelected = selected.includes(def.id);
@@ -210,7 +211,7 @@ export default function WishPage() {
       await fulfillWish(wishlistId, wishId);
       const refreshedWish = await getWish(wishlistId, wishId);
       setWish(refreshedWish);
-      if (refreshedWish.fulfilledByReserverId && !refreshedWish.hasGiftBadges) {
+      if (!refreshedWish.hasGiftBadges && (refreshedWish.fulfilledByReserverId || wishlist?.isSurpriseModeEnabled)) {
         setShowGiftBadgesModal(true);
       }
     } catch (e) { toast.error(parseError(e)); }
@@ -294,7 +295,6 @@ export default function WishPage() {
         priority: wish.priority,
         imagePath: wish.imagePath,
         shareToken: wish.shareToken,
-        wishlistName: wishlist?.name ?? '',
         ownerDisplayName: me?.displayName ?? '',
         storageUrl: STORAGE_URL,
       });
@@ -453,6 +453,7 @@ export default function WishPage() {
           onClose={() => setShowGiftBadgesModal(false)}
           onSubmit={handleGiftBadgesSubmit}
           definitions={fulfilledBadgeDefinitions}
+          description={wishlist?.isSurpriseModeEnabled ? 'Если это желание исполнили не вы — поставьте оценку. Если нет — пропустите.' : undefined}
         />
       )}
       <ConfirmModal
@@ -460,7 +461,7 @@ export default function WishPage() {
         onClose={() => setShowFulfillConfirm(false)}
         onConfirm={executeFulfill}
         title="Отметить желание исполненным?"
-        description="Это действие изменит статус желания. Если у желания есть бронирование, вам будет предложено оценить подарок."
+        description="Это действие изменит статус желания."
         confirmLabel="Отметить исполненным"
       />
       <ConfirmModal

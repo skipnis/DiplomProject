@@ -52,7 +52,7 @@ public sealed class GetWishHandler(
             wish.FulfilledAt,
             !query.HideReservations && reservedIds.Contains(wish.Id),
             query.IsOwner ? wish.ShareToken : null,
-            wish.FulfilledByReserverId,
+            query.HideReservations ? null : wish.FulfilledByReserverId,
             hasGiftBadges,
             wish.CreatedByUserId,
             createdByDisplayName);
