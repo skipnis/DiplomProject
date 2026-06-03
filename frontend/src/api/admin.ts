@@ -299,3 +299,31 @@ export function adminUpdateAchievementDefinition(id: number, data: {
 export function adminDeleteAchievementDefinition(id: number): Promise<void> {
   return adminRequest<void>('DELETE', `/admin/catalog/achievements/${id}`);
 }
+
+export interface AdminStatsResponse {
+  users: {
+    total: number;
+    newLast7Days: number;
+    newLast30Days: number;
+  };
+  content: {
+    totalWishlists: number;
+    totalWishes: number;
+    averageWishesPerWishlist: number;
+    wishesWithImage: number;
+    wishesWithoutImage: number;
+  };
+  activity: {
+    activeReservations: number;
+    fulfilledWishes: number;
+    fulfilledWithGifter: number;
+    topGifters: { userId: string; displayName: string; fulfilledCount: number }[];
+  };
+  catalog: {
+    topItems: { id: string; name: string; wishCount: number }[];
+  };
+}
+
+export function adminGetStats(): Promise<AdminStatsResponse> {
+  return adminRequest<AdminStatsResponse>('GET', '/admin/stats');
+}

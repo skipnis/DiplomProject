@@ -12,6 +12,7 @@ import {
   adminGetCatalogBadgeDefinitions, adminCreateCatalogBadgeDefinition, adminUpdateCatalogBadgeDefinition, adminDeleteCatalogBadgeDefinition,
   adminGetFulfilledBadgeDefinitions, adminCreateFulfilledBadgeDefinition, adminUpdateFulfilledBadgeDefinition, adminDeleteFulfilledBadgeDefinition,
   adminGetAchievementDefinitions, adminCreateAchievementDefinition, adminUpdateAchievementDefinition, adminDeleteAchievementDefinition,
+  adminGetStats, type AdminStatsResponse,
   ADMIN_TOKEN_KEY,
 } from '../api/admin';
 import { useToast } from '../components/Toast';
@@ -217,7 +218,7 @@ function CollectionForm({ form, setForm, occasions, collectionImageFile, setColl
 }
 
 export default function AdminPage() {
-  const [activeTab, setActiveTab] = useState('categories');
+  const [activeTab, setActiveTab] = useState('stats');
   const [filterCategoryId, setFilterCategoryId] = useState<string | undefined>(undefined);
 
   const openItemsByCategory = (categoryId: string) => {
@@ -233,6 +234,7 @@ export default function AdminPage() {
       </div>
       <Tabs value={activeTab} onValueChange={(v) => { setActiveTab(v); if (v !== 'items') setFilterCategoryId(undefined); }}>
         <TabsList className="mb-6 flex-wrap h-auto gap-1">
+          <TabsTrigger value="stats">Статистика</TabsTrigger>
           <TabsTrigger value="categories">Категории</TabsTrigger>
           <TabsTrigger value="items">Товары</TabsTrigger>
           <TabsTrigger value="occasions">Поводы</TabsTrigger>
@@ -241,6 +243,7 @@ export default function AdminPage() {
           <TabsTrigger value="fulfilled-badges">Бейджи подарков</TabsTrigger>
           <TabsTrigger value="achievements">Достижения</TabsTrigger>
         </TabsList>
+        <TabsContent value="stats"><StatsTab /></TabsContent>
         <TabsContent value="categories"><CategoriesTab onOpenItems={openItemsByCategory} /></TabsContent>
         <TabsContent value="items"><ItemsTab initialCategoryId={filterCategoryId} /></TabsContent>
         <TabsContent value="occasions"><OccasionsTab /></TabsContent>
@@ -1191,6 +1194,105 @@ function AchievementsTab() {
           ))}
         </div>
       )}
+    </div>
+  );
+}
+
+function StatCard({ label, value, sub }: { label: string; value: string | number; sub?: string }) {
+  return (
+    <Card>
+      <CardContent className="pt-5">
+        <p className="text-sm text-muted-foreground mb-1">{label}</p>
+        <p className="text-2xl font-bold">{value}</p>
+        {sub && <p className="text-xs text-muted-foreground mt-1">{sub}</p>}
+      </CardContent>
+    </Card>
+  );
+}
+
+function StatsTab() {
+  const [stats, setStats] = useState<AdminStatsResponse | null>(null);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    adminGetStats()
+      .then(setStats)
+      .catch(() => {})
+      .finally(() => setLoading(false));
+  }, []);
+
+  if (loading) return <p className="text-muted-foreground">Загрузка...</p>;
+  if (!stats) return <p className="text-destructive">Не удалось загрузить статистику</p>;
+
+  return (
+    <div className="space-y-8">
+      <section>
+        <h2 className="text-lg font-semibold mb-3">Пользователи</h2>
+        <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
+          <StatCard label="Всего" value={stats.users.total} />
+          <StatCard label="Новых за 7 дней" value={stats.users.newLast7Days} />
+          <StatCard label="Новых за 30 дней" value={stats.users.newLast30Days} />
+        </div>
+      </section>
+
+      <section>
+        <h2 className="text-lg font-semibold mb-3">Контент</h2>
+        <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
+          <StatCard label="Вишлистов" value={stats.content.totalWishlists} />
+          <StatCard label="Желаний" value={stats.content.totalWishes} />
+          <StatCard label="Среднее желаний на вишлист" value={stats.content.averageWishesPerWishlist} />
+          <StatCard label="С картинкой" value={stats.content.wishesWithImage} />
+          <StatCard label="Без картинки" value={stats.content.wishesWithoutImage} />
+        </div>
+      </section>
+
+      <section>
+        <h2 className="text-lg font-semibold mb-3">Активность</h2>
+        <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
+          <StatCard label="Активных резерваций" value={stats.activity.activeReservations} />
+          <StatCard label="Выполнено желаний" value={stats.activity.fulfilledWishes} />
+          <StatCard
+            label="Выполнено с дарителем"
+            value={stats.activity.fulfilledWithGifter}
+            sub={`${stats.activity.fulfilledWishes > 0 ? Math.round(stats.activity.fulfilledWithGifter / stats.activity.fulfilledWishes * 100) : 0}% от всех`}
+          />
+        </div>
+
+        {stats.activity.topGifters.length > 0 && (
+          <div className="mt-4">
+            <h3 className="text-sm font-medium mb-2 text-muted-foreground">Топ дарителей</h3>
+            <div className="space-y-1">
+              {stats.activity.topGifters.map((gifter, index) => (
+                <div key={gifter.userId} className="flex items-center justify-between text-sm py-1.5 border-b last:border-0">
+                  <span className="text-muted-foreground w-6">{index + 1}.</span>
+                  <span className="flex-1">{gifter.displayName}</span>
+                  <span className="font-medium">{gifter.fulfilledCount}</span>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
+      </section>
+
+      <section>
+        <h2 className="text-lg font-semibold mb-3">Каталог</h2>
+        {stats.catalog.topItems.length > 0 ? (
+          <div>
+            <h3 className="text-sm font-medium mb-2 text-muted-foreground">Топ товаров по добавлениям</h3>
+            <div className="space-y-1">
+              {stats.catalog.topItems.map((item, index) => (
+                <div key={item.id} className="flex items-center justify-between text-sm py-1.5 border-b last:border-0">
+                  <span className="text-muted-foreground w-6">{index + 1}.</span>
+                  <span className="flex-1 truncate">{item.name}</span>
+                  <span className="font-medium ml-4">{item.wishCount}</span>
+                </div>
+              ))}
+            </div>
+          </div>
+        ) : (
+          <p className="text-sm text-muted-foreground">Нет данных</p>
+        )}
+      </section>
     </div>
   );
 }

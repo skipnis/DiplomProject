@@ -21,6 +21,9 @@ public static partial class AdminEndpoints
 
         var secured = admin.MapGroup("/catalog").RequireAuthorization("Admin");
 
+        admin.MapGroup("").RequireAuthorization("Admin")
+            .MapGet("/stats", GetStats);
+
         secured.MapGet("/categories", GetAllCategories);
         secured.MapPost("/categories", CreateCategory)
             .AddEndpointFilter<ValidationFilter<CreateCategoryCommand>>();
