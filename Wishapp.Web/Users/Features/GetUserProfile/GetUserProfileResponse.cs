@@ -7,4 +7,5 @@ public record GetUserProfileResponse(
     string? AvatarUrl,
     string? Bio,
     int ReceivedCount,
-    int GiftedCount);
+    int GiftedCount,
+    DateOnly? BirthDate);

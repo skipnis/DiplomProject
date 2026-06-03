@@ -31,6 +31,7 @@ public sealed class GetUserProfileHandler(ApplicationDbContext db, IWishlistsApi
             user.AvatarPath ?? user.AvatarUrl,
             user.Bio,
             stats.ReceivedCount,
-            stats.GiftedCount);
+            stats.GiftedCount,
+            user.BirthDate);
     }
 }

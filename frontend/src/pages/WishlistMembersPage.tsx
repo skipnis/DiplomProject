@@ -8,7 +8,9 @@ import { useAuth } from '../context/AuthContext';
 import { useToast } from '../components/Toast';
 import { parseError } from '../utils/errors';
 import { ROLE_LABELS } from '../types';
-import type { WishlistMemberDto, WishlistMemberRole, UserProfile, FriendInfo } from '../types';
+import type { WishlistMemberDto, WishlistMemberRole, FriendInfo } from '../types';
+
+type MemberProfile = { displayName: string; avatarUrl: string | null };
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Card, CardContent } from '@/components/ui/card';
@@ -23,7 +25,7 @@ export default function WishlistMembersPage() {
 
   const [wishlistName, setWishlistName] = useState('');
   const [members, setMembers] = useState<WishlistMemberDto[]>([]);
-  const [memberProfiles, setMemberProfiles] = useState<Record<string, UserProfile>>({});
+  const [memberProfiles, setMemberProfiles] = useState<Record<string, MemberProfile>>({});
   const [friends, setFriends] = useState<FriendInfo[]>([]);
   const [friendFilter, setFriendFilter] = useState('');
   const [customRoleEdits, setCustomRoleEdits] = useState<Record<string, string>>({});
@@ -52,7 +54,7 @@ export default function WishlistMembersPage() {
         const roleEdits: Record<string, string> = {};
         mems.forEach((m) => { roleEdits[m.userId] = m.customRoleName ?? ''; });
         setCustomRoleEdits(roleEdits);
-        const profiles: Record<string, UserProfile> = {};
+        const profiles: Record<string, MemberProfile> = {};
         await Promise.all(mems.map(async (m) => {
           try { profiles[m.userId] = await getUserProfile(m.userId); } catch { /* ignore */ }
         }));
@@ -68,7 +70,7 @@ export default function WishlistMembersPage() {
       await addWishlistMembers(id, [{ userId: friend.userId, role: 1 }]);
       setMembers((prev) => [...prev, { userId: friend.userId, role: 1, customRoleName: null, joinedAt: new Date().toISOString() }]);
       setCustomRoleEdits((prev) => ({ ...prev, [friend.userId]: '' }));
-      setMemberProfiles((prev) => ({ ...prev, [friend.userId]: { id: friend.userId, displayName: friend.username, username: null, avatarUrl: friend.avatarUrl, bio: null, receivedCount: 0, giftedCount: 0 } }));
+      setMemberProfiles((prev) => ({ ...prev, [friend.userId]: { displayName: friend.username, avatarUrl: friend.avatarUrl } }));
     } catch (e) { toast.error(parseError(e)); }
   };
 
