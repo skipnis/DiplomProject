@@ -21,15 +21,6 @@ public sealed class NotificationsApi(ApplicationDbContext db, INotificationSende
         db.Notifications.Add(notification);
         await db.SaveChangesAsync(ct);
 
-        try
-        {
-            await sender.SendAsync(notification, ct);
-            notification.MarkSent();
-            await db.SaveChangesAsync(ct);
-        }
-        catch
-        {
-            // delivery failed — worker will retry
-        }
+        await sender.SendAsync(notification, ct);
     }
 }

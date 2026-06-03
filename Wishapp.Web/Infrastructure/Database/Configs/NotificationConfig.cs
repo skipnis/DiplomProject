@@ -13,15 +13,11 @@ public class NotificationConfig : IEntityTypeConfiguration<Notification>
         builder.Property(n => n.Type)
             .HasConversion<int>();
 
-        builder.Property(n => n.Status)
-            .HasConversion<int>();
-
         builder.Property(n => n.Payload)
             .HasColumnType("jsonb")
             .IsRequired();
 
         builder.HasIndex(n => new { n.UserId, n.IsRead, n.CreatedAt });
-        builder.HasIndex(n => new { n.Status, n.CreatedAt });
 
         builder.ToTable("notifications", "notifications");
     }

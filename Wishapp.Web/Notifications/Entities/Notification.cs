@@ -9,10 +9,7 @@ public sealed class Notification
     public NotificationType Type { get; private set; }
     public JsonElement Payload { get; private set; }
     public bool IsRead { get; private set; }
-    public NotificationStatus Status { get; private set; }
-    public int RetryCount { get; private set; }
     public DateTimeOffset CreatedAt { get; private set; }
-    public DateTimeOffset? ProcessedAt { get; private set; }
 
     private Notification() { }
 
@@ -25,26 +22,8 @@ public sealed class Notification
             Type = type,
             Payload = payload,
             IsRead = false,
-            Status = NotificationStatus.Pending,
-            RetryCount = 0,
             CreatedAt = DateTimeOffset.UtcNow,
         };
-    }
-
-    public void MarkSent()
-    {
-        Status = NotificationStatus.Sent;
-        ProcessedAt = DateTimeOffset.UtcNow;
-    }
-
-    public void RecordFailure(int maxRetries)
-    {
-        RetryCount++;
-        if (RetryCount >= maxRetries)
-        {
-            Status = NotificationStatus.Failed;
-            ProcessedAt = DateTimeOffset.UtcNow;
-        }
     }
 
     public void MarkRead()

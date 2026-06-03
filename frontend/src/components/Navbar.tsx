@@ -3,7 +3,7 @@ import { Link, NavLink, useLocation, useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { getImageUrl } from '../api/client';
 import { useTheme } from '../hooks/useTheme';
-import { useNotificationsHub } from '../hooks/useNotificationsHub';
+import { useNotificationsStream } from '../hooks/useNotificationsStream';
 import { getUnreadCount } from '../api/notifications';
 import { Button, buttonVariants } from '@/components/ui/button';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
@@ -37,7 +37,7 @@ export default function Navbar() {
     });
   }, [user]);
 
-  useNotificationsHub(!!user, handleNotification, handleConnected);
+  useNotificationsStream(!!user, handleNotification, handleConnected);
 
   if (location.pathname === '/onboarding' || location.pathname.startsWith('/admin')) return null;
 

@@ -13,7 +13,6 @@ using Wishapp.Web.Friendships;
 using Wishapp.Web.Gamification;
 using Wishapp.Web.Infrastructure;
 using Wishapp.Web.Notifications;
-using Wishapp.Web.Notifications.SignalR;
 using Wishapp.Web.Proposals;
 using Wishapp.Web.Reservations;
 using Wishapp.Web.Users;
@@ -103,8 +102,6 @@ app.MapUsersEndpoints()
     .MapAdminEndpoints()
     .MapShareEndpoints()
     .MapNotificationsEndpoints();
-
-app.MapHub<NotificationsHub>("/hubs/notifications");
 
 if (app.Environment.IsDevelopment())
 {
