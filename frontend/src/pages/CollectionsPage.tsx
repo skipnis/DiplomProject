@@ -121,7 +121,12 @@ export default function CollectionsPage() {
             {collectionItems.map((item) => (
               <div key={item.id} className="rounded-2xl border bg-card overflow-hidden flex flex-col sm:flex-row hover:shadow-md transition-shadow">
                 {item.imagePath
-                  ? <img src={getImageUrl(item.imagePath) ?? ''} alt={item.name} className="w-full sm:w-40 h-44 sm:h-auto object-contain bg-muted shrink-0" />
+                  ? (
+                    <div className="relative w-full sm:w-40 h-44 sm:h-auto overflow-hidden shrink-0">
+                      <img src={getImageUrl(item.imagePath) ?? ''} alt="" aria-hidden className="absolute inset-0 w-full h-full object-cover scale-110 blur-xl opacity-60" />
+                      <img src={getImageUrl(item.imagePath) ?? ''} alt={item.name} className="relative w-full h-full object-contain" />
+                    </div>
+                  )
                   : <div className="w-full sm:w-40 h-44 sm:h-auto bg-muted flex items-center justify-center text-4xl shrink-0">🛍️</div>
                 }
                 <div className="p-4 flex flex-col flex-1 gap-2">

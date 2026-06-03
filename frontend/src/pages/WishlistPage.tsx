@@ -18,8 +18,36 @@ import { Card, CardContent } from '@/components/ui/card';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Separator } from '@/components/ui/separator';
 import { Dialog, DialogContent, DialogTitle } from '@/components/ui/dialog';
-import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
+import { Pencil, Trash2, Share2 } from 'lucide-react';
 
+const PLACEHOLDER_GRADIENTS = [
+  'from-violet-500 to-purple-700',
+  'from-blue-500 to-cyan-600',
+  'from-emerald-500 to-teal-700',
+  'from-rose-500 to-pink-700',
+  'from-amber-500 to-orange-600',
+  'from-indigo-500 to-blue-700',
+  'from-fuchsia-500 to-pink-600',
+  'from-sky-500 to-indigo-600',
+];
+
+function wishNameHash(name: string): number {
+  let hash = 0;
+  for (let index = 0; index < name.length; index++) {
+    hash = (hash * 31 + name.charCodeAt(index)) >>> 0;
+  }
+  return hash;
+}
+
+function WishImagePlaceholder({ name }: { name: string }) {
+  const gradient = PLACEHOLDER_GRADIENTS[wishNameHash(name) % PLACEHOLDER_GRADIENTS.length];
+  const firstChar = [...name.trim()][0]?.toUpperCase() ?? '?';
+  return (
+    <div className={`w-full h-40 bg-gradient-to-br ${gradient} flex items-center justify-center`}>
+      <span className="text-5xl font-bold text-white/90 select-none">{firstChar}</span>
+    </div>
+  );
+}
 
 function GiftBadgesModal({ open, onClose, onSubmit, definitions }: {
   open: boolean;
@@ -372,25 +400,23 @@ export default function WishlistPage() {
                 </Link>
               )}
             </div>
-            {(canEdit || isOwner || (wishlist.visibility === 0 && !isSystem) || ((wishlist.visibility === 0 || isOwner) && !isSystem)) && (
-              <DropdownMenu>
-                <DropdownMenuTrigger className={`${buttonVariants({ variant: 'ghost', size: 'sm' })} h-8 w-8 p-0 text-muted-foreground text-lg`}>⋯</DropdownMenuTrigger>
-                <DropdownMenuContent align="end">
-                  {(wishlist.visibility === 0 || isOwner) && wishlist.visibility !== 3 && !isSystem && (
-                    <DropdownMenuItem onClick={handleShare}>Поделиться</DropdownMenuItem>
-                  )}
-                  {canEdit && (
-                    <DropdownMenuItem onClick={() => navigate(`/wishlists/${id}/edit`)}>Изменить</DropdownMenuItem>
-                  )}
-                  {isOwner && !isSystem && (
-                    <>
-                      <DropdownMenuSeparator />
-                      <DropdownMenuItem className="text-destructive focus:text-destructive" onClick={() => setShowDeleteWishlistConfirm(true)}>Удалить</DropdownMenuItem>
-                    </>
-                  )}
-                </DropdownMenuContent>
-              </DropdownMenu>
-            )}
+            <div className="flex items-center gap-1">
+              {(wishlist.visibility === 0 || isOwner) && wishlist.visibility !== 3 && !isSystem && (
+                <Button variant="ghost" size="sm" className="h-8 w-8 p-0 text-muted-foreground" onClick={handleShare} title="Поделиться">
+                  <Share2 size={16} />
+                </Button>
+              )}
+              {canEdit && (
+                <Button variant="ghost" size="sm" className="h-8 w-8 p-0 text-muted-foreground" onClick={() => navigate(`/wishlists/${id}/edit`)} title="Изменить">
+                  <Pencil size={16} />
+                </Button>
+              )}
+              {isOwner && !isSystem && (
+                <Button variant="ghost" size="sm" className="h-8 w-8 p-0 text-muted-foreground hover:text-destructive" onClick={() => setShowDeleteWishlistConfirm(true)} title="Удалить">
+                  <Trash2 size={16} />
+                </Button>
+              )}
+            </div>
           </div>
         </CardContent>
       </Card>
@@ -437,8 +463,13 @@ export default function WishlistPage() {
                 <Link to={`/wishlists/${id}/wishes/${wish.id}`} className={`block rounded-xl border bg-card overflow-hidden hover:shadow-md hover:-translate-y-0.5 transition-all ${wish.isFulfilled ? 'opacity-60' : ''}`}>
                   <div className={shouldBlur ? 'blur-sm pointer-events-none' : ''}>
                     {wish.imagePath
-                      ? <img src={getImageUrl(wish.imagePath)!} alt={wish.name} className="w-full h-40 object-contain bg-muted" />
-                      : <div className="w-full h-40 bg-muted flex items-center justify-center text-4xl">🎁</div>
+                      ? (
+                        <div className="relative w-full h-40 overflow-hidden">
+                          <img src={getImageUrl(wish.imagePath)!} alt="" aria-hidden className="absolute inset-0 w-full h-full object-cover scale-110 blur-xl opacity-60" />
+                          <img src={getImageUrl(wish.imagePath)!} alt={wish.name} className="relative w-full h-full object-contain" />
+                        </div>
+                      )
+                      : <WishImagePlaceholder name={wish.name} />
                     }
                     <div className="p-3 flex flex-col gap-1">
                       <div className="font-semibold text-sm leading-snug">{wish.name}</div>
@@ -453,18 +484,6 @@ export default function WishlistPage() {
                   {shouldBlur && <div className="absolute inset-0 flex items-center justify-center font-bold text-muted-foreground text-sm bg-background/60">🔒 Забронировано</div>}
                   {wish.isFulfilled && <div className="absolute top-2 left-2 bg-green-500 text-white rounded-full px-2 py-0.5 text-xs font-semibold">Исполнено</div>}
                 </Link>
-                {(isOwner || (canEdit && !isOwner && wish.createdByUserId === me?.id)) && (
-                  <div className="absolute top-2 right-2 z-10">
-                    <DropdownMenu>
-                      <DropdownMenuTrigger className="flex items-center justify-center h-7 w-7 rounded-full bg-white/85 dark:bg-black/65 text-foreground/70 hover:bg-white dark:hover:bg-black/85 transition-colors shadow-sm text-base font-bold">⋯</DropdownMenuTrigger>
-                      <DropdownMenuContent align="end">
-                        <DropdownMenuItem onClick={() => navigate(`/wishlists/${id}/wishes/${wish.id}/edit`)}>Изменить</DropdownMenuItem>
-                        <DropdownMenuSeparator />
-                        <DropdownMenuItem className="text-destructive focus:text-destructive" onClick={() => setPendingDeleteWish(wish)}>Удалить</DropdownMenuItem>
-                      </DropdownMenuContent>
-                    </DropdownMenu>
-                  </div>
-                )}
                 {isOwner && !isSystem && (
                   <div className="flex items-center gap-1 mt-2">
                     <Button size="sm" variant={wish.isFulfilled ? 'secondary' : 'default'} onClick={() => handleFulfillClick(wish)}>

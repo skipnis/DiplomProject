@@ -212,7 +212,12 @@ export default function CatalogPage() {
                     <Link to={`/catalog/items/${item.id}`} className="flex flex-col flex-1">
                       <div className="relative">
                         {item.imagePath
-                          ? <img src={getImageUrl(item.imagePath) ?? ''} alt={item.name} className="w-full h-36 object-contain bg-muted" />
+                          ? (
+                            <div className="relative w-full h-36 overflow-hidden">
+                              <img src={getImageUrl(item.imagePath) ?? ''} alt="" aria-hidden className="absolute inset-0 w-full h-full object-cover scale-110 blur-xl opacity-60" />
+                              <img src={getImageUrl(item.imagePath) ?? ''} alt={item.name} className="relative w-full h-full object-contain" />
+                            </div>
+                          )
                           : <div className="w-full h-36 bg-muted flex items-center justify-center text-4xl">🛍️</div>
                         }
                         {item.wishCount > 0 && (

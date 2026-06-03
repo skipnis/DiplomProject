@@ -197,7 +197,12 @@ export default function CatalogItemPage() {
       <Card>
         <CardContent className="pt-6">
           {imageUrl
-            ? <img src={imageUrl} alt={item.name} className="w-full max-h-80 object-contain rounded-lg mb-6 bg-muted" />
+            ? (
+              <div className="relative w-full overflow-hidden rounded-lg mb-6">
+                <img src={imageUrl} alt="" aria-hidden className="absolute inset-0 w-full h-full object-cover scale-110 blur-xl opacity-60" />
+                <img src={imageUrl} alt={item.name} className="relative w-full max-h-80 object-contain" />
+              </div>
+            )
             : <div className="w-full h-60 bg-muted rounded-lg flex items-center justify-center text-5xl mb-6">🛍️</div>
           }
 

@@ -4,18 +4,20 @@ import { getWish, deleteWish, fulfillWish, unfulfillWish, duplicateWish, copyWis
 import { getFulfilledBadgeDefinitions } from '../api/catalog';
 import { reserveWish, cancelReservation, getMyReservations } from '../api/reservations';
 import { getWishlist, getMyWishlists } from '../api/wishlists';
-import { getImageUrl } from '../api/client';
+import { getImageUrl, STORAGE_URL } from '../api/client';
+import { generateWishShareCard } from '../lib/generateWishShareCard';
 
 import { useAuth } from '../context/AuthContext';
 import { useToast } from '../components/Toast';
 import { parseError } from '../utils/errors';
 import { PRIORITY_LABELS, CURRENCY_LABELS } from '../types';
 import type { WishDto, WishlistDto, WishlistSummaryDto, FulfilledWishBadgeDto, FulfilledBadgeDefinitionDto } from '../types';
+import { Copy, Pencil, Trash2, Share2 } from 'lucide-react';
 import { Button, buttonVariants } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { Separator } from '@/components/ui/separator';
 import { Dialog, DialogContent, DialogTitle } from '@/components/ui/dialog';
-import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
 
 const PRIORITY_BADGE: Record<number, string> = {
   0: 'bg-muted text-muted-foreground',
@@ -153,6 +155,8 @@ export default function WishPage() {
   const [isMineReserved, setIsMineReserved] = useState(false);
   const [loading, setLoading] = useState(true);
   const [shareLoading, setShareLoading] = useState(false);
+  const [shareCardLoading, setShareCardLoading] = useState(false);
+  const [shareCardBlobUrl, setShareCardBlobUrl] = useState<string | null>(null);
   const [showCopy, setShowCopy] = useState(false);
   const [copyWishlists, setCopyWishlists] = useState<WishlistSummaryDto[]>([]);
   const [showGiftBadgesModal, setShowGiftBadgesModal] = useState(false);
@@ -249,6 +253,7 @@ export default function WishPage() {
   };
 
   const handleOpenCopy = async () => {
+    if (!me) { toast.warning('Войдите в аккаунт, чтобы копировать желание'); return; }
     try { const wishlists = await getMyWishlists(); setCopyWishlists(wishlists.filter((wl) => wl.id !== wishlistId)); setShowCopy(true); }
     catch (e) { toast.error(parseError(e)); }
   };
@@ -280,10 +285,38 @@ export default function WishPage() {
     }
   };
 
-  const copyShareLink = () => {
-    if (!wish?.shareToken) return;
-    navigator.clipboard.writeText(`${window.location.origin}/share/${wish.shareToken}`);
-    toast.success('Ссылка скопирована');
+  const handleShare = async () => {
+    if (!wish?.shareToken || shareCardLoading) return;
+    setShareCardLoading(true);
+    try {
+      const blob = await generateWishShareCard({
+        name: wish.name,
+        priority: wish.priority,
+        imagePath: wish.imagePath,
+        shareToken: wish.shareToken,
+        wishlistName: wishlist?.name ?? '',
+        ownerDisplayName: me?.displayName ?? '',
+        storageUrl: STORAGE_URL,
+      });
+      const file = new File([blob], 'wish.png', { type: 'image/png' });
+      if (navigator.canShare?.({ files: [file] })) {
+        await navigator.share({ files: [file] });
+      } else {
+        const blobUrl = URL.createObjectURL(blob);
+        setShareCardBlobUrl(blobUrl);
+      }
+    } catch (error) {
+      if (error instanceof Error && error.name !== 'AbortError') {
+        toast.error('Не удалось поделиться');
+      }
+    } finally {
+      setShareCardLoading(false);
+    }
+  };
+
+  const handleShareCardModalClose = () => {
+    if (shareCardBlobUrl) URL.revokeObjectURL(shareCardBlobUrl);
+    setShareCardBlobUrl(null);
   };
 
   if (loading) return <div className="flex items-center justify-center min-h-[200px] text-muted-foreground">Загрузка...</div>;
@@ -295,29 +328,49 @@ export default function WishPage() {
     <div className="max-w-xl mx-auto">
       <div className="flex items-center justify-between mb-7 gap-3">
         <Link to={`/wishlists/${wishlistId}`} className={buttonVariants({ variant: 'ghost', size: 'sm' })}>← Назад</Link>
-        {(me || !isSystem) && (
-          <DropdownMenu>
-            <DropdownMenuTrigger className={`${buttonVariants({ variant: 'ghost', size: 'sm' })} h-8 w-8 p-0 text-muted-foreground text-lg`}>⋯</DropdownMenuTrigger>
-            <DropdownMenuContent align="end">
-              {canEdit && <DropdownMenuItem onClick={handleDuplicate}>Дублировать</DropdownMenuItem>}
-              {me && <DropdownMenuItem onClick={handleOpenCopy}>Копировать в вишлист</DropdownMenuItem>}
-              {(isOwner || (canEdit && wish.createdByUserId === me?.id)) && (
-                <DropdownMenuItem onClick={() => navigate(`/wishlists/${wishlistId}/wishes/${wishId}/edit`)}>Изменить</DropdownMenuItem>
-              )}
-              {(isOwner || (canEdit && wish.createdByUserId === me?.id)) && (
-                <>
-                  <DropdownMenuSeparator />
-                  <DropdownMenuItem className="text-destructive focus:text-destructive" onClick={() => setShowDeleteConfirm(true)}>Удалить</DropdownMenuItem>
-                </>
-              )}
-            </DropdownMenuContent>
-          </DropdownMenu>
-        )}
+        <div className="flex items-center gap-1">
+          <Button variant="ghost" size="sm" className="h-8 w-8 p-0 text-muted-foreground" onClick={handleOpenCopy} title="Копировать в вишлист">
+            <Copy size={16} />
+          </Button>
+          {(isOwner || (canEdit && wish.createdByUserId === me?.id)) && (
+            <Button variant="ghost" size="sm" className="h-8 w-8 p-0 text-muted-foreground" onClick={() => navigate(`/wishlists/${wishlistId}/wishes/${wishId}/edit`)} title="Редактировать">
+              <Pencil size={16} />
+            </Button>
+          )}
+          {(isOwner || (canEdit && wish.createdByUserId === me?.id)) && (
+            <Button variant="ghost" size="sm" className="h-8 w-8 p-0 text-muted-foreground hover:text-destructive" onClick={() => setShowDeleteConfirm(true)} title="Удалить">
+              <Trash2 size={16} />
+            </Button>
+          )}
+          {isOwner && !isSystem && wish?.shareToken && (
+            <Button variant="ghost" size="sm" className="h-8 w-8 p-0 text-muted-foreground" onClick={handleShare} title="Поделиться" disabled={shareCardLoading}>
+              <Share2 size={16} />
+            </Button>
+          )}
+          {canEdit && (
+            <DropdownMenu>
+              <DropdownMenuTrigger className={`${buttonVariants({ variant: 'ghost', size: 'sm' })} h-8 w-8 p-0 text-muted-foreground text-lg`}>⋯</DropdownMenuTrigger>
+              <DropdownMenuContent align="end">
+                <DropdownMenuItem onClick={handleDuplicate}>Дублировать</DropdownMenuItem>
+                {isOwner && !isSystem && wish?.shareToken && (
+                  <DropdownMenuItem onClick={handleRegenerateShareToken} disabled={shareLoading}>
+                    {shareLoading ? 'Сбрасываем...' : 'Сбросить ссылку для шаринга'}
+                  </DropdownMenuItem>
+                )}
+              </DropdownMenuContent>
+            </DropdownMenu>
+          )}
+        </div>
       </div>
 
       <Card>
         <CardContent className="pt-6">
-          {imageUrl && <img src={imageUrl} alt={wish.name} className="w-full max-h-72 object-contain rounded-lg mb-5 bg-muted" />}
+          {imageUrl && (
+            <div className="relative w-full overflow-hidden rounded-lg mb-5">
+              <img src={imageUrl} alt="" aria-hidden className="absolute inset-0 w-full h-full object-cover scale-110 blur-xl opacity-60" />
+              <img src={imageUrl} alt={wish.name} className="relative w-full max-h-72 object-contain" />
+            </div>
+          )}
 
           <h1 className="text-xl font-extrabold tracking-tight mb-1">{wish.name}</h1>
           {wishlist && wishlist.members.length > 1 && wish.createdByDisplayName && (
@@ -390,26 +443,6 @@ export default function WishPage() {
               </Button>
             )}
           </div>
-
-          {isOwner && !isSystem && wish.shareToken && (
-            <>
-              <Separator className="my-4" />
-              <div>
-                <div className="text-xs text-muted-foreground mb-2">Поделиться желанием</div>
-                <div className="flex items-center gap-2 flex-wrap">
-                  <input
-                    readOnly
-                    value={`${window.location.origin}/share/${wish.shareToken}`}
-                    className="flex-1 min-w-0 text-xs bg-muted rounded px-2 py-1.5 border text-muted-foreground"
-                  />
-                  <Button size="sm" variant="secondary" onClick={copyShareLink}>Копировать</Button>
-                  <Button size="sm" variant="ghost" onClick={handleRegenerateShareToken} disabled={shareLoading}>
-                    {shareLoading ? '...' : 'Обновить ссылку'}
-                  </Button>
-                </div>
-              </div>
-            </>
-          )}
         </CardContent>
       </Card>
 
@@ -448,6 +481,23 @@ export default function WishPage() {
         confirmLabel="Удалить"
         confirmVariant="destructive"
       />
+      <Dialog open={!!shareCardBlobUrl} onOpenChange={(open) => { if (!open) handleShareCardModalClose(); }}>
+        <DialogContent className="max-w-sm p-4">
+          <DialogTitle className="text-base">Поделиться желанием</DialogTitle>
+          {shareCardBlobUrl && (
+            <>
+              <img src={shareCardBlobUrl} alt="Карточка желания" className="w-full rounded-lg" />
+              <a
+                href={shareCardBlobUrl}
+                download={`wish-${wish?.name.slice(0, 30).replace(/\s+/g, '-')}.png`}
+                className={buttonVariants({ variant: 'secondary' })}
+              >
+                Сохранить изображение
+              </a>
+            </>
+          )}
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
