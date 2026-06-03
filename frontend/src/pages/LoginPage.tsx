@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef } from 'react';
 import { GoogleLogin } from '@react-oauth/google';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useSearchParams } from 'react-router-dom';
 import { googleSignIn, sendOtp, verifyOtp } from '../api/auth';
 import { useAuth } from '../context/AuthContext';
 import { useToast } from '../components/Toast';
@@ -18,7 +18,9 @@ type Step = 'select' | 'email' | 'code';
 export default function LoginPage() {
   const { login } = useAuth();
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
   const toast = useToast();
+  const redirectPath = searchParams.get('redirect') ?? '/wishlists';
 
   const [step, setStep] = useState<Step>('select');
   const [email, setEmail] = useState('');
@@ -52,7 +54,7 @@ export default function LoginPage() {
     try {
       await googleSignIn(credential.credential);
       await login();
-      navigate('/wishlists', { replace: true });
+      navigate(redirectPath, { replace: true });
     } catch (e) {
       toast.error(parseError(e));
     }
@@ -82,7 +84,7 @@ export default function LoginPage() {
     try {
       await verifyOtp(email, code);
       await login();
-      navigate('/wishlists', { replace: true });
+      navigate(redirectPath, { replace: true });
     } catch (e) {
       toast.error(parseError(e));
       setCode('');

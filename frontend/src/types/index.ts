@@ -1,7 +1,7 @@
 // Enums match C# backend integer values (no JsonStringEnumConverter)
 export type WishlistVisibility = 0 | 1 | 2 | 3; // Public | Friends | SelectedFriends | Private
 export type SystemWishlistType = 'None' | 'Hidden' | 'Blacklist';
-export type NotificationType = 1 | 2 | 3 | 10 | 11 | 20 | 21 | 22 | 30 | 31;
+export type NotificationType = 1 | 2 | 3 | 10 | 11 | 12 | 20 | 21 | 22 | 30 | 31;
 export type ProposalSourceType = 1 | 2 | 3; // Catalog | Wishlist | Custom
 export type ProposalStatus = 0 | 1 | 2;      // Pending | Liked | Disliked
 export type Currency = 0 | 1 | 2 | 3;           // BYN | RUB | USD | EUR
@@ -31,6 +31,7 @@ export const NOTIFICATION_TYPE_LABELS: Record<number, string> = {
   3: 'Подарок передан',
   10: 'Новая заявка в друзья',
   11: 'Заявка в друзья принята',
+  12: 'Заявка в друзья отклонена',
   20: 'Вас добавили в вишлист',
   21: 'Вас удалили из вишлиста',
   22: 'Ваша роль изменена',
@@ -71,6 +72,7 @@ export interface UserProfile {
   bio: string | null;
   receivedCount: number;
   giftedCount: number;
+  birthDate: string | null;
 }
 
 export interface UserSearchResult {
@@ -160,6 +162,7 @@ export interface SharedWishResponse {
   isFulfilled: boolean;
   isReserved: boolean;
   wishlistVisibility: WishlistVisibility;
+  ownerId: string;
   ownerUsername: string;
 }
 

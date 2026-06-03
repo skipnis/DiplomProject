@@ -16,4 +16,5 @@ public record SharedWishResponse(
     bool IsFulfilled,
     bool IsReserved,
     WishlistVisibility WishlistVisibility,
+    Guid OwnerId,
     string OwnerUsername);

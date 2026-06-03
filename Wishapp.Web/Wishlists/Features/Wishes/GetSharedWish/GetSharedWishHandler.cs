@@ -49,6 +49,7 @@ public sealed class GetSharedWishHandler(
             wish.IsFulfilled,
             reservedIds.Contains(wish.Id),
             wishlist.Visibility,
+            wishlist.OwnerId,
             ownerUsername);
     }
 }
