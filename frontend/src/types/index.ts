@@ -112,6 +112,7 @@ export interface WishlistSummaryDto {
   wishCount: number;
   fulfilledWishCount: number;
   createdAt: string;
+  isOwner: boolean;
 }
 
 export interface WishSummaryDto {
@@ -127,6 +128,7 @@ export interface WishSummaryDto {
   createdByUserId: string | null;
   createdByDisplayName: string | null;
   createdAt: string;
+  fulfilledByDisplayName: string | null;
 }
 
 export interface WishDto {
@@ -144,6 +146,7 @@ export interface WishDto {
   isReserved: boolean;
   shareToken: string | null;
   fulfilledByReserverId: string | null;
+  fulfilledByDisplayName: string | null;
   hasGiftBadges: boolean;
   createdByUserId: string | null;
   createdByDisplayName: string | null;

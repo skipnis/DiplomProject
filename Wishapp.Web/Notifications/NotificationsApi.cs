@@ -5,7 +5,7 @@ using Wishapp.Web.Notifications.Entities;
 
 namespace Wishapp.Web.Notifications;
 
-public sealed class NotificationsApi(ApplicationDbContext db, INotificationSender sender) : INotificationsApi
+public sealed class NotificationsApi(ApplicationDbContext db, INotificationSender sender, ILogger<NotificationsApi> logger) : INotificationsApi
 {
     public async Task DeleteUserDataAsync(Guid userId, CancellationToken ct = default)
     {
@@ -19,8 +19,24 @@ public sealed class NotificationsApi(ApplicationDbContext db, INotificationSende
         var element = JsonSerializer.SerializeToElement(payload);
         var notification = Notification.Create(userId, type, element);
         db.Notifications.Add(notification);
-        await db.SaveChangesAsync(ct);
 
-        await sender.SendAsync(notification, ct);
+        try
+        {
+            await db.SaveChangesAsync(ct);
+        }
+        catch (Exception ex)
+        {
+            logger.LogError(ex, "Failed to save notification {NotificationType} for user {UserId}", type, userId);
+            throw;
+        }
+
+        try
+        {
+            await sender.SendAsync(notification, ct);
+        }
+        catch (Exception ex)
+        {
+            logger.LogWarning(ex, "Failed to send notification {NotificationType} to user {UserId} via SSE", type, userId);
+        }
     }
 }

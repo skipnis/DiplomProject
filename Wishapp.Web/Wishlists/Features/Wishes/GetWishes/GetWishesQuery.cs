@@ -7,7 +7,7 @@ namespace Wishapp.Web.Wishlists.Features.Wishes.GetWishes;
 public record GetWishesQuery(
     Guid WishlistId,
     PagedRequest Request,
-    bool HideReservations = false,
+    bool HideActiveReservations = false,
     WishSortBy SortBy = WishSortBy.CreatedAt,
     SortDirection Direction = SortDirection.Desc)
     : IQuery<PagedResponse<WishSummaryDto>>;

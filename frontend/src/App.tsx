@@ -38,6 +38,7 @@ const AdminPage = lazy(() => import('./pages/AdminPage'));
 const NotificationsPage = lazy(() => import('./pages/NotificationsPage'));
 const SharedWishPage = lazy(() => import('./pages/SharedWishPage'));
 const LandingPage = lazy(() => import('./pages/LandingPage'));
+const RateGifterPage = lazy(() => import('./pages/RateGifterPage'));
 
 const GOOGLE_CLIENT_ID = import.meta.env.VITE_GOOGLE_CLIENT_ID as string;
 
@@ -80,6 +81,7 @@ function AppRoutes() {
             <Route path="/wishlists/:id/wishes/new" element={<PrivateRoute><NewWishPage /></PrivateRoute>} />
             <Route path="/wishlists/:id/wishes/:wishId" element={<WishPage />} />
             <Route path="/wishlists/:id/wishes/:wishId/edit" element={<PrivateRoute><EditWishPage /></PrivateRoute>} />
+            <Route path="/wishlists/:id/wishes/:wishId/rate-gifter" element={<PrivateRoute><RateGifterPage /></PrivateRoute>} />
             <Route path="/reservations" element={<PrivateRoute><ReservationsPage /></PrivateRoute>} />
             <Route path="/proposals" element={<PrivateRoute><ProposalsPage /></PrivateRoute>} />
             <Route path="/proposals/new" element={<PrivateRoute><CreateProposalPage /></PrivateRoute>} />

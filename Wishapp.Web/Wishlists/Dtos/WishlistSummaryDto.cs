@@ -11,4 +11,5 @@ public record WishlistSummaryDto(
     bool IsSystem,
     int WishCount,
     int FulfilledWishCount,
-    DateTimeOffset CreatedAt);
+    DateTimeOffset CreatedAt,
+    bool IsOwner = true);

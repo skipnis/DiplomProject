@@ -37,39 +37,39 @@ public sealed class GetWishesHandler(
         };
 
         var pagedData = await wishes
-            .Select(w => new { w.Id, w.Name, w.Price, w.Currency, w.Priority, w.ImagePath, w.IsFulfilled, w.CreatedByUserId, w.CreatedAt })
+            .Select(w => new { w.Id, w.Name, w.Price, w.Currency, w.Priority, w.ImagePath, w.IsFulfilled, w.CreatedByUserId, w.FulfilledByReserverId, w.CreatedAt })
             .ToPagedResponseAsync(query.Request, ct);
 
         var wishIds = pagedData.Items.Select(w => w.Id).ToList();
 
         HashSet<Guid> reservedIds = [];
-        if (!query.HideReservations)
+        if (!query.HideActiveReservations)
         {
             reservedIds = (await reservationsApi.GetReservedWishIdsAsync(wishIds, ct)).ToHashSet();
         }
 
         var wishesWithBadgeIds = await gamificationApi.GetWishIdsWithBadgesAsync(wishIds, ct);
 
-        var creatorIds = pagedData.Items
-            .Where(w => w.CreatedByUserId.HasValue)
-            .Select(w => w.CreatedByUserId!.Value)
+        var userIdsToResolve = pagedData.Items
+            .SelectMany(w => new[] { w.CreatedByUserId, w.FulfilledByReserverId })
+            .Where(id => id.HasValue)
+            .Select(id => id!.Value)
             .Distinct()
             .ToList();
 
-        var displayNames = creatorIds.Count > 0
-            ? await usersApi.GetUsernamesAsync(creatorIds, ct)
+        var displayNames = userIdsToResolve.Count > 0
+            ? await usersApi.GetUsernamesAsync(userIdsToResolve, ct)
             : [];
 
         var items = pagedData.Items
             .Select(w =>
             {
-                string? createdByDisplayName = w.CreatedByUserId.HasValue && displayNames.TryGetValue(w.CreatedByUserId.Value, out var name)
-                    ? name
-                    : null;
+                displayNames.TryGetValue(w.CreatedByUserId ?? Guid.Empty, out var createdByDisplayName);
+                displayNames.TryGetValue(w.FulfilledByReserverId ?? Guid.Empty, out var fulfilledByDisplayName);
                 return new WishSummaryDto(
                     w.Id, w.Name, w.Price, w.Currency, w.Priority, w.ImagePath,
                     w.IsFulfilled, reservedIds.Contains(w.Id), wishesWithBadgeIds.Contains(w.Id),
-                    w.CreatedByUserId, createdByDisplayName, w.CreatedAt);
+                    w.CreatedByUserId, createdByDisplayName, w.CreatedAt, fulfilledByDisplayName);
             })
             .ToList();
 

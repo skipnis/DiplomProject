@@ -163,7 +163,7 @@ public sealed class WishlistsApi(ApplicationDbContext db) : IWishlistsApi
             .Select(wl => new
             {
                 wl.OwnerId,
-                Wish = wl.Wishes.Where(w => w.Id == wishId).Select(w => new { w.IsFulfilled, w.FulfilledByReserverId }).FirstOrDefault()
+                Wish = wl.Wishes.Where(w => w.Id == wishId).Select(w => new { w.IsFulfilled, w.FulfilledByReserverId, w.CreatedByUserId }).FirstOrDefault()
             })
             .FirstOrDefaultAsync(ct);
 
@@ -172,6 +172,7 @@ public sealed class WishlistsApi(ApplicationDbContext db) : IWishlistsApi
 
         return new GiftBadgeEligibilityData(
             wishlist.OwnerId,
+            wishlist.Wish?.CreatedByUserId,
             wishlist.Wish is not null,
             wishlist.Wish?.IsFulfilled ?? false,
             wishlist.Wish?.FulfilledByReserverId);

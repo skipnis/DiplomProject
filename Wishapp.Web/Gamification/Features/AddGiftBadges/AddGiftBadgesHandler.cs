@@ -26,8 +26,9 @@ public sealed class AddGiftBadgesHandler(ApplicationDbContext db, IWishlistsApi 
         if (eligibility is null || !eligibility.WishExists)
             return Error.NotFound("Wishes.NotFound", "Wish not found");
 
-        if (eligibility.WishlistOwnerId != command.UserId)
-            return Error.Forbidden("Wishes.GiftBadges.Forbidden", "Only the wishlist owner can give gift badges");
+        var wishOwnerId = eligibility.WishCreatorId ?? eligibility.WishlistOwnerId;
+        if (wishOwnerId != command.UserId)
+            return Error.Forbidden("Wishes.GiftBadges.Forbidden", "Only the wish owner can give gift badges");
 
         if (!eligibility.IsFulfilled)
             return Error.Failure("Wishes.GiftBadges.NotFulfilled", "Cannot rate a wish that has not been fulfilled");

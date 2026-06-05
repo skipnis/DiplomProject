@@ -16,20 +16,31 @@ public sealed class GetWishlistHandler(ApplicationDbContext db)
         var wishlist = await db.Wishlists
             .AsNoTracking()
             .Where(w => w.Id == query.WishlistId)
-            .Select(w => new WishlistDto(
+            .Select(w => new
+            {
                 w.Id, w.Name, w.Description, w.Emoji,
                 w.Visibility, w.IsSystem, w.SystemType,
-                w.IsSurpriseModeEnabled,
-                w.Wishes.Count(wish => wish.IsFulfilled),
-                w.Members
+                w.IsSurpriseModeEnabled, w.OwnerId,
+                FulfilledWishCount = w.Wishes.Count(wish => wish.IsFulfilled),
+                Members = w.Members
                     .OrderBy(m => m.JoinedAt)
                     .Select(m => new WishlistMemberDto(m.UserId, m.Role, m.CustomRoleName, m.JoinedAt))
-                    .ToList()))
+                    .ToList()
+            })
             .FirstOrDefaultAsync(ct);
 
         if (wishlist is null)
             return Error.NotFound("Wishlists.NotFound", "Wishlist not found");
 
-        return wishlist;
+        var isMember = query.UserId.HasValue &&
+                       (wishlist.OwnerId == query.UserId.Value ||
+                        wishlist.Members.Any(m => m.UserId == query.UserId.Value));
+
+        return new WishlistDto(
+            wishlist.Id, wishlist.Name, wishlist.Description, wishlist.Emoji,
+            wishlist.Visibility, wishlist.IsSystem, wishlist.SystemType,
+            isMember && wishlist.IsSurpriseModeEnabled,
+            wishlist.FulfilledWishCount,
+            wishlist.Members);
     }
 }

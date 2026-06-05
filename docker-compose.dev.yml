@@ -7,7 +7,7 @@ services:
     env_file:
       - .env.dev
     ports:
-      - "5432:5432"
+      - "127.0.0.1:5432:5432"
     volumes:
       - dev_postgres_data:/var/lib/postgresql/data
       - ./postgres/postgresql.conf:/etc/postgresql/postgresql.conf:ro
@@ -24,8 +24,8 @@ services:
     env_file:
       - .env.dev
     ports:
-      - "9000:9000"
-      - "9001:9001"
+      - "127.0.0.1:9000:9000"
+      - "127.0.0.1:9001:9001"
     volumes:
       - dev_minio_data:/data
     healthcheck:
@@ -63,13 +63,23 @@ services:
         condition: service_healthy
     restart: on-failure
 
+  seq:
+    container_name: wishapp-dev-seq
+    image: datalust/seq:latest
+    restart: unless-stopped
+    env_file:
+      - .env.dev
+    ports:
+      - "127.0.0.1:8080:80"
+    volumes:
+      - dev_seq_data:/data
+
   mailpit:
     container_name: wishapp-dev-mailpit
     image: axllent/mailpit
     restart: unless-stopped
     ports:
-      - "8025:8025"
-      - "1025:1025"
+      - "127.0.0.1:8025:8025"
 
   backend:
     container_name: wishapp-dev-backend
@@ -114,3 +124,4 @@ services:
 volumes:
   dev_postgres_data:
   dev_minio_data:
+  dev_seq_data:

@@ -36,6 +36,8 @@ public sealed class GetSharedWishHandler(
 
         var reservedIds = await reservationsApi.GetReservedWishIdsAsync([wish.Id], ct);
 
+        var isReserved = !wishlist.IsSurpriseModeEnabled && reservedIds.Contains(wish.Id);
+
         return new SharedWishResponse(
             wish.Id,
             wish.WishlistId,
@@ -47,7 +49,7 @@ public sealed class GetSharedWishHandler(
             wish.Url,
             wish.ImagePath,
             wish.IsFulfilled,
-            reservedIds.Contains(wish.Id),
+            isReserved,
             wishlist.Visibility,
             wishlist.OwnerId,
             ownerUsername);

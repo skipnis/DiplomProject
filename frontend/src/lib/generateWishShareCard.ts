@@ -68,7 +68,8 @@ export async function generateWishShareCard(options: WishShareCardOptions): Prom
   let wishImage: HTMLImageElement | null = null;
   if (imagePath) {
     const imageUrl = imagePath.startsWith('http') ? imagePath : `${storageUrl}/${imagePath}`;
-    wishImage = await loadImage(imageUrl);
+    const cacheBustUrl = `${imageUrl}${imageUrl.includes('?') ? '&' : '?'}_cb=${Date.now()}`;
+    wishImage = await loadImage(cacheBustUrl);
   }
 
   const IMAGE_SECTION_HEIGHT = wishImage ? 360 : 0;
@@ -133,7 +134,7 @@ export async function generateWishShareCard(options: WishShareCardOptions): Prom
   // Owner label: "Желание Алексея" (genitive isn't available in JS, so use nominative)
   ctx.font = `500 15px ${FONT}`;
   ctx.textAlign = 'left';
-  ctx.fillStyle = 'rgba(255, 255, 255, 0.4)';
+  ctx.fillStyle = 'rgba(255, 255, 255, 0.5)';
   ctx.fillText(`Автор: ${ownerDisplayName}`, PADDING, currentY + 15);
   currentY += 28 + 16;
 
@@ -168,7 +169,7 @@ export async function generateWishShareCard(options: WishShareCardOptions): Prom
 
   // Tagline
   ctx.font = `italic 14px ${FONT}`;
-  ctx.fillStyle = 'rgba(255, 255, 255, 0.3)';
+  ctx.fillStyle = 'rgba(255, 255, 255, 0.5)';
   ctx.fillText(TAGLINE, PADDING, currentY + 15);
   currentY += 20 + 32;
 
@@ -210,7 +211,7 @@ export async function generateWishShareCard(options: WishShareCardOptions): Prom
   ctx.fillText('Открой и исполни', brandX, brandY + 34);
   ctx.fillText('желание друга', brandX, brandY + 56);
   ctx.font = `italic 12px ${FONT}`;
-  ctx.fillStyle = 'rgba(255, 255, 255, 0.25)';
+  ctx.fillStyle = 'rgba(255, 255, 255, 0.5)';
   const quote = `«${pickRandom(QUOTES)}»`;
   const maxQuoteWidth = WIDTH - brandX - PADDING;
   const quoteLines = wrapText(ctx, quote, maxQuoteWidth).slice(0, 3);

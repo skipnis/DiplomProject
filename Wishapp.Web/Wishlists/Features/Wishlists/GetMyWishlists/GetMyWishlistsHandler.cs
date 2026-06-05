@@ -14,9 +14,11 @@ public sealed class GetMyWishlistsHandler(ApplicationDbContext db)
         GetMyWishlistsQuery query,
         CancellationToken ct = default)
     {
+        var userId = query.UserId;
+
         var wishlists = db.Wishlists
             .AsNoTracking()
-            .Where(w => w.OwnerId == query.UserId);
+            .Where(w => w.OwnerId == userId || w.Members.Any(m => m.UserId == userId));
 
         wishlists = (query.SortBy, query.Direction) switch
         {
@@ -36,7 +38,8 @@ public sealed class GetMyWishlistsHandler(ApplicationDbContext db)
                 w.IsSystem,
                 w.Wishes.Count,
                 w.Wishes.Count(wish => wish.IsFulfilled),
-                w.CreatedAt))
+                w.CreatedAt,
+                w.OwnerId == userId))
             .ToPagedResponseAsync(query.Request, ct);
 
         return result;

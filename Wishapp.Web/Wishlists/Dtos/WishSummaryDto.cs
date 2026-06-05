@@ -14,4 +14,5 @@ public record WishSummaryDto(
     bool HasGiftBadges,
     Guid? CreatedByUserId,
     string? CreatedByDisplayName,
-    DateTimeOffset CreatedAt);
+    DateTimeOffset CreatedAt,
+    string? FulfilledByDisplayName);

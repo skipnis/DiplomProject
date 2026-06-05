@@ -1,19 +1,18 @@
 import { useEffect, useState, useCallback } from 'react';
 import { useParams, Link, useNavigate } from 'react-router-dom';
 import { getWishlist, deleteWishlist } from '../api/wishlists';
-import { getWishes, deleteWish, fulfillWish, unfulfillWish, getWish, addGiftBadges } from '../api/wishes';
+import { getWishes, deleteWish, fulfillWish, unfulfillWish } from '../api/wishes';
 import { getEventByWishlist } from '../api/events';
 import { generateWishlistShareCard } from '../lib/generateWishlistShareCard';
-import { getFulfilledBadgeDefinitions } from '../api/catalog';
+import { toast } from 'sonner';
 import { Select, SelectContent, SelectItem, SelectTrigger } from '@/components/ui/select';
 import { reserveWish, cancelReservation, getMyReservations } from '../api/reservations';
 import { getUserProfile } from '../api/users';
 import { getImageUrl } from '../api/client';
 import { useAuth } from '../context/AuthContext';
-import { useToast } from '../components/Toast';
 import { parseError, ApiError } from '../utils/errors';
 import { VISIBILITY_LABELS, ROLE_LABELS, PRIORITY_LABELS, getWishlistEmoji } from '../types';
-import type { WishlistDto, WishSummaryDto, WishlistMemberRole, UserProfile, FulfilledBadgeDefinitionDto } from '../types';
+import type { WishlistDto, WishSummaryDto, WishlistMemberRole, UserProfile } from '../types';
 import { Button, buttonVariants } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Card, CardContent } from '@/components/ui/card';
@@ -51,77 +50,6 @@ function WishImagePlaceholder({ name }: { name: string }) {
   );
 }
 
-function GiftBadgesModal({ open, onClose, onSubmit, definitions, description }: {
-  open: boolean;
-  onClose: () => void;
-  onSubmit: (badges: number[]) => Promise<void>;
-  definitions: FulfilledBadgeDefinitionDto[];
-  description?: string;
-}) {
-  const [selected, setSelected] = useState<number[]>([]);
-  const [submitting, setSubmitting] = useState(false);
-
-  const toggleBadge = (badgeType: number) => {
-    setSelected((prev) => {
-      if (prev.includes(badgeType)) return prev.filter((b) => b !== badgeType);
-      if (prev.length >= 3) return prev;
-      return [...prev, badgeType];
-    });
-  };
-
-  const handleSubmit = async () => {
-    if (selected.length === 0) return;
-    setSubmitting(true);
-    try { await onSubmit(selected); }
-    finally { setSubmitting(false); }
-  };
-
-  useEffect(() => {
-    if (!open) setSelected([]);
-  }, [open]);
-
-  const activeDefinitions = definitions.filter((def) => def.isActive);
-
-  return (
-    <Dialog open={open} onOpenChange={onClose}>
-      <DialogContent className="max-w-sm">
-        <DialogTitle>Оцените подарок</DialogTitle>
-        <p className="text-sm text-muted-foreground">{description ?? 'Отметьте до 3 характеристик, которые лучше всего описывают впечатление от этого подарка.'}</p>
-        <div className="flex flex-wrap gap-2 mt-1">
-          {activeDefinitions.map((def) => {
-            const isSelected = selected.includes(def.id);
-            const isDisabled = !isSelected && selected.length >= 3;
-            return (
-              <button
-                key={def.id}
-                onClick={() => !isDisabled && toggleBadge(def.id)}
-                className={[
-                  'px-3 py-1.5 rounded-full text-sm border transition-all',
-                  isSelected
-                    ? 'border-primary bg-primary/10 text-primary font-semibold'
-                    : isDisabled
-                      ? 'border-border bg-background text-muted-foreground opacity-40 cursor-not-allowed'
-                      : 'border-border bg-background text-foreground cursor-pointer hover:border-primary/60',
-                ].join(' ')}
-              >
-                {def.emoji} {def.label}
-              </button>
-            );
-          })}
-        </div>
-        {selected.length >= 3 && (
-          <p className="text-xs text-muted-foreground">Максимум 3 бейджа</p>
-        )}
-        <div className="flex gap-2 justify-end mt-2">
-          <Button variant="ghost" onClick={onClose}>Пропустить</Button>
-          <Button disabled={selected.length === 0 || submitting} onClick={handleSubmit}>
-            {submitting ? 'Отправка...' : 'Отправить'}
-          </Button>
-        </div>
-      </DialogContent>
-    </Dialog>
-  );
-}
 
 function ConfirmModal({ open, onClose, onConfirm, title, description, confirmLabel, confirmVariant }: {
   open: boolean;
@@ -172,8 +100,6 @@ export default function WishlistPage() {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
   const { user: me } = useAuth();
-  const toast = useToast();
-
   const [wishlist, setWishlist] = useState<WishlistDto | null>(null);
   const [wishes, setWishes] = useState<WishSummaryDto[]>([]);
   const [wishPage, setWishPage] = useState(1);
@@ -186,9 +112,6 @@ export default function WishlistPage() {
   const [accessDenied, setAccessDenied] = useState(false);
   const [notFound, setNotFound] = useState(false);
   const [wishSortKey, setWishSortKey] = useState('CreatedAt_Desc');
-  const [fulfilledBadgeDefinitions, setFulfilledBadgeDefinitions] = useState<FulfilledBadgeDefinitionDto[]>([]);
-  const [showGiftBadgesModal, setShowGiftBadgesModal] = useState(false);
-  const [pendingGiftBadgeWishId, setPendingGiftBadgeWishId] = useState<string | null>(null);
   const [pendingFulfillWish, setPendingFulfillWish] = useState<WishSummaryDto | null>(null);
   const [pendingReserveWish, setPendingReserveWish] = useState<WishSummaryDto | null>(null);
   const [pendingCancelReserveWish, setPendingCancelReserveWish] = useState<WishSummaryDto | null>(null);
@@ -226,9 +149,8 @@ export default function WishlistPage() {
   const load = useCallback(async () => {
     if (!id) return;
     try {
-      const [wl, definitions] = await Promise.all([getWishlist(id), getFulfilledBadgeDefinitions()]);
+      const wl = await getWishlist(id);
       setWishlist(wl);
-      setFulfilledBadgeDefinitions(definitions);
       const profiles: Record<string, UserProfile> = {};
       await Promise.all(wl.members.map(async (m) => {
         try { profiles[m.userId] = await getUserProfile(m.userId); } catch { /* ignore */ }
@@ -318,13 +240,15 @@ export default function WishlistPage() {
   const executeFulfill = async (wish: WishSummaryDto) => {
     if (!id) return;
     try {
-      await fulfillWish(id, wish.id);
+      const { hasGifter } = await fulfillWish(id, wish.id);
       setWishes((prev) => prev.map((w) => w.id === wish.id ? { ...w, isFulfilled: true, isReserved: false } : w));
-      setMyReservationIds((prev) => { const s = new Set(prev); s.delete(wish.id); return s; });
-      const fullWish = await getWish(id, wish.id);
-      if (!fullWish.hasGiftBadges && (fullWish.fulfilledByReserverId || wishlist?.isSurpriseModeEnabled)) {
-        setPendingGiftBadgeWishId(wish.id);
-        setShowGiftBadgesModal(true);
+      setMyReservationIds((prev) => { const updated = new Set(prev); updated.delete(wish.id); return updated; });
+      if (hasGifter) {
+        toast('Желание исполнено!', {
+          action: { label: 'Оценить дарителя', onClick: () => navigate(`/wishlists/${id}/wishes/${wish.id}/rate-gifter`) },
+        });
+      } else {
+        toast.success('Желание исполнено!');
       }
     } catch (e) { toast.error(parseError(e)); }
   };
@@ -345,19 +269,6 @@ export default function WishlistPage() {
     } catch (e) { toast.error(parseError(e)); }
   };
 
-  const handleGiftBadgesSubmit = async (badgeTypes: number[]) => {
-    if (!id || !pendingGiftBadgeWishId) return;
-    try {
-      await addGiftBadges(id, pendingGiftBadgeWishId, badgeTypes);
-      setWishes((prev) => prev.map((w) => w.id === pendingGiftBadgeWishId ? { ...w, hasGiftBadges: true } : w));
-      toast.success('Спасибо за оценку!');
-    } catch (e) {
-      toast.error(parseError(e));
-    } finally {
-      setShowGiftBadgesModal(false);
-      setPendingGiftBadgeWishId(null);
-    }
-  };
 
   const handleReserve = async (wish: WishSummaryDto) => {
     if (!id) return;
@@ -490,6 +401,7 @@ export default function WishlistPage() {
           {wishes.map((wish) => {
             const iMineReserved = myReservationIds.has(wish.id);
             const shouldBlur = wish.isReserved && !iMineReserved && !wish.isFulfilled && myRole === null;
+            const isWishAuthor = wish.createdByUserId ? wish.createdByUserId === me?.id : isOwner;
             return (
               <div key={wish.id} className="relative">
                 <Link to={`/wishlists/${id}/wishes/${wish.id}`} className={`block rounded-xl border bg-card overflow-hidden hover:shadow-md hover:-translate-y-0.5 transition-all ${wish.isFulfilled ? 'opacity-60' : ''}`}>
@@ -511,17 +423,21 @@ export default function WishlistPage() {
                     </div>
                   </div>
                   {shouldBlur && <div className="absolute inset-0 flex items-center justify-center font-bold text-muted-foreground text-sm bg-background/60">🔒 Забронировано</div>}
-                  {wish.isFulfilled && <div className="absolute top-2 left-2 bg-green-500 text-white rounded-full px-2 py-0.5 text-xs font-semibold">Исполнено</div>}
+                  {wish.isFulfilled && (
+                    <div className="absolute top-2 left-2 bg-green-500 text-white rounded-full px-2 py-0.5 text-xs font-semibold">
+                      {wish.fulfilledByDisplayName ? `Исполнено: ${wish.fulfilledByDisplayName}` : 'Исполнено собой любимым'}
+                    </div>
+                  )}
                   {wish.priority > 0 && <span className={`absolute top-2 right-2 text-xs px-2 py-0.5 rounded-full font-semibold ${PRIORITY_BADGE[wish.priority]}`}>{PRIORITY_LABELS[wish.priority]}</span>}
                 </Link>
-                {isOwner && !isSystem && (
+                {isWishAuthor && !isSystem && !(wish.isFulfilled && wish.hasGiftBadges) && (
                   <div className="flex items-center gap-1 mt-2">
                     <Button size="sm" variant={wish.isFulfilled ? 'secondary' : 'default'} onClick={() => handleFulfillClick(wish)}>
                       {wish.isFulfilled ? '↩ Не исполнено' : '✓ Исполнить'}
                     </Button>
                   </div>
                 )}
-                {!isOwner && !wish.isFulfilled && !isSystem && (
+                {!isWishAuthor && !wish.isFulfilled && !isSystem && (
                   <div className="flex items-center gap-1 mt-2">
                     <Button size="sm" variant={iMineReserved ? 'destructive' : wish.isReserved ? 'ghost' : 'secondary'} onClick={() => { if (!me) { toast.warning('Войдите в аккаунт, чтобы забронировать желание'); return; } if (iMineReserved) { setPendingCancelReserveWish(wish); } else if (!wish.isReserved) { setPendingReserveWish(wish); } }} disabled={wish.isReserved && !iMineReserved}>
                       {iMineReserved ? 'Отменить бронь' : wish.isReserved ? 'Забронировано' : 'Забронировать'}
@@ -572,20 +488,11 @@ export default function WishlistPage() {
       )}
 
 
-      <GiftBadgesModal
-        open={showGiftBadgesModal}
-        onClose={() => { setShowGiftBadgesModal(false); setPendingGiftBadgeWishId(null); }}
-        onSubmit={handleGiftBadgesSubmit}
-        definitions={fulfilledBadgeDefinitions}
-        description={wishlist?.isSurpriseModeEnabled ? 'Если это желание исполнили не вы — поставьте оценку. Если нет — пропустите.' : undefined}
-      />
-
       <ConfirmModal
         open={!!pendingFulfillWish}
         onClose={() => setPendingFulfillWish(null)}
         onConfirm={() => { if (pendingFulfillWish) executeFulfill(pendingFulfillWish); }}
         title="Отметить желание исполненным?"
-        description="Если у желания есть бронирование, вам будет предложено оценить подарок."
         confirmLabel="Отметить исполненным"
       />
 

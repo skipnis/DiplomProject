@@ -37,6 +37,7 @@
       <PackageReference Include="Scrutor" />
       <PackageReference Include="Serilog.AspNetCore" />
       <PackageReference Include="Serilog.Expressions" />
+      <PackageReference Include="Serilog.Sinks.Seq" />
       <PackageReference Include="ZiggyCreatures.FusionCache" />
     </ItemGroup>
 

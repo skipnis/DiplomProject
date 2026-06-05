@@ -117,6 +117,16 @@ export default function NotificationsPage() {
   useEffect(() => { load(page, from, to, isReadParam); }, [page]);
 
   useEffect(() => {
+    markAllAsRead()
+      .then(() => {
+        setData((prev) =>
+          prev ? { ...prev, items: prev.items.map((n) => ({ ...n, isRead: true })) } : prev,
+        );
+      })
+      .catch(() => {});
+  }, []);
+
+  useEffect(() => {
     const handler = (e: Event) => {
       const n = (e as CustomEvent<NotificationDto>).detail;
       setData((prev) => {

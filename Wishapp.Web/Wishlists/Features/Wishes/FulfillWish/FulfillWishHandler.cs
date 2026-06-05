@@ -15,9 +15,9 @@ public sealed class FulfillWishHandler(
     INotificationsApi notificationsApi,
     IReservationsApi reservationsApi,
     IUsersApi usersApi)
-    : ICommandHandler<FulfillWishCommand>
+    : ICommandHandler<FulfillWishCommand, FulfillWishResult>
 {
-    public async Task<Result> HandleAsync(
+    public async Task<Result<FulfillWishResult>> HandleAsync(
         FulfillWishCommand command,
         CancellationToken ct = default)
     {
@@ -41,9 +41,11 @@ public sealed class FulfillWishHandler(
 
         var fulfilledWish = wishlist.Wishes.First(w => w.Id == command.WishId);
 
+        var wishOwnerId = fulfilledWish.CreatedByUserId ?? wishlist.OwnerId;
+
         var record = FulfilledWishRecord.Create(
             command.WishId,
-            wishlist.OwnerId,
+            wishOwnerId,
             reserverId,
             fulfilledWish.Name,
             fulfilledWish.Description,
@@ -51,7 +53,7 @@ public sealed class FulfillWishHandler(
             fulfilledWish.Currency,
             fulfilledWish.ImagePath,
             wishlist.Name,
-            wishlist.SystemType == SystemWishlistType.Hidden,
+            wishlist.SystemType == SystemWishlistType.Hidden || wishlist.IsSurpriseModeEnabled,
             fulfilledWish.FulfilledAt!.Value);
 
         db.FulfilledWishRecords.Add(record);
@@ -76,6 +78,6 @@ public sealed class FulfillWishHandler(
             }, ct);
         }
 
-        return Result.Success();
+        return new FulfillWishResult(reserverId.HasValue);
     }
 }

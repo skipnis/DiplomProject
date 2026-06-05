@@ -88,28 +88,35 @@ export default function WishlistsPage() {
               onClick={() => navigate(`/wishlists/${w.id}`)}
             >
               <div className="text-3xl mb-2">{getWishlistEmoji(w)}</div>
-              <div className="font-bold text-sm">{w.name}</div>
+              <div className="flex items-center gap-2 flex-wrap">
+                <div className="font-bold text-sm">{w.name}</div>
+                {!w.isOwner && (
+                  <span className="text-xs px-1.5 py-0.5 rounded bg-muted text-muted-foreground">Участник</span>
+                )}
+              </div>
               {w.description && <div className="text-xs text-muted-foreground truncate mt-0.5">{w.description}</div>}
               <div className="flex gap-3 mt-2 text-xs text-muted-foreground">
                 <span>{w.wishCount} желаний</span>
                 {!w.isSystem && <span>{VISIBILITY_LABELS[w.visibility]}</span>}
               </div>
-              <div className="absolute top-3 right-3" onClick={(e) => e.stopPropagation()}>
-                <DropdownMenu>
-                  <DropdownMenuTrigger className={`${buttonVariants({ variant: 'ghost', size: 'sm' })} h-7 w-7 p-0 text-muted-foreground`}>⋯</DropdownMenuTrigger>
-                  <DropdownMenuContent align="end">
-                    <DropdownMenuItem onClick={() => navigate(`/wishlists/${w.id}/edit`)}>Изменить</DropdownMenuItem>
-                    {!w.isSystem && (
-                      <>
-                        <DropdownMenuSeparator />
-                        <DropdownMenuItem className="text-destructive focus:text-destructive" onClick={(e) => handleDelete(e as unknown as React.MouseEvent, w.id)}>
-                          Удалить
-                        </DropdownMenuItem>
-                      </>
-                    )}
-                  </DropdownMenuContent>
-                </DropdownMenu>
-              </div>
+              {w.isOwner && (
+                <div className="absolute top-3 right-3" onClick={(e) => e.stopPropagation()}>
+                  <DropdownMenu>
+                    <DropdownMenuTrigger className={`${buttonVariants({ variant: 'ghost', size: 'sm' })} h-7 w-7 p-0 text-muted-foreground`}>⋯</DropdownMenuTrigger>
+                    <DropdownMenuContent align="end">
+                      <DropdownMenuItem onClick={() => navigate(`/wishlists/${w.id}/edit`)}>Изменить</DropdownMenuItem>
+                      {!w.isSystem && (
+                        <>
+                          <DropdownMenuSeparator />
+                          <DropdownMenuItem className="text-destructive focus:text-destructive" onClick={(e) => handleDelete(e as unknown as React.MouseEvent, w.id)}>
+                            Удалить
+                          </DropdownMenuItem>
+                        </>
+                      )}
+                    </DropdownMenuContent>
+                  </DropdownMenu>
+                </div>
+              )}
             </div>
           ))}
         </div>

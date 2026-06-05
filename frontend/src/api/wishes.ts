@@ -50,8 +50,8 @@ export function deleteWish(wishlistId: string, wishId: string): Promise<void> {
   return apiDelete<void>(`/wishlists/${wishlistId}/wishes/${wishId}`);
 }
 
-export function fulfillWish(wishlistId: string, wishId: string): Promise<void> {
-  return apiPatch<void>(`/wishlists/${wishlistId}/wishes/${wishId}/fulfill`);
+export function fulfillWish(wishlistId: string, wishId: string): Promise<{ hasGifter: boolean }> {
+  return apiPatch<{ hasGifter: boolean }>(`/wishlists/${wishlistId}/wishes/${wishId}/fulfill`);
 }
 
 export function unfulfillWish(wishlistId: string, wishId: string): Promise<void> {

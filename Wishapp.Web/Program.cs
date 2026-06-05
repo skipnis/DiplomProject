@@ -1,3 +1,5 @@
+using System.IdentityModel.Tokens.Jwt;
+using System.Security.Claims;
 using System.Threading.RateLimiting;
 using HealthChecks.UI.Client;
 using Wishapp.Web.Infrastructure.Database;
@@ -77,7 +79,16 @@ app.UseCors(corsPolicyBuilder =>
 
 app.UseExceptionHandler();
 
-app.UseSerilogRequestLogging();
+app.UseSerilogRequestLogging(options =>
+{
+    options.EnrichDiagnosticContext = (diagnosticContext, httpContext) =>
+    {
+        var userId = httpContext.User.FindFirstValue(ClaimTypes.NameIdentifier)
+                     ?? httpContext.User.FindFirstValue(JwtRegisteredClaimNames.Sub);
+        if (userId is not null)
+            diagnosticContext.Set("UserId", userId);
+    };
+});
 
 app.UseRateLimiter();
 

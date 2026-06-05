@@ -31,12 +31,16 @@ public sealed class GetWishHandler(
         var reservedIds = await reservationsApi.GetReservedWishIdsAsync([wish.Id], ct);
         var hasGiftBadges = await gamificationApi.HasGiftBadgesAsync(wish.Id, ct);
 
-        string? createdByDisplayName = null;
-        if (wish.CreatedByUserId.HasValue)
-        {
-            var displayNames = await usersApi.GetUsernamesAsync([wish.CreatedByUserId.Value], ct);
-            displayNames.TryGetValue(wish.CreatedByUserId.Value, out createdByDisplayName);
-        }
+        var userIdsToResolve = new List<Guid>();
+        if (wish.CreatedByUserId.HasValue) userIdsToResolve.Add(wish.CreatedByUserId.Value);
+        if (wish.FulfilledByReserverId.HasValue) userIdsToResolve.Add(wish.FulfilledByReserverId.Value);
+
+        var displayNames = userIdsToResolve.Count > 0
+            ? await usersApi.GetUsernamesAsync(userIdsToResolve, ct)
+            : new Dictionary<Guid, string>();
+
+        displayNames.TryGetValue(wish.CreatedByUserId ?? Guid.Empty, out var createdByDisplayName);
+        displayNames.TryGetValue(wish.FulfilledByReserverId ?? Guid.Empty, out var fulfilledByDisplayName);
 
         return new WishDto(
             wish.Id,
@@ -50,9 +54,10 @@ public sealed class GetWishHandler(
             wish.CreatedAt,
             wish.IsFulfilled,
             wish.FulfilledAt,
-            !query.HideReservations && reservedIds.Contains(wish.Id),
+            !query.HideActiveReservations && reservedIds.Contains(wish.Id),
             query.IsOwner ? wish.ShareToken : null,
-            query.HideReservations ? null : wish.FulfilledByReserverId,
+            wish.FulfilledByReserverId,
+            fulfilledByDisplayName,
             hasGiftBadges,
             wish.CreatedByUserId,
             createdByDisplayName);

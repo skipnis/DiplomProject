@@ -12,6 +12,7 @@ public record WishNotificationData(
 
 public record GiftBadgeEligibilityData(
     Guid WishlistOwnerId,
+    Guid? WishCreatorId,
     bool WishExists,
     bool IsFulfilled,
     Guid? FulfilledByReserverId);

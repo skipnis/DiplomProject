@@ -1,10 +1,10 @@
-import { useState, useCallback, useEffect } from 'react';
+import { useState, useCallback, useEffect, useRef } from 'react';
 import { Link, NavLink, useLocation, useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { getImageUrl } from '../api/client';
 import { useTheme } from '../hooks/useTheme';
 import { useNotificationsStream } from '../hooks/useNotificationsStream';
-import { getUnreadCount } from '../api/notifications';
+import { getUnreadCount, markAllAsRead } from '../api/notifications';
 import { Button, buttonVariants } from '@/components/ui/button';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Bell } from 'lucide-react';
@@ -18,8 +18,11 @@ export default function Navbar() {
   const [menuOpen, setMenuOpen] = useState(false);
   const [unreadCount, setUnreadCount] = useState(0);
   const [unviewedProposalsCount, setUnviewedProposalsCount] = useState(0);
+  const seenNotificationIds = useRef(new Set<string>());
 
   const handleNotification = useCallback((n: NotificationDto) => {
+    if (seenNotificationIds.current.has(n.id)) return;
+    seenNotificationIds.current.add(n.id);
     if (!n.isRead) setUnreadCount((c) => c + 1);
     window.dispatchEvent(new CustomEvent('new-notification', { detail: n }));
   }, []);
@@ -27,6 +30,11 @@ export default function Navbar() {
   const handleConnected = useCallback(() => {
     getUnreadCount().then(setUnreadCount).catch(() => {});
   }, []);
+
+  useEffect(() => {
+    if (!user) return;
+    getUnreadCount().then(setUnreadCount).catch(() => {});
+  }, [user]);
 
   useEffect(() => {
     if (!user) return;
@@ -97,7 +105,7 @@ export default function Navbar() {
               <NavLink to="/events" className={navCls} onClick={close}>События</NavLink>
               <NavLink
                 to="/notifications"
-                onClick={() => { setUnreadCount(0); close(); }}
+                onClick={() => { setUnreadCount(0); markAllAsRead().catch(() => {}); close(); }}
                 className={({ isActive }) =>
                   `relative text-sm font-medium px-3 py-1.5 rounded-md transition-colors ${
                     isActive
