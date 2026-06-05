@@ -26,48 +26,39 @@ public sealed class UrlParser(IHttpClientFactory httpClientFactory, ILogger<UrlP
 
     public async Task<ParsedWishData> ParseAsync(string url, CancellationToken ct = default)
     {
-        try
+        var client = httpClientFactory.CreateClient("parser");
+        var response = await client.GetAsync(url, ct);
+        logger.LogInformation("Parser got {StatusCode} from {Url}", (int)response.StatusCode, url);
+        var html = await response.Content.ReadAsStringAsync(ct);
+
+        var context = BrowsingContext.New(Configuration.Default);
+        var document = await context.OpenAsync(req => req.Content(html), ct);
+
+        var ldProduct = FindLdJsonProduct(document);
+
+        var name =
+            GetString(ldProduct?["name"])
+            ?? document.QuerySelector(Selectors.OgTitle)?.GetAttribute("content")
+            ?? document.QuerySelector(Selectors.Title)?.TextContent
+            ?? document.QuerySelector(Selectors.MetaTitle)?.GetAttribute("content");
+
+        var description =
+            GetString(ldProduct?["description"])
+            ?? document.QuerySelector(Selectors.OgDescription)?.GetAttribute("content")
+            ?? document.QuerySelector(Selectors.MetaDescription)?.GetAttribute("content");
+
+        var image =
+            GetString(ldProduct?["image"])
+            ?? document.QuerySelector(Selectors.OgImage)?.GetAttribute("content");
+
+        var (price, currency) = ResolvePrice(ldProduct, document);
+
+        if (name is null)
         {
-            var client = httpClientFactory.CreateClient("parser");
-            var response = await client.GetAsync(url, ct);
-            logger.LogInformation("Parser got {StatusCode} from {Url}", (int)response.StatusCode, url);
-            var html = await response.Content.ReadAsStringAsync(ct);
-
-            var context = BrowsingContext.New(Configuration.Default);
-            var document = await context.OpenAsync(req => req.Content(html), ct);
-
-            var ldProduct = FindLdJsonProduct(document);
-
-            var name =
-                GetString(ldProduct?["name"])
-                ?? document.QuerySelector(Selectors.OgTitle)?.GetAttribute("content")
-                ?? document.QuerySelector(Selectors.Title)?.TextContent
-                ?? document.QuerySelector(Selectors.MetaTitle)?.GetAttribute("content");
-
-            var description =
-                GetString(ldProduct?["description"])
-                ?? document.QuerySelector(Selectors.OgDescription)?.GetAttribute("content")
-                ?? document.QuerySelector(Selectors.MetaDescription)?.GetAttribute("content");
-
-            var image =
-                GetString(ldProduct?["image"])
-                ?? document.QuerySelector(Selectors.OgImage)?.GetAttribute("content");
-
-            var (price, currency) = ResolvePrice(ldProduct, document);
-
-            if (name is null)
-            {
-                logger.LogWarning("Could not parse any data from {Url}", url);
-            }
-
-            return new ParsedWishData(name, description, price, currency, image);
+            logger.LogWarning("Could not parse any data from {Url}", url);
         }
-        catch (Exception ex)
-        {
-            logger.LogError(ex, "Failed to parse {Url}", url);
 
-            return new ParsedWishData(null, null, null, null, null);
-        }
+        return new ParsedWishData(name, description, price, currency, image);
     }
 
     private static JsonObject? FindLdJsonProduct(IDocument document)
