@@ -2,10 +2,11 @@ using Microsoft.EntityFrameworkCore;
 using Wishapp.Web.Common.Interfaces;
 using Wishapp.Web.Common.Types;
 using Wishapp.Web.Infrastructure.Database;
+using ZiggyCreatures.Caching.Fusion;
 
 namespace Wishapp.Web.Admin.Features.Collections.SetPublished;
 
-public sealed class SetCollectionPublishedHandler(ApplicationDbContext db)
+public sealed class SetCollectionPublishedHandler(ApplicationDbContext db, IFusionCache cache)
     : ICommandHandler<SetCollectionPublishedCommand>
 {
     public async Task<Result> HandleAsync(SetCollectionPublishedCommand command, CancellationToken ct = default)
@@ -17,6 +18,7 @@ public sealed class SetCollectionPublishedHandler(ApplicationDbContext db)
 
         collection.SetPublished(command.IsPublished);
         await db.SaveChangesAsync(ct);
+        await cache.RemoveAsync("catalog:collections", token: ct);
 
         return Result.Success();
     }

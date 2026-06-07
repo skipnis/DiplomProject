@@ -14,7 +14,7 @@ public static partial class AdminEndpoints
         ICommandHandler<UpdateOccasionCommand> handler,
         CancellationToken ct)
     {
-        var result = await handler.HandleAsync(new UpdateOccasionCommand(id, request.Key, request.Label, request.Order), ct);
+        var result = await handler.HandleAsync(new UpdateOccasionCommand(id, request.Key, request.Label), ct);
 
         if (!result.IsSuccess)
         {

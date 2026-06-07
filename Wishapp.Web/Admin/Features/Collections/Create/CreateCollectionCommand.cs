@@ -6,5 +6,4 @@ public record CreateCollectionCommand(
     string Name,
     string? Description,
     Guid? OccasionId,
-    string? CoverImagePath,
-    int Order) : ICommand<Guid>;
+    string? CoverImagePath) : ICommand<Guid>;

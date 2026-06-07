@@ -9,5 +9,4 @@ public record AchievementDefinitionRequest(
     AchievementRuleType RuleType,
     int? LinkedBadgeTypeId,
     int Threshold,
-    int Order,
     bool IsActive = true);

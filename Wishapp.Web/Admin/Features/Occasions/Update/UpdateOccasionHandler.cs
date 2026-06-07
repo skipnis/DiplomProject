@@ -29,7 +29,7 @@ public sealed class UpdateOccasionHandler(ApplicationDbContext db, IFusionCache 
             return Error.Conflict("Catalog.OccasionExists", "Occasion with this key already exists");
         }
 
-        occasion.Update(command.Key, command.Label, command.Order);
+        occasion.Update(command.Key, command.Label);
         await db.SaveChangesAsync(ct);
         await cache.RemoveAsync("catalog:occasions", token: ct);
 

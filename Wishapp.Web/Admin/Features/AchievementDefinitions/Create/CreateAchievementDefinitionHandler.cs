@@ -1,3 +1,4 @@
+using Microsoft.EntityFrameworkCore;
 using Wishapp.Web.Common.Interfaces;
 using Wishapp.Web.Common.Types;
 using Wishapp.Web.Gamification.Entities;
@@ -12,10 +13,14 @@ public sealed class CreateAchievementDefinitionHandler(ApplicationDbContext db)
         CreateAchievementDefinitionCommand command,
         CancellationToken ct = default)
     {
+        var nextOrder = await db.AchievementDefinitions.AnyAsync(ct)
+            ? await db.AchievementDefinitions.MaxAsync(a => a.Order, ct) + 1
+            : 1;
+
         var definition = AchievementDefinition.Create(
             command.Name, command.Description, command.Emoji,
             command.RuleType, command.LinkedBadgeTypeId,
-            command.Threshold, command.Order);
+            command.Threshold, nextOrder);
 
         db.AchievementDefinitions.Add(definition);
         await db.SaveChangesAsync(ct);

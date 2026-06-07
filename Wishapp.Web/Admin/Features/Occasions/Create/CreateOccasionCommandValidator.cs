@@ -14,7 +14,5 @@ public sealed class CreateOccasionCommandValidator : AbstractValidator<CreateOcc
             .NotEmpty()
             .MaximumLength(100);
 
-        RuleFor(x => x.Order)
-            .GreaterThan(0);
     }
 }

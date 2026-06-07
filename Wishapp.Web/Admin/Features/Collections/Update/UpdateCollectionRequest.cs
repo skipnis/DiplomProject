@@ -5,5 +5,4 @@ public record UpdateCollectionRequest(
     string? Description,
     Guid? OccasionId,
     string? CoverImagePath,
-    int Order,
     bool IsPublished);

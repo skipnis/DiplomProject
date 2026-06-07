@@ -21,7 +21,5 @@ public sealed class AchievementDefinitionRequestValidator : AbstractValidator<Ac
         RuleFor(x => x.Threshold)
             .GreaterThan(0);
 
-        RuleFor(x => x.Order)
-            .GreaterThan(0);
     }
 }

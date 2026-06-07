@@ -1,7 +1,7 @@
 // Enums match C# backend integer values (no JsonStringEnumConverter)
 export type WishlistVisibility = 0 | 1 | 2 | 3; // Public | Friends | SelectedFriends | Private
 export type SystemWishlistType = 'None' | 'Hidden' | 'Blacklist';
-export type NotificationType = 1 | 2 | 3 | 10 | 11 | 12 | 20 | 21 | 22 | 30 | 31;
+export type NotificationType = 1 | 2 | 3 | 10 | 11 | 12 | 20 | 21 | 22 | 30 | 31 | 40;
 export type ProposalSourceType = 1 | 2 | 3; // Catalog | Wishlist | Custom
 export type ProposalStatus = 0 | 1 | 2;      // Pending | Liked | Disliked
 export type Currency = 0 | 1 | 2 | 3;           // BYN | RUB | USD | EUR
@@ -37,6 +37,7 @@ export const NOTIFICATION_TYPE_LABELS: Record<number, string> = {
   22: 'Ваша роль изменена',
   30: 'Новое предложение подарка',
   31: 'Ответ на предложение',
+  40: 'Достижение разблокировано',
 };
 
 export const ROLE_LABELS: Record<number, string> = {
@@ -247,7 +248,7 @@ export interface CatalogCategoryDto {
   isPublished: boolean;
 }
 
-export type AchievementRuleType = 1 | 2; // SpecificBadgeCount | UniqueBadgeTypes
+export type AchievementRuleType = 1 | 2 | 3; // SpecificBadgeCount | UniqueBadgeTypes | LikedProposalsCount
 
 export interface CatalogBadgeDefinitionDto {
   id: number;
@@ -374,12 +375,10 @@ export interface UpdateCatalogItemRequest extends CreateCatalogItemRequest {
 
 export interface CreateCatalogCategoryRequest {
   name: string;
-  order: number;
 }
 
 export interface UpdateCatalogCategoryRequest {
   name: string;
-  order: number;
 }
 
 export interface CatalogCollectionSummaryDto {
@@ -419,7 +418,6 @@ export interface CreateCollectionRequest {
   description: string | null;
   occasionId: string | null;
   coverImagePath: string | null;
-  order: number;
 }
 
 export interface UpdateCollectionRequest extends CreateCollectionRequest {

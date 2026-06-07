@@ -2,10 +2,11 @@ using Microsoft.EntityFrameworkCore;
 using Wishapp.Web.Common.Interfaces;
 using Wishapp.Web.Common.Types;
 using Wishapp.Web.Infrastructure.Database;
+using ZiggyCreatures.Caching.Fusion;
 
 namespace Wishapp.Web.Admin.Features.Collections.Update;
 
-public sealed class UpdateCollectionHandler(ApplicationDbContext db)
+public sealed class UpdateCollectionHandler(ApplicationDbContext db, IFusionCache cache)
     : ICommandHandler<UpdateCollectionCommand>
 {
     public async Task<Result> HandleAsync(
@@ -22,10 +23,10 @@ public sealed class UpdateCollectionHandler(ApplicationDbContext db)
             command.Description,
             command.OccasionId,
             command.CoverImagePath,
-            command.Order,
             command.IsPublished);
 
         await db.SaveChangesAsync(ct);
+        await cache.RemoveAsync("catalog:collections", token: ct);
 
         return Result.Success();
     }

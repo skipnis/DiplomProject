@@ -11,5 +11,4 @@ public record UpdateAchievementDefinitionCommand(
     AchievementRuleType RuleType,
     int? LinkedBadgeTypeId,
     int Threshold,
-    int Order,
     bool IsActive) : ICommand;

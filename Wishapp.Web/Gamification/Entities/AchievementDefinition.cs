@@ -30,10 +30,15 @@ public sealed class AchievementDefinition
     public void Update(
         string name, string description, string emoji,
         AchievementRuleType ruleType, int? linkedBadgeTypeId,
-        int threshold, int order, bool isActive)
+        int threshold, bool isActive)
     {
         Name = name; Description = description; Emoji = emoji;
         RuleType = ruleType; LinkedBadgeTypeId = linkedBadgeTypeId;
-        Threshold = threshold; Order = order; IsActive = isActive;
+        Threshold = threshold; IsActive = isActive;
+    }
+
+    public void SetOrder(int order)
+    {
+        Order = order;
     }
 }

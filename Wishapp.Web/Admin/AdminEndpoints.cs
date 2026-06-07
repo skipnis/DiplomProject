@@ -30,6 +30,7 @@ public static partial class AdminEndpoints
         secured.MapPut("/categories/{id:guid}", UpdateCategory)
             .AddEndpointFilter<ValidationFilter<UpdateCategoryRequest>>();
         secured.MapPatch("/categories/{id:guid}/published", SetCategoryPublished);
+        secured.MapPatch("/categories/{id:guid}/swap", SwapCategoryOrder);
         secured.MapDelete("/categories/{id:guid}", DeleteCategory);
 
         secured.MapGet("/items", GetAllItems);
@@ -46,6 +47,7 @@ public static partial class AdminEndpoints
         secured.MapGet("/occasions", GetAllOccasions);
         secured.MapPost("/occasions", CreateOccasion);
         secured.MapPut("/occasions/{id:guid}", UpdateOccasion);
+        secured.MapPatch("/occasions/{id:guid}/swap", SwapOccasionOrder);
         secured.MapDelete("/occasions/{id:guid}", DeleteOccasion);
 
         secured.MapGet("/collections", GetAllCollections);
@@ -56,6 +58,7 @@ public static partial class AdminEndpoints
         secured.MapDelete("/collections/{id:guid}", DeleteCollection);
         secured.MapPost("/collections/{id:guid}/image", UploadCollectionCover).DisableAntiforgery();
         secured.MapPatch("/collections/{id:guid}/published", SetCollectionPublished);
+        secured.MapPatch("/collections/{id:guid}/swap", SwapCollectionOrder);
         secured.MapGet("/collections/{id:guid}/items", GetCollectionItems);
         secured.MapPost("/collections/{id:guid}/items/{itemId:guid}", AddItemToCollection);
         secured.MapPatch("/collections/{id:guid}/items/{itemId:guid}/description", UpdateCollectionItemDescription);
@@ -74,6 +77,7 @@ public static partial class AdminEndpoints
         secured.MapGet("/achievements", GetAllAchievementDefinitions);
         secured.MapPost("/achievements", CreateAchievementDefinition);
         secured.MapPut("/achievements/{id:int}", UpdateAchievementDefinition);
+        secured.MapPatch("/achievements/{id:int}/swap", SwapAchievementOrder);
         secured.MapDelete("/achievements/{id:int}", DeleteAchievementDefinition);
 
         return app;

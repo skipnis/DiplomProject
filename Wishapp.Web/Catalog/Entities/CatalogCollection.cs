@@ -42,15 +42,18 @@ public sealed class CatalogCollection
         string? description,
         Guid? occasionId,
         string? coverImagePath,
-        int order,
         bool isPublished)
     {
         Name = name;
         Description = description;
         OccasionId = occasionId;
         CoverImagePath = coverImagePath;
-        Order = order;
         IsPublished = isPublished;
+    }
+
+    public void SetOrder(int order)
+    {
+        Order = order;
     }
 
     public void SetPublished(bool isPublished)

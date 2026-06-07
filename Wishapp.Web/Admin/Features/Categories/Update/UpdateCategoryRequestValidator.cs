@@ -10,7 +10,5 @@ public sealed class UpdateCategoryRequestValidator : AbstractValidator<UpdateCat
             .NotEmpty()
             .MaximumLength(100);
 
-        RuleFor(x => x.Order)
-            .GreaterThan(0);
     }
 }

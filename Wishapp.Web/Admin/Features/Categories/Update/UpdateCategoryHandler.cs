@@ -21,15 +21,7 @@ public sealed class UpdateCategoryHandler(ApplicationDbContext db, IFusionCache 
             return Error.NotFound("Catalog.CategoryNotFound", "Category not found");
         }
 
-        var orderTaken = await db.CatalogCategories
-            .AnyAsync(c => c.Id != command.Id && c.Order == command.Order, ct);
-
-        if (orderTaken)
-        {
-            return Error.Conflict("Catalog.CategoryOrderExists", "Category with this order already exists");
-        }
-
-        category.Update(command.Name, command.Order);
+        category.Update(command.Name);
 
         await db.SaveChangesAsync(ct);
         await cache.RemoveAsync("catalog:categories", token: ct);

@@ -21,7 +21,6 @@ public static partial class AdminEndpoints
                 request.Description,
                 request.OccasionId,
                 request.CoverImagePath,
-                request.Order,
                 request.IsPublished), ct);
 
         return result.IsSuccess

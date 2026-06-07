@@ -1,17 +1,17 @@
 import { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import {
-  adminGetCategories, adminCreateCategory, adminUpdateCategory, adminDeleteCategory,
+  adminGetCategories, adminCreateCategory, adminUpdateCategory, adminDeleteCategory, adminSwapCategoryOrder,
   adminGetAllItems, adminCreateItem, adminUpdateItem, adminDeleteItem,
-  adminGetAllCollections, adminCreateCollection, adminUpdateCollection, adminDeleteCollection,
+  adminGetAllCollections, adminCreateCollection, adminUpdateCollection, adminDeleteCollection, adminSwapCollectionOrder,
   adminAddItemToCollection, adminRemoveItemFromCollection, adminGetCollectionItems, adminUpdateCollectionItemDescription,
   adminUploadItemImage, adminUploadCollectionImage, adminParseUrl, adminSetItemPublished,
   adminSetCategoryPublished, adminSetCollectionPublished,
   adminBatchImportItems, type BatchImportItemResult,
-  adminGetOccasions, adminCreateOccasion, adminUpdateOccasion, adminDeleteOccasion,
+  adminGetOccasions, adminCreateOccasion, adminUpdateOccasion, adminDeleteOccasion, adminSwapOccasionOrder,
   adminGetCatalogBadgeDefinitions, adminCreateCatalogBadgeDefinition, adminUpdateCatalogBadgeDefinition, adminDeleteCatalogBadgeDefinition,
   adminGetFulfilledBadgeDefinitions, adminCreateFulfilledBadgeDefinition, adminUpdateFulfilledBadgeDefinition, adminDeleteFulfilledBadgeDefinition,
-  adminGetAchievementDefinitions, adminCreateAchievementDefinition, adminUpdateAchievementDefinition, adminDeleteAchievementDefinition,
+  adminGetAchievementDefinitions, adminCreateAchievementDefinition, adminUpdateAchievementDefinition, adminDeleteAchievementDefinition, adminSwapAchievementOrder,
   adminGetStats, type AdminStatsResponse,
   ADMIN_TOKEN_KEY,
 } from '../api/admin';
@@ -32,7 +32,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { FieldError } from '@/components/ui/field-error';
 
 type ItemFormValues = { name: string; description: string; price: string; currency: string; imagePath: string; url: string; categoryId: string; isPublished: boolean; occasionIds: string[] };
-type CollectionFormValues = { name: string; description: string; occasionId: string; coverImagePath: string; order: string; isPublished: boolean };
+type CollectionFormValues = { name: string; description: string; occasionId: string; coverImagePath: string; isPublished: boolean };
 
 function ItemForm({ form, setForm, categories, occasions, itemImageFile, setItemImageFile, externalImageUrl, setExternalImageUrl, onSubmit, submitLabel, onCancel, onParseUrl, parsing, errors, clearError }: {
   form: ItemFormValues; setForm: (f: ItemFormValues) => void; categories: CatalogCategoryDto[]; occasions: OccasionDto[];
@@ -181,17 +181,6 @@ function CollectionForm({ form, setForm, occasions, collectionImageFile, setColl
               </Select>
             </div>
             <div className="flex flex-col gap-1.5">
-              <Label>Порядок *</Label>
-              <Input
-                type="number"
-                min={1}
-                value={form.order}
-                onChange={(e) => { setForm({ ...form, order: e.target.value }); clearError('order'); }}
-                aria-invalid={!!errors.order}
-              />
-              <FieldError message={errors.order} />
-            </div>
-            <div className="flex flex-col gap-1.5">
               <Label>Обложка</Label>
               {form.coverImagePath && !collectionImageFile && <img src={getImageUrl(form.coverImagePath) ?? undefined} alt="" className="h-14 rounded mb-1 object-cover" />}
               <input type="file" accept="image/*" onChange={(e) => setCollectionImageFile(e.target.files?.[0] ?? null)} />
@@ -261,11 +250,9 @@ function CategoriesTab({ onOpenItems }: { onOpenItems: (categoryId: string) => v
   const [categories, setCategories] = useState<CatalogCategoryDto[]>([]);
   const [loading, setLoading] = useState(true);
   const [newName, setNewName] = useState('');
-  const [newOrder, setNewOrder] = useState('1');
   const [newErrors, setNewErrors] = useState<FormErrors>({});
   const [editId, setEditId] = useState<string | null>(null);
   const [editName, setEditName] = useState('');
-  const [editOrder, setEditOrder] = useState('1');
   const [editErrors, setEditErrors] = useState<FormErrors>({});
 
   const load = () => { setLoading(true); adminGetCategories().then(setCategories).catch((e) => toast.error(parseError(e))).finally(() => setLoading(false)); };
@@ -273,20 +260,27 @@ function CategoriesTab({ onOpenItems }: { onOpenItems: (categoryId: string) => v
 
   const handleCreate = async (e: React.FormEvent) => {
     e.preventDefault();
-    const result = catalogCategorySchema.safeParse({ name: newName, order: newOrder });
+    const result = catalogCategorySchema.safeParse({ name: newName });
     if (!result.success) { setNewErrors(parseZodErrors(result.error)); return; }
     setNewErrors({});
-    try { await adminCreateCategory({ name: newName, order: Number(newOrder) }); setNewName(''); setNewOrder('1'); load(); }
+    try { await adminCreateCategory({ name: newName }); setNewName(''); load(); }
     catch (e) { const fe = parseApiFieldErrors(e); if (fe) setNewErrors((p) => ({ ...p, ...fe })); else toast.error(parseError(e)); }
   };
 
   const handleUpdate = async (id: string) => {
-    const result = catalogCategorySchema.safeParse({ name: editName, order: editOrder });
+    const result = catalogCategorySchema.safeParse({ name: editName });
     if (!result.success) { setEditErrors(parseZodErrors(result.error)); return; }
     setEditErrors({});
-    try { await adminUpdateCategory(id, { name: editName, order: Number(editOrder) }); setEditId(null); load(); }
+    try { await adminUpdateCategory(id, { name: editName }); setEditId(null); load(); }
     catch (e) { const fe = parseApiFieldErrors(e); if (fe) setEditErrors((p) => ({ ...p, ...fe })); else toast.error(parseError(e)); }
   };
+
+  const handleSwap = async (id: string, targetId: string) => {
+    try { await adminSwapCategoryOrder(id, targetId); load(); }
+    catch (e) { toast.error(parseError(e)); }
+  };
+
+  const sorted = [...categories].sort((a, b) => a.order - b.order);
 
   return (
     <div>
@@ -296,20 +290,15 @@ function CategoriesTab({ onOpenItems }: { onOpenItems: (categoryId: string) => v
           <Input value={newName} onChange={(e) => { setNewName(e.target.value); if (newErrors.name) setNewErrors((p) => ({ ...p, name: '' })); }} aria-invalid={!!newErrors.name} />
           <FieldError message={newErrors.name} />
         </div>
-        <div className="flex flex-col gap-1.5 w-24">
-          <Label>Порядок *</Label>
-          <Input type="number" min={1} value={newOrder} onChange={(e) => { setNewOrder(e.target.value); if (newErrors.order) setNewErrors((p) => ({ ...p, order: '' })); }} aria-invalid={!!newErrors.order} />
-          <FieldError message={newErrors.order} />
-        </div>
         <Button type="submit" className="mt-6">Создать</Button>
       </form>
       {loading ? <div className="text-muted-foreground text-sm">Загрузка...</div> : (
         <Card>
           <CardContent className="p-0">
             <table className="w-full border-collapse text-sm">
-              <thead><tr className="border-b"><th className="p-3 text-left text-xs font-semibold text-muted-foreground uppercase">Название</th><th className="p-3 text-left text-xs font-semibold text-muted-foreground uppercase">Порядок</th><th className="p-3 text-left text-xs font-semibold text-muted-foreground uppercase">Статус</th><th className="p-3"></th></tr></thead>
+              <thead><tr className="border-b"><th className="p-3 text-left text-xs font-semibold text-muted-foreground uppercase">Название</th><th className="p-3 text-left text-xs font-semibold text-muted-foreground uppercase">Статус</th><th className="p-3"></th></tr></thead>
               <tbody>
-                {categories.map((c) => (
+                {sorted.map((c, index) => (
                   <tr key={c.id} className="border-b last:border-0">
                     <td className="p-3">
                       {editId === c.id ? (
@@ -318,21 +307,8 @@ function CategoriesTab({ onOpenItems }: { onOpenItems: (categoryId: string) => v
                           <FieldError message={editErrors.name} />
                         </>
                       ) : (
-                        <button
-                          className="hover:underline text-left"
-                          onClick={() => onOpenItems(c.id)}
-                        >
-                          {c.name}
-                        </button>
+                        <button className="hover:underline text-left" onClick={() => onOpenItems(c.id)}>{c.name}</button>
                       )}
-                    </td>
-                    <td className="p-3">
-                      {editId === c.id ? (
-                        <>
-                          <Input type="number" min={1} value={editOrder} onChange={(e) => { setEditOrder(e.target.value); if (editErrors.order) setEditErrors((p) => ({ ...p, order: '' })); }} className="h-7 w-20" aria-invalid={!!editErrors.order} />
-                          <FieldError message={editErrors.order} />
-                        </>
-                      ) : c.order}
                     </td>
                     <td className="p-3">
                       {editId !== c.id && <Badge variant={c.isPublished ? 'default' : 'secondary'}>{c.isPublished ? 'Опубликована' : 'Черновик'}</Badge>}
@@ -345,9 +321,11 @@ function CategoriesTab({ onOpenItems }: { onOpenItems: (categoryId: string) => v
                         </div>
                       ) : (
                         <div className="flex gap-2 justify-end">
+                          <Button size="sm" variant="ghost" disabled={index === 0} onClick={() => handleSwap(c.id, sorted[index - 1].id)}>▲</Button>
+                          <Button size="sm" variant="ghost" disabled={index === sorted.length - 1} onClick={() => handleSwap(c.id, sorted[index + 1].id)}>▼</Button>
                           <Button size="sm" variant="ghost" onClick={async () => { try { await adminSetCategoryPublished(c.id, !c.isPublished); load(); } catch (e) { toast.error(parseError(e)); } }}>{c.isPublished ? 'Скрыть' : 'Опубликовать'}</Button>
                           <Button size="sm" variant="ghost" onClick={() => onOpenItems(c.id)}>Открыть</Button>
-                          <Button size="sm" variant="ghost" onClick={() => { setEditId(c.id); setEditName(c.name); setEditOrder(String(c.order)); setEditErrors({}); }}>Изменить</Button>
+                          <Button size="sm" variant="ghost" onClick={() => { setEditId(c.id); setEditName(c.name); setEditErrors({}); }}>Изменить</Button>
                           <Button size="sm" variant="ghost" className="text-destructive" onClick={async () => { if (!confirm('Удалить?')) return; try { await adminDeleteCategory(c.id); load(); } catch (e) { toast.error(parseError(e)); } }}>Удалить</Button>
                         </div>
                       )}
@@ -659,7 +637,7 @@ function CollectionsTab() {
   const [selectedCollection, setSelectedCollection] = useState<CatalogCollectionAdminDto | null>(null);
   const [addItemId, setAddItemId] = useState('');
   const [addItemDescription, setAddItemDescription] = useState('');
-  const [form, setForm] = useState<CollectionFormValues>({ name: '', description: '', occasionId: '', coverImagePath: '', order: '1', isPublished: false });
+  const [form, setForm] = useState<CollectionFormValues>({ name: '', description: '', occasionId: '', coverImagePath: '', isPublished: false });
   const [collectionImageFile, setCollectionImageFile] = useState<File | null>(null);
   const [errors, setErrors] = useState<FormErrors>({});
   const clearError = (field: string) => { if (errors[field]) setErrors((p) => ({ ...p, [field]: '' })); };
@@ -671,11 +649,11 @@ function CollectionsTab() {
     adminGetOccasions().then(setOccasions).catch(() => {});
   }, []);
 
-  const resetForm = () => { setForm({ name: '', description: '', occasionId: '', coverImagePath: '', order: '1', isPublished: false }); setCollectionImageFile(null); setErrors({}); };
+  const resetForm = () => { setForm({ name: '', description: '', occasionId: '', coverImagePath: '', isPublished: false }); setCollectionImageFile(null); setErrors({}); };
   const handleCancel = () => { setShowCreate(false); setEditCollection(null); resetForm(); };
 
   const validate = () => {
-    const result = catalogCollectionSchema.safeParse({ name: form.name, description: form.description || undefined, order: form.order });
+    const result = catalogCollectionSchema.safeParse({ name: form.name, description: form.description || undefined });
     if (!result.success) { setErrors(parseZodErrors(result.error)); return false; }
     setErrors({});
     return true;
@@ -685,7 +663,7 @@ function CollectionsTab() {
     e.preventDefault();
     if (!validate()) return;
     try {
-      const newId = await adminCreateCollection({ name: form.name, description: form.description || null, occasionId: form.occasionId || null, coverImagePath: null, order: Number(form.order) });
+      const newId = await adminCreateCollection({ name: form.name, description: form.description || null, occasionId: form.occasionId || null, coverImagePath: null });
       if (collectionImageFile) await adminUploadCollectionImage(newId, collectionImageFile);
       resetForm(); setShowCreate(false); load(); toast.success('Подборка создана');
     } catch (e) { const fe = parseApiFieldErrors(e); if (fe) setErrors((p) => ({ ...p, ...fe })); else toast.error(parseError(e)); }
@@ -695,10 +673,15 @@ function CollectionsTab() {
     e.preventDefault();
     if (!editCollection || !validate()) return;
     try {
-      await adminUpdateCollection(editCollection.id, { name: form.name, description: form.description || null, occasionId: form.occasionId || null, coverImagePath: form.coverImagePath || null, order: Number(form.order), isPublished: form.isPublished });
+      await adminUpdateCollection(editCollection.id, { name: form.name, description: form.description || null, occasionId: form.occasionId || null, coverImagePath: form.coverImagePath || null, isPublished: form.isPublished });
       if (collectionImageFile) await adminUploadCollectionImage(editCollection.id, collectionImageFile);
       setEditCollection(null); resetForm(); load(); toast.success('Подборка обновлена');
     } catch (e) { const fe = parseApiFieldErrors(e); if (fe) setErrors((p) => ({ ...p, ...fe })); else toast.error(parseError(e)); }
+  };
+
+  const handleSwap = async (id: string, targetId: string) => {
+    try { await adminSwapCollectionOrder(id, targetId); load(); }
+    catch (e) { toast.error(parseError(e)); }
   };
 
   return (
@@ -712,20 +695,22 @@ function CollectionsTab() {
           <table className="w-full border-collapse text-sm">
             <thead><tr className="border-b">{['Название','Повод','Товаров','Статус',''].map((h) => <th key={h} className="p-3 text-left text-xs font-semibold text-muted-foreground uppercase">{h}</th>)}</tr></thead>
             <tbody>
-              {collections.map((c) => (
+              {[...collections].sort((a, b) => a.order - b.order).map((c, index, sorted) => (
                 <>
                   <tr key={c.id} className="border-b">
                     <td className="p-3 font-medium">
-                      <Link to={`/collections/${c.id}`} className="hover:underline">{c.name}</Link>
+                      <Link to="/catalog/collections" className="hover:underline">{c.name}</Link>
                     </td>
                     <td className="p-3 text-muted-foreground">{c.occasion?.label ?? '—'}</td>
                     <td className="p-3">{c.itemCount}</td>
                     <td className="p-3"><Badge variant={c.isPublished ? 'default' : 'secondary'}>{c.isPublished ? 'Опубликована' : 'Черновик'}</Badge></td>
                     <td className="p-3 text-right">
                       <div className="flex gap-1 justify-end">
+                        <Button size="sm" variant="ghost" disabled={index === 0} onClick={() => handleSwap(c.id, sorted[index - 1].id)}>▲</Button>
+                        <Button size="sm" variant="ghost" disabled={index === sorted.length - 1} onClick={() => handleSwap(c.id, sorted[index + 1].id)}>▼</Button>
                         <Button size="sm" variant="ghost" onClick={async () => { try { await adminSetCollectionPublished(c.id, !c.isPublished); load(); } catch (e) { toast.error(parseError(e)); } }}>{c.isPublished ? 'Снять' : 'Опубликовать'}</Button>
                         <Button size="sm" variant="ghost" onClick={() => setSelectedCollection(selectedCollection?.id === c.id ? null : c)}>{selectedCollection?.id === c.id ? 'Свернуть' : 'Товары'}</Button>
-                        <Button size="sm" variant="ghost" onClick={() => { setEditCollection(c); setShowCreate(false); setForm({ name: c.name, description: c.description ?? '', occasionId: c.occasion?.id ?? '', coverImagePath: c.coverImagePath ?? '', order: String(c.order), isPublished: c.isPublished }); setErrors({}); }}>Изменить</Button>
+                        <Button size="sm" variant="ghost" onClick={() => { setEditCollection(c); setShowCreate(false); setForm({ name: c.name, description: c.description ?? '', occasionId: c.occasion?.id ?? '', coverImagePath: c.coverImagePath ?? '', isPublished: c.isPublished }); setErrors({}); }}>Изменить</Button>
                         <Button size="sm" variant="ghost" className="text-destructive" onClick={async () => { if (!confirm('Удалить подборку?')) return; try { await adminDeleteCollection(c.id); if (selectedCollection?.id === c.id) setSelectedCollection(null); load(); } catch (e) { toast.error(parseError(e)); } }}>Удалить</Button>
                       </div>
                     </td>
@@ -774,11 +759,9 @@ function OccasionsTab() {
   const [loading, setLoading] = useState(true);
   const [newKey, setNewKey] = useState('');
   const [newLabel, setNewLabel] = useState('');
-  const [newOrder, setNewOrder] = useState('1');
   const [editId, setEditId] = useState<string | null>(null);
   const [editKey, setEditKey] = useState('');
   const [editLabel, setEditLabel] = useState('');
-  const [editOrder, setEditOrder] = useState('1');
 
   const load = () => { setLoading(true); adminGetOccasions().then(setOccasions).catch((e) => toast.error(parseError(e))).finally(() => setLoading(false)); };
   useEffect(() => { load(); }, []);
@@ -787,18 +770,25 @@ function OccasionsTab() {
     e.preventDefault();
     if (!newKey.trim() || !newLabel.trim()) return;
     try {
-      await adminCreateOccasion({ key: newKey.trim(), label: newLabel.trim(), order: Number(newOrder) });
-      setNewKey(''); setNewLabel(''); setNewOrder('1'); load();
+      await adminCreateOccasion({ key: newKey.trim(), label: newLabel.trim() });
+      setNewKey(''); setNewLabel(''); load();
     } catch (e) { toast.error(parseError(e)); }
   };
 
   const handleUpdate = async (id: string) => {
     if (!editKey.trim() || !editLabel.trim()) return;
     try {
-      await adminUpdateOccasion(id, { key: editKey.trim(), label: editLabel.trim(), order: Number(editOrder) });
+      await adminUpdateOccasion(id, { key: editKey.trim(), label: editLabel.trim() });
       setEditId(null); load();
     } catch (e) { toast.error(parseError(e)); }
   };
+
+  const handleSwap = async (id: string, targetId: string) => {
+    try { await adminSwapOccasionOrder(id, targetId); load(); }
+    catch (e) { toast.error(parseError(e)); }
+  };
+
+  const sorted = [...occasions].sort((a, b) => a.order - b.order);
 
   return (
     <div>
@@ -811,19 +801,15 @@ function OccasionsTab() {
           <Label>Название *</Label>
           <Input placeholder="🎂 День рождения" value={newLabel} onChange={(e) => setNewLabel(e.target.value)} />
         </div>
-        <div className="flex flex-col gap-1.5 w-24">
-          <Label>Порядок *</Label>
-          <Input type="number" min={1} value={newOrder} onChange={(e) => setNewOrder(e.target.value)} />
-        </div>
         <Button type="submit" className="mt-6" disabled={!newKey.trim() || !newLabel.trim()}>Создать</Button>
       </form>
       {loading ? <div className="text-muted-foreground text-sm">Загрузка...</div> : (
         <Card>
           <CardContent className="p-0">
             <table className="w-full border-collapse text-sm">
-              <thead><tr className="border-b"><th className="p-3 text-left text-xs font-semibold text-muted-foreground uppercase">Ключ</th><th className="p-3 text-left text-xs font-semibold text-muted-foreground uppercase">Название</th><th className="p-3 text-left text-xs font-semibold text-muted-foreground uppercase">Порядок</th><th className="p-3"></th></tr></thead>
+              <thead><tr className="border-b"><th className="p-3 text-left text-xs font-semibold text-muted-foreground uppercase">Ключ</th><th className="p-3 text-left text-xs font-semibold text-muted-foreground uppercase">Название</th><th className="p-3"></th></tr></thead>
               <tbody>
-                {occasions.map((o) => (
+                {sorted.map((o, index) => (
                   <tr key={o.id} className="border-b last:border-0">
                     <td className="p-3 font-mono text-xs">
                       {editId === o.id
@@ -835,11 +821,6 @@ function OccasionsTab() {
                         ? <Input value={editLabel} onChange={(e) => setEditLabel(e.target.value)} className="h-7" />
                         : o.label}
                     </td>
-                    <td className="p-3">
-                      {editId === o.id
-                        ? <Input type="number" min={1} value={editOrder} onChange={(e) => setEditOrder(e.target.value)} className="h-7 w-20" />
-                        : o.order}
-                    </td>
                     <td className="p-3 text-right">
                       {editId === o.id ? (
                         <div className="flex gap-2 justify-end">
@@ -848,7 +829,9 @@ function OccasionsTab() {
                         </div>
                       ) : (
                         <div className="flex gap-2 justify-end">
-                          <Button size="sm" variant="ghost" onClick={() => { setEditId(o.id); setEditKey(o.key); setEditLabel(o.label); setEditOrder(String(o.order)); }}>Изменить</Button>
+                          <Button size="sm" variant="ghost" disabled={index === 0} onClick={() => handleSwap(o.id, sorted[index - 1].id)}>▲</Button>
+                          <Button size="sm" variant="ghost" disabled={index === sorted.length - 1} onClick={() => handleSwap(o.id, sorted[index + 1].id)}>▼</Button>
+                          <Button size="sm" variant="ghost" onClick={() => { setEditId(o.id); setEditKey(o.key); setEditLabel(o.label); }}>Изменить</Button>
                           <Button size="sm" variant="ghost" className="text-destructive" onClick={async () => { if (!confirm('Удалить повод?')) return; try { await adminDeleteOccasion(o.id); load(); } catch (e) { toast.error(parseError(e)); } }}>Удалить</Button>
                         </div>
                       )}
@@ -1068,8 +1051,8 @@ function FulfilledBadgesTab() {
   );
 }
 
-type AchievementForm = { name: string; description: string; emoji: string; ruleType: string; linkedBadgeTypeId: string; threshold: string; order: string; isActive: boolean };
-const emptyAchievementForm: AchievementForm = { name: '', description: '', emoji: '', ruleType: '1', linkedBadgeTypeId: '', threshold: '3', order: '1', isActive: true };
+type AchievementForm = { name: string; description: string; emoji: string; ruleType: string; linkedBadgeTypeId: string; threshold: string; isActive: boolean };
+const emptyAchievementForm: AchievementForm = { name: '', description: '', emoji: '', ruleType: '1', linkedBadgeTypeId: '', threshold: '3', isActive: true };
 
 function AchievementsTab() {
   const toast = useToast();
@@ -1092,7 +1075,7 @@ function AchievementsTab() {
   const openCreate = () => { setEditingItem(null); setForm(emptyAchievementForm); setShowForm(true); };
   const openEdit = (item: AchievementDefinitionAdminDto) => {
     setEditingItem(item);
-    setForm({ name: item.name, description: item.description, emoji: item.emoji, ruleType: String(item.ruleType), linkedBadgeTypeId: item.linkedBadgeTypeId != null ? String(item.linkedBadgeTypeId) : '', threshold: String(item.threshold), order: String(item.order), isActive: item.isActive });
+    setForm({ name: item.name, description: item.description, emoji: item.emoji, ruleType: String(item.ruleType), linkedBadgeTypeId: item.linkedBadgeTypeId != null ? String(item.linkedBadgeTypeId) : '', threshold: String(item.threshold), isActive: item.isActive });
     setShowForm(true);
   };
 
@@ -1102,7 +1085,7 @@ function AchievementsTab() {
       name: form.name.trim(), description: form.description.trim(), emoji: form.emoji.trim(),
       ruleType: Number(form.ruleType) as AchievementRuleType,
       linkedBadgeTypeId: form.ruleType === '1' && form.linkedBadgeTypeId ? Number(form.linkedBadgeTypeId) : null,
-      threshold: Number(form.threshold), order: Number(form.order), isActive: form.isActive,
+      threshold: Number(form.threshold), isActive: form.isActive,
     };
     try {
       if (editingItem) { await adminUpdateAchievementDefinition(editingItem.id, payload); toast.success('Достижение обновлено'); }
@@ -1114,6 +1097,11 @@ function AchievementsTab() {
   const handleDelete = async (id: number) => {
     if (!confirm('Удалить достижение?')) return;
     try { await adminDeleteAchievementDefinition(id); load(); toast.success('Удалено'); }
+    catch (e) { toast.error(parseError(e)); }
+  };
+
+  const handleSwap = async (id: number, targetId: number) => {
+    try { await adminSwapAchievementOrder(id, targetId); load(); }
     catch (e) { toast.error(parseError(e)); }
   };
 
@@ -1142,6 +1130,7 @@ function AchievementsTab() {
                     <SelectContent>
                       <SelectItem value="1">Конкретный бейдж</SelectItem>
                       <SelectItem value="2">Уникальные типы</SelectItem>
+                      <SelectItem value="3">Лайкнутые предложения</SelectItem>
                     </SelectContent>
                   </Select>
                 </div>
@@ -1156,12 +1145,9 @@ function AchievementsTab() {
                 )}
                 <div className="flex flex-col gap-1"><Label>Порог</Label><Input type="number" value={form.threshold} onChange={(e) => setForm({ ...form, threshold: e.target.value })} /></div>
               </div>
-              <div className="flex items-center gap-4">
-                <div className="flex flex-col gap-1"><Label>Порядок</Label><Input type="number" value={form.order} className="w-24" onChange={(e) => setForm({ ...form, order: e.target.value })} /></div>
-                <div className="flex items-center gap-2 mt-4">
-                  <input type="checkbox" id="cb-ach-active" checked={form.isActive} onChange={(e) => setForm({ ...form, isActive: e.target.checked })} />
-                  <Label htmlFor="cb-ach-active">Активно</Label>
-                </div>
+              <div className="flex items-center gap-2">
+                <input type="checkbox" id="cb-ach-active" checked={form.isActive} onChange={(e) => setForm({ ...form, isActive: e.target.checked })} />
+                <Label htmlFor="cb-ach-active">Активно</Label>
               </div>
               <div className="flex gap-2"><Button type="submit" size="sm">{editingItem ? 'Сохранить' : 'Создать'}</Button><Button type="button" variant="ghost" size="sm" onClick={() => setShowForm(false)}>Отмена</Button></div>
             </form>
@@ -1170,7 +1156,7 @@ function AchievementsTab() {
       )}
       {loading ? <p className="text-sm text-muted-foreground">Загрузка...</p> : (
         <div className="flex flex-col gap-2">
-          {items.map((item) => (
+          {[...items].sort((a, b) => a.order - b.order).map((item, index, sorted) => (
             <div key={item.id} className="flex items-center justify-between border rounded-lg px-4 py-3 bg-card">
               <div className="flex items-center gap-3">
                 <span className="text-xl">{item.emoji}</span>
@@ -1180,13 +1166,16 @@ function AchievementsTab() {
                   <div className="text-xs text-muted-foreground mt-0.5">
                     {item.ruleType === 1
                       ? `Бейдж: ${badgeLabelById.get(item.linkedBadgeTypeId!) ?? `#${item.linkedBadgeTypeId}`}`
-                      : 'Уникальные типы'
+                      : item.ruleType === 2 ? 'Уникальные типы'
+                      : 'Лайкнутые предложения'
                     } · Порог: {item.threshold}
                   </div>
                 </div>
               </div>
               <div className="flex items-center gap-2">
                 {!item.isActive && <Badge variant="secondary" className="text-xs">Неактивно</Badge>}
+                <Button size="sm" variant="ghost" disabled={index === 0} onClick={() => handleSwap(item.id, sorted[index - 1].id)}>▲</Button>
+                <Button size="sm" variant="ghost" disabled={index === sorted.length - 1} onClick={() => handleSwap(item.id, sorted[index + 1].id)}>▼</Button>
                 <Button size="sm" variant="ghost" onClick={() => openEdit(item)}>✎</Button>
                 <Button size="sm" variant="ghost" className="text-destructive" onClick={() => handleDelete(item.id)}>✕</Button>
               </div>

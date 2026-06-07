@@ -20,10 +20,14 @@ public sealed class CatalogOccasion
         };
     }
 
-    public void Update(string key, string label, int order)
+    public void Update(string key, string label)
     {
         Key = key;
         Label = label;
+    }
+
+    public void SetOrder(int order)
+    {
         Order = order;
     }
 }

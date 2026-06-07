@@ -29,7 +29,7 @@ public static partial class AdminEndpoints
             new CreateAchievementDefinitionCommand(
                 request.Name, request.Description, request.Emoji,
                 request.RuleType, request.LinkedBadgeTypeId,
-                request.Threshold, request.Order), ct);
+                request.Threshold), ct);
 
         return TypedResults.Created($"/admin/catalog/achievements/{result.Value}", result.Value);
     }
@@ -44,7 +44,7 @@ public static partial class AdminEndpoints
             new UpdateAchievementDefinitionCommand(
                 id, request.Name, request.Description, request.Emoji,
                 request.RuleType, request.LinkedBadgeTypeId,
-                request.Threshold, request.Order, request.IsActive), ct);
+                request.Threshold, request.IsActive), ct);
 
         if (!result.IsSuccess)
             return TypedResults.NotFound(result.Error);

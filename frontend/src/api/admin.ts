@@ -89,6 +89,10 @@ export function adminDeleteCategory(id: string): Promise<void> {
   return adminRequest<void>('DELETE', `/admin/catalog/categories/${id}`);
 }
 
+export function adminSwapCategoryOrder(id: string, targetId: string): Promise<void> {
+  return adminRequest<void>('PATCH', `/admin/catalog/categories/${id}/swap`, { targetId });
+}
+
 export function adminGetAllItems(params: {
   categoryId?: string;
   search?: string;
@@ -135,12 +139,16 @@ export function adminGetOccasions(): Promise<OccasionDto[]> {
   return adminRequest<OccasionDto[]>('GET', '/admin/catalog/occasions');
 }
 
-export function adminCreateOccasion(data: { key: string; label: string; order: number }): Promise<string> {
+export function adminCreateOccasion(data: { key: string; label: string }): Promise<string> {
   return adminRequest<string>('POST', '/admin/catalog/occasions', data);
 }
 
-export function adminUpdateOccasion(id: string, data: { key: string; label: string; order: number }): Promise<void> {
+export function adminUpdateOccasion(id: string, data: { key: string; label: string }): Promise<void> {
   return adminRequest<void>('PUT', `/admin/catalog/occasions/${id}`, data);
+}
+
+export function adminSwapOccasionOrder(id: string, targetId: string): Promise<void> {
+  return adminRequest<void>('PATCH', `/admin/catalog/occasions/${id}/swap`, { targetId });
 }
 
 export function adminDeleteOccasion(id: string): Promise<void> {
@@ -161,6 +169,10 @@ export function adminUpdateCollection(id: string, data: UpdateCollectionRequest)
 
 export function adminDeleteCollection(id: string): Promise<void> {
   return adminRequest<void>('DELETE', `/admin/catalog/collections/${id}`);
+}
+
+export function adminSwapCollectionOrder(id: string, targetId: string): Promise<void> {
+  return adminRequest<void>('PATCH', `/admin/catalog/collections/${id}/swap`, { targetId });
 }
 
 export function adminAddItemToCollection(collectionId: string, itemId: string, description?: string): Promise<void> {
@@ -283,7 +295,7 @@ export function adminGetAchievementDefinitions(): Promise<AchievementDefinitionA
 export function adminCreateAchievementDefinition(data: {
   name: string; description: string; emoji: string;
   ruleType: AchievementRuleType; linkedBadgeTypeId: number | null;
-  threshold: number; order: number; isActive: boolean;
+  threshold: number; isActive: boolean;
 }): Promise<number> {
   return adminRequest<number>('POST', '/admin/catalog/achievements', data);
 }
@@ -291,9 +303,13 @@ export function adminCreateAchievementDefinition(data: {
 export function adminUpdateAchievementDefinition(id: number, data: {
   name: string; description: string; emoji: string;
   ruleType: AchievementRuleType; linkedBadgeTypeId: number | null;
-  threshold: number; order: number; isActive: boolean;
+  threshold: number; isActive: boolean;
 }): Promise<void> {
   return adminRequest<void>('PUT', `/admin/catalog/achievements/${id}`, data);
+}
+
+export function adminSwapAchievementOrder(id: number, targetId: number): Promise<void> {
+  return adminRequest<void>('PATCH', `/admin/catalog/achievements/${id}/swap`, { targetId });
 }
 
 export function adminDeleteAchievementDefinition(id: number): Promise<void> {

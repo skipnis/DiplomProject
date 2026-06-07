@@ -22,9 +22,13 @@ public sealed class CatalogCategory
         };
     }
 
-    public void Update(string name, int order)
+    public void Update(string name)
     {
         Name = name;
+    }
+
+    public void SetOrder(int order)
+    {
         Order = order;
     }
 

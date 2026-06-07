@@ -22,7 +22,11 @@ public sealed class CreateOccasionHandler(ApplicationDbContext db, IFusionCache 
             return Error.Conflict("Catalog.OccasionExists", "Occasion with this key already exists");
         }
 
-        var occasion = CatalogOccasion.Create(command.Key, command.Label, command.Order);
+        var nextOrder = await db.CatalogOccasions.AnyAsync(ct)
+            ? await db.CatalogOccasions.MaxAsync(o => o.Order, ct) + 1
+            : 1;
+
+        var occasion = CatalogOccasion.Create(command.Key, command.Label, nextOrder);
 
         db.CatalogOccasions.Add(occasion);
         await db.SaveChangesAsync(ct);

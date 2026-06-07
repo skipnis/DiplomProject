@@ -1,6 +1,6 @@
 using Microsoft.AspNetCore.Http.HttpResults;
 using Microsoft.AspNetCore.Mvc;
-using Wishapp.Web.Admin.Features.Categories.Update;
+using Wishapp.Web.Admin.Features.Occasions.SwapOrder;
 using Wishapp.Web.Common.Interfaces;
 using Wishapp.Web.Common.Types;
 
@@ -8,13 +8,13 @@ namespace Wishapp.Web.Admin;
 
 public static partial class AdminEndpoints
 {
-    private static async Task<Results<NoContent, NotFound<Error>>> UpdateCategory(
+    private static async Task<Results<NoContent, NotFound<Error>>> SwapOccasionOrder(
         [FromRoute] Guid id,
-        UpdateCategoryRequest request,
-        ICommandHandler<UpdateCategoryCommand> handler,
+        SwapOccasionOrderCommand command,
+        ICommandHandler<SwapOccasionOrderCommand> handler,
         CancellationToken ct)
     {
-        var result = await handler.HandleAsync(new UpdateCategoryCommand(id, request.Name), ct);
+        var result = await handler.HandleAsync(command with { Id = id }, ct);
 
         return result.IsSuccess
             ? TypedResults.NoContent()

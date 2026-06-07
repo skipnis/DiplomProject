@@ -8,5 +8,4 @@ public record UpdateCollectionCommand(
     string? Description,
     Guid? OccasionId,
     string? CoverImagePath,
-    int Order,
     bool IsPublished) : ICommand;

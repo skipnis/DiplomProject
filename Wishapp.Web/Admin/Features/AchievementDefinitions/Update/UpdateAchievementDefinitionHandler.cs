@@ -19,7 +19,7 @@ public sealed class UpdateAchievementDefinitionHandler(ApplicationDbContext db)
         definition.Update(
             command.Name, command.Description, command.Emoji,
             command.RuleType, command.LinkedBadgeTypeId,
-            command.Threshold, command.Order, command.IsActive);
+            command.Threshold, command.IsActive);
 
         await db.SaveChangesAsync(ct);
         return Result.Success();

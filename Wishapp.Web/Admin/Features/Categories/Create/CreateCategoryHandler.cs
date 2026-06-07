@@ -14,15 +14,19 @@ public sealed class CreateCategoryHandler(ApplicationDbContext db, IFusionCache 
         CreateCategoryCommand command,
         CancellationToken ct = default)
     {
-        var exists = await db.CatalogCategories
-            .AnyAsync(c => c.Name == command.Name || c.Order == command.Order, ct);
+        var nameExists = await db.CatalogCategories
+            .AnyAsync(c => c.Name == command.Name, ct);
 
-        if (exists)
+        if (nameExists)
         {
-            return Error.Conflict("Catalog.CategoryExists", "Category with this name or order already exists");
+            return Error.Conflict("Catalog.CategoryExists", "Category with this name already exists");
         }
 
-        var category = CatalogCategory.Create(command.Name, command.Order);
+        var nextOrder = await db.CatalogCategories.AnyAsync(ct)
+            ? await db.CatalogCategories.MaxAsync(c => c.Order, ct) + 1
+            : 1;
+
+        var category = CatalogCategory.Create(command.Name, nextOrder);
 
         db.CatalogCategories.Add(category);
 

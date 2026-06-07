@@ -9,5 +9,4 @@ public record CreateAchievementDefinitionCommand(
     string Emoji,
     AchievementRuleType RuleType,
     int? LinkedBadgeTypeId,
-    int Threshold,
-    int Order) : ICommand<int>;
+    int Threshold) : ICommand<int>;
