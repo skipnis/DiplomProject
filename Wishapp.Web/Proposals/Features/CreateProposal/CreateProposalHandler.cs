@@ -1,18 +1,18 @@
 using Wishapp.Web.Catalog;
 using Wishapp.Web.Common.Interfaces;
 using Wishapp.Web.Common.Types;
-using Wishapp.Web.Friendships;
 using Wishapp.Web.Infrastructure.Database;
 using Wishapp.Web.Notifications;
 using Wishapp.Web.Notifications.Entities;
 using Wishapp.Web.Proposals.Entities;
+using Wishapp.Web.Users;
 using Wishapp.Web.Wishlists;
 
 namespace Wishapp.Web.Proposals.Features.CreateProposal;
 
 public sealed class CreateProposalHandler(
     ApplicationDbContext db,
-    IFriendshipsApi friendshipsApi,
+    IUsersApi usersApi,
     ICatalogApi catalogApi,
     IWishlistsApi wishlistsApi,
     INotificationsApi notificationsApi)
@@ -23,10 +23,10 @@ public sealed class CreateProposalHandler(
         if (command.SenderId == command.RecipientId)
             return Error.Validation("Proposals.SelfProposal", "Cannot send a proposal to yourself");
 
-        var areFriends = await friendshipsApi.AreFriendsAsync(command.SenderId, command.RecipientId, ct);
+        var recipientExists = await usersApi.ExistsAsync(command.RecipientId, ct);
 
-        if (!areFriends)
-            return Error.NotFound("Proposals.RecipientNotFound", "Recipient not found or is not your friend");
+        if (recipientExists.IsFailure)
+            return Error.NotFound("Proposals.RecipientNotFound", "Recipient not found");
 
         var validationError = await ValidateSourceAsync(command, ct);
 

@@ -28,7 +28,7 @@ public sealed class UserAchievement
         };
     }
 
-    public void UpdateProgress(int progress, int threshold)
+    public bool UpdateProgress(int progress, int threshold)
     {
         Progress = progress;
         UpdatedAt = DateTimeOffset.UtcNow;
@@ -36,6 +36,8 @@ public sealed class UserAchievement
         {
             IsEarned = true;
             EarnedAt = DateTimeOffset.UtcNow;
+            return true;
         }
+        return false;
     }
 }

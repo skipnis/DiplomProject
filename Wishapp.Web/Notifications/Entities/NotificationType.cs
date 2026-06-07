@@ -16,4 +16,6 @@ public enum NotificationType
 
     ProposalReceived = 30,
     ProposalReacted = 31,
+
+    AchievementEarned = 40,
 }

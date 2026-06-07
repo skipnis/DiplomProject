@@ -1,6 +1,7 @@
 using Microsoft.EntityFrameworkCore;
 using Wishapp.Web.Common.Interfaces;
 using Wishapp.Web.Common.Types;
+using Wishapp.Web.Gamification;
 using Wishapp.Web.Infrastructure.Database;
 using Wishapp.Web.Notifications;
 using Wishapp.Web.Notifications.Entities;
@@ -10,7 +11,8 @@ namespace Wishapp.Web.Proposals.Features.ReactToProposal;
 
 public sealed class ReactToProposalHandler(
     ApplicationDbContext db,
-    INotificationsApi notificationsApi)
+    INotificationsApi notificationsApi,
+    IGamificationApi gamificationApi)
     : ICommandHandler<ReactToProposalCommand>
 {
     public async Task<Result> HandleAsync(ReactToProposalCommand command, CancellationToken ct = default)
@@ -35,6 +37,9 @@ public sealed class ReactToProposalHandler(
             proposalId = proposal.Id,
             status = command.Status.ToString()
         }, ct);
+
+        if (command.Status == ProposalStatus.Liked)
+            await gamificationApi.RecalculateAchievementsAsync(proposal.SenderId, ct);
 
         return Result.Success();
     }

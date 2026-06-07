@@ -2,12 +2,16 @@ using Microsoft.EntityFrameworkCore;
 using Wishapp.Web.Common.Interfaces;
 using Wishapp.Web.Common.Types;
 using Wishapp.Web.Gamification.Entities;
+using Wishapp.Web.Gamification.Features.CalculateAchievements;
 using Wishapp.Web.Infrastructure.Database;
 using Wishapp.Web.Wishlists;
 
 namespace Wishapp.Web.Gamification.Features.AddGiftBadges;
 
-public sealed class AddGiftBadgesHandler(ApplicationDbContext db, IWishlistsApi wishlistsApi)
+public sealed class AddGiftBadgesHandler(
+    ApplicationDbContext db,
+    IWishlistsApi wishlistsApi,
+    ICommandHandler<CalculateAchievementsCommand> calculateAchievementsHandler)
     : ICommandHandler<AddGiftBadgesCommand>
 {
     public async Task<Result> HandleAsync(AddGiftBadgesCommand command, CancellationToken ct = default)
@@ -55,54 +59,8 @@ public sealed class AddGiftBadgesHandler(ApplicationDbContext db, IWishlistsApi 
 
         await db.SaveChangesAsync(ct);
 
-        await RecalculateAchievementsAsync(db, gifterId, ct);
-        await db.SaveChangesAsync(ct);
+        await calculateAchievementsHandler.HandleAsync(new CalculateAchievementsCommand(gifterId), ct);
 
         return Result.Success();
-    }
-
-    private static async Task RecalculateAchievementsAsync(
-        ApplicationDbContext db,
-        Guid gifterId,
-        CancellationToken ct)
-    {
-        var badgeCounts = await db.FulfilledWishBadges
-            .Where(b => b.GifterUserId == gifterId)
-            .GroupBy(b => b.BadgeType)
-            .Select(g => new { BadgeType = g.Key, Count = g.Count() })
-            .ToListAsync(ct);
-
-        var countsByBadgeType = badgeCounts.ToDictionary(b => b.BadgeType, b => b.Count);
-        var uniqueBadgeTypeCount = countsByBadgeType.Count;
-
-        var achievementDefinitions = await db.AchievementDefinitions
-            .Where(d => d.IsActive)
-            .ToListAsync(ct);
-
-        var existingAchievements = await db.UserAchievements
-            .Where(a => a.UserId == gifterId)
-            .ToListAsync(ct);
-
-        var achievementsByDefinitionId = existingAchievements.ToDictionary(a => a.DefinitionId);
-
-        foreach (var definition in achievementDefinitions)
-        {
-            var progress = definition.RuleType switch
-            {
-                AchievementRuleType.SpecificBadgeCount when definition.LinkedBadgeTypeId.HasValue
-                    => countsByBadgeType.GetValueOrDefault(definition.LinkedBadgeTypeId.Value, 0),
-                AchievementRuleType.UniqueBadgeTypes
-                    => uniqueBadgeTypeCount,
-                _ => 0
-            };
-
-            if (!achievementsByDefinitionId.TryGetValue(definition.Id, out var achievement))
-            {
-                achievement = UserAchievement.Create(gifterId, definition.Id);
-                db.UserAchievements.Add(achievement);
-            }
-
-            achievement.UpdateProgress(progress, definition.Threshold);
-        }
     }
 }

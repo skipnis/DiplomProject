@@ -1,10 +1,15 @@
 using Microsoft.EntityFrameworkCore;
+using Wishapp.Web.Common.Interfaces;
 using Wishapp.Web.Gamification.Dtos;
+using Wishapp.Web.Gamification.Features.CalculateAchievements;
 using Wishapp.Web.Infrastructure.Database;
 
 namespace Wishapp.Web.Gamification;
 
-public sealed class GamificationApi(ApplicationDbContext db) : IGamificationApi
+public sealed class GamificationApi(
+    ApplicationDbContext db,
+    ICommandHandler<CalculateAchievementsCommand> calculateAchievementsHandler)
+    : IGamificationApi
 {
     public async Task<Dictionary<Guid, List<CatalogItemBadgeDto>>> GetBadgesForItemsAsync(
         IReadOnlyList<Guid> itemIds,
@@ -59,6 +64,9 @@ public sealed class GamificationApi(ApplicationDbContext db) : IGamificationApi
                     }).ToList();
                 });
     }
+
+    public Task RecalculateAchievementsAsync(Guid userId, CancellationToken ct = default)
+        => calculateAchievementsHandler.HandleAsync(new CalculateAchievementsCommand(userId), ct);
 
     public Task<bool> HasGiftBadgesAsync(Guid wishId, CancellationToken ct = default) =>
         db.FulfilledWishBadges.AnyAsync(badge => badge.WishId == wishId, ct);

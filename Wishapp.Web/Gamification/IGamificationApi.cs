@@ -12,5 +12,6 @@ public interface IGamificationApi
     Task<HashSet<Guid>> GetWishIdsWithBadgesAsync(IReadOnlyList<Guid> wishIds, CancellationToken ct = default);
     Task DeleteBadgesForWishAsync(Guid wishId, CancellationToken ct = default);
     Task DeleteBadgesForWishesAsync(IReadOnlyList<Guid> wishIds, CancellationToken ct = default);
+    Task RecalculateAchievementsAsync(Guid userId, CancellationToken ct = default);
     Task DeleteUserDataAsync(Guid userId, CancellationToken ct = default);
 }
