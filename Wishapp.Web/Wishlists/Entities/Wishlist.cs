@@ -17,7 +17,6 @@ public sealed class Wishlist
     public string? Emoji { get; private set; }
     public WishlistVisibility Visibility { get; private set; }
     public bool IsSystem { get; private set; }
-    public SystemWishlistType SystemType { get; private set; }
     public bool IsSurpriseModeEnabled { get; private set; }
     public DateTimeOffset CreatedAt { get; private set; }
 
@@ -53,8 +52,7 @@ public sealed class Wishlist
     public static Wishlist CreateSystem(
         Guid ownerId,
         string name,
-        WishlistVisibility visibility,
-        SystemWishlistType systemType)
+        WishlistVisibility visibility)
     {
         var wishlist = new Wishlist
         {
@@ -63,7 +61,6 @@ public sealed class Wishlist
             Name = name,
             Visibility = visibility,
             IsSystem = true,
-            SystemType = systemType,
             CreatedAt = DateTimeOffset.UtcNow
         };
 

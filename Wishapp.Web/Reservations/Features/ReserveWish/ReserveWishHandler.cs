@@ -38,7 +38,7 @@ public sealed class ReserveWishHandler(
             return Error.NotFound("Wishlists.NotFound", "Wishlist not found");
         }
 
-        if (accessData.SystemType != SystemWishlistType.None)
+        if (accessData.IsSystem)
         {
             return Error.Forbidden("Reservations.SystemWishlist", "Cannot reserve wishes from a system wishlist");
         }

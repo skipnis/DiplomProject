@@ -19,7 +19,7 @@ public sealed class GetWishlistHandler(ApplicationDbContext db)
             .Select(w => new
             {
                 w.Id, w.Name, w.Description, w.Emoji,
-                w.Visibility, w.IsSystem, w.SystemType,
+                w.Visibility, w.IsSystem,
                 w.IsSurpriseModeEnabled, w.OwnerId,
                 FulfilledWishCount = w.Wishes.Count(wish => wish.IsFulfilled),
                 Members = w.Members
@@ -38,7 +38,7 @@ public sealed class GetWishlistHandler(ApplicationDbContext db)
 
         return new WishlistDto(
             wishlist.Id, wishlist.Name, wishlist.Description, wishlist.Emoji,
-            wishlist.Visibility, wishlist.IsSystem, wishlist.SystemType,
+            wishlist.Visibility, wishlist.IsSystem,
             isMember && wishlist.IsSurpriseModeEnabled,
             wishlist.FulfilledWishCount,
             wishlist.Members);

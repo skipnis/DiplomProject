@@ -53,7 +53,7 @@ public sealed class FulfillWishHandler(
             fulfilledWish.Currency,
             fulfilledWish.ImagePath,
             wishlist.Name,
-            wishlist.SystemType == SystemWishlistType.Hidden || wishlist.IsSurpriseModeEnabled,
+            wishlist.IsSystem || wishlist.IsSurpriseModeEnabled,
             fulfilledWish.FulfilledAt!.Value);
 
         db.FulfilledWishRecords.Add(record);

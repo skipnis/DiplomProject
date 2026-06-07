@@ -11,7 +11,7 @@ public sealed class WishlistsApi(ApplicationDbContext db) : IWishlistsApi
 {
     public Task CreateSystemWishlistsAsync(Guid userId, CancellationToken ct = default)
     {
-        var hidden = Wishlist.CreateSystem(userId, "Скрытые", WishlistVisibility.Private, SystemWishlistType.Hidden);
+        var hidden = Wishlist.CreateSystem(userId, "Скрытые", WishlistVisibility.Private);
 
         db.Wishlists.Add(hidden);
 
@@ -61,7 +61,7 @@ public sealed class WishlistsApi(ApplicationDbContext db) : IWishlistsApi
                 w.OwnerId,
                 w.Visibility,
                 w.Members.Select(m => new WishlistMemberInfo(m.UserId, m.Role)).ToList(),
-                w.SystemType,
+                w.IsSystem,
                 w.IsSurpriseModeEnabled))
             .FirstOrDefaultAsync(ct);
     }

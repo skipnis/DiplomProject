@@ -27,11 +27,6 @@ public class WishlistConfig : IEntityTypeConfiguration<Wishlist>
             .HasConversion<string>()
             .HasColumnType("text");
 
-        builder.Property(w => w.SystemType)
-            .HasConversion<string>()
-            .HasColumnType("text")
-            .HasDefaultValue(SystemWishlistType.None);
-
         builder.HasMany(w => w.Members)
             .WithOne()
             .HasForeignKey(m => m.WishlistId)

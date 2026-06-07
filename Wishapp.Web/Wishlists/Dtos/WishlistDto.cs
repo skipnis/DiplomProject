@@ -9,7 +9,6 @@ public record WishlistDto(
     string? Emoji,
     WishlistVisibility Visibility,
     bool IsSystem,
-    SystemWishlistType SystemType,
     bool IsSurpriseModeEnabled,
     int FulfilledWishCount,
     List<WishlistMemberDto> Members);
