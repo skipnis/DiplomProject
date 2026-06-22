@@ -10,9 +10,7 @@ public sealed class UpdateWishlistRequestValidator : AbstractValidator<UpdateWis
             .NotEmpty()
             .MaximumLength(100);
 
-        RuleFor(x => x.Description)
-            .MaximumLength(500)
-            .When(x => x.Description is not null);
+        RuleFor(x => x.Description);
 
         RuleFor(x => x.Emoji)
             .MaximumLength(10)

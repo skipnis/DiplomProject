@@ -16,7 +16,6 @@ public class WishlistConfig : IEntityTypeConfiguration<Wishlist>
             .IsRequired();
 
         builder.Property(w => w.Description)
-            .HasMaxLength(500)
             .HasColumnType("text");
 
         builder.Property(w => w.Emoji)
