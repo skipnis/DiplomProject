@@ -162,7 +162,7 @@ export default function CatalogItemPage() {
   };
 
   const openAddModal = async () => {
-    if (!user) { toast.error('Войдите в аккаунт'); return; }
+    if (!user) { toast.warning('Войдите в аккаунт'); return; }
     const lists = await getMyWishlists().catch(() => []);
     setWishlists(lists);
     if (lists.length > 0) setSelectedWishlistId(lists[0].id);

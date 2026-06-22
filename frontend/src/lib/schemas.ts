@@ -35,7 +35,6 @@ export const wishSchema = z.object({
 
 export const wishlistSchema = z.object({
   name: z.string().min(1, 'Обязательное поле').max(100, 'Не более 100 символов'),
-  description: z.string().max(500, 'Не более 500 символов').optional(),
 });
 
 export const eventSchema = z.object({

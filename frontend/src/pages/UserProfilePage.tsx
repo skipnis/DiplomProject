@@ -137,8 +137,16 @@ export default function UserProfilePage() {
 
   const handleProposeGift = () => {
     if (!me) { toast.warning('Войдите в аккаунт, чтобы предложить подарок'); return; }
-    if (friendStatus !== 'friends') { toast.warning(`Сначала добавьте ${profile?.displayName ?? 'пользователя'} в друзья`); return; }
-    navigate(`/proposals/new?recipientId=${id}`);
+    if (!profile) return;
+    navigate('/proposals/new', {
+      state: {
+        recipient: {
+          userId: id,
+          username: profile.displayName,
+          avatarUrl: profile.avatarUrl,
+        },
+      },
+    });
   };
 
   const handleShareProfile = () => {

@@ -425,7 +425,7 @@ export default function WishlistPage() {
                   {shouldBlur && <div className="absolute inset-0 flex items-center justify-center font-bold text-muted-foreground text-sm bg-background/60">🔒 Забронировано</div>}
                   {wish.isFulfilled && (
                     <div className="absolute top-2 left-2 bg-green-500 text-white rounded-full px-2 py-0.5 text-xs font-semibold">
-                      {wish.fulfilledByDisplayName ? `Исполнено: ${wish.fulfilledByDisplayName}` : 'Исполнено собой любимым'}
+                      {wish.fulfilledByDisplayName ? `Исполнено: ${wish.fulfilledByDisplayName}` : 'Исполнено'}
                     </div>
                   )}
                   {wish.priority > 0 && <span className={`absolute top-2 right-2 text-xs px-2 py-0.5 rounded-full font-semibold ${PRIORITY_BADGE[wish.priority]}`}>{PRIORITY_LABELS[wish.priority]}</span>}

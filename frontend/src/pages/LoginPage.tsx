@@ -192,6 +192,9 @@ export default function LoginPage() {
               <p className="text-sm text-center text-muted-foreground">
                 Код отправлен на <span className="font-medium text-foreground">{email}</span>
               </p>
+              <p className="text-xs text-center text-muted-foreground">
+                Если письмо с кодом не пришло, проверьте папку «Спам» или «Промоакции»
+              </p>
               <input
                 type="text"
                 inputMode="numeric"

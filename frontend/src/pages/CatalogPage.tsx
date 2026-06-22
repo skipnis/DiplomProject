@@ -77,7 +77,7 @@ export default function CatalogPage() {
   const handleSearch = (e: React.FormEvent) => { e.preventDefault(); setSearch(searchInput); };
 
   const openAddModal = async (item: CatalogItemSummaryDto) => {
-    if (!user) { toast.error('Войдите в аккаунт'); return; }
+    if (!user) { toast.warning('Войдите в аккаунт'); return; }
     setAddModal(item);
     const lists = await getMyWishlists().catch(() => []);
     setWishlists(lists);

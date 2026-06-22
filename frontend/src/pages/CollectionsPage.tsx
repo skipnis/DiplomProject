@@ -47,7 +47,7 @@ export default function CollectionsPage() {
   };
 
   const openAddModal = async (item: CatalogItemSummaryDto) => {
-    if (!user) { toast.error('Войдите в аккаунт'); return; }
+    if (!user) { toast.warning('Войдите в аккаунт'); return; }
     setAddModal(item);
     const lists = await getMyWishlists().catch(() => []);
     setWishlists(lists);

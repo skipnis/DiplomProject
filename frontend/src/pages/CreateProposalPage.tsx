@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from 'react';
-import { useNavigate, Link } from 'react-router-dom';
+import { useNavigate, Link, useLocation } from 'react-router-dom';
 import { createProposal, uploadProposalImage } from '../api/proposals';
 import { getFriends } from '../api/friends';
 import { getCatalogItems, getCatalogCategories } from '../api/catalog';
@@ -42,15 +42,21 @@ const ALIAS_PRESETS = [
   'Твой Санта',
 ];
 
+type RecipientInfo = {
+  userId: string;
+  username: string;
+  avatarUrl: string | null;
+};
+
 type SelectedGift =
-  | { type: 1; item: CatalogItemSummaryDto }
-  | { type: 2; wish: WishSummaryDto }
-  | { type: 3; title: string; description: string; imageFile: File | null; imagePreview: string | null };
+    | { type: 1; item: CatalogItemSummaryDto }
+    | { type: 2; wish: WishSummaryDto }
+    | { type: 3; title: string; description: string; imageFile: File | null; imagePreview: string | null };
 
 function CatalogPickerDialog({
-  open,
-  onClose,
-  onSelect,
+open,
+onClose,
+onSelect,
 }: {
   open: boolean;
   onClose: () => void;
@@ -316,13 +322,16 @@ function CustomIdeaDialog({
 
 export default function CreateProposalPage() {
   const navigate = useNavigate();
+  const location = useLocation();
   const toast = useToast();
 
-  const [step, setStep] = useState(1);
+  const preselectedRecipient = location.state?.recipient as RecipientInfo | undefined;
+
+  const [step, setStep] = useState(preselectedRecipient ? 2 : 1);
   const [friends, setFriends] = useState<FriendInfo[]>([]);
   const [friendsLoading, setFriendsLoading] = useState(true);
   const [friendSearch, setFriendSearch] = useState('');
-  const [selectedFriend, setSelectedFriend] = useState<FriendInfo | null>(null);
+  const [selectedFriend, setSelectedFriend] = useState<RecipientInfo | null>(preselectedRecipient ?? null);
   const [selectedGift, setSelectedGift] = useState<SelectedGift | null>(null);
   const [hintMessage, setHintMessage] = useState<string | null>(null);
   const [customHint, setCustomHint] = useState('');
@@ -343,7 +352,7 @@ export default function CreateProposalPage() {
       .finally(() => setFriendsLoading(false));
   }, []);
 
-  const filteredFriends = friends.filter((f) =>
+  const filteredFriends = friends.filter((f) => 
     f.username.toLowerCase().includes(friendSearch.toLowerCase()),
   );
 
@@ -475,7 +484,7 @@ export default function CreateProposalPage() {
             onClose={() => setCatalogOpen(false)}
             onSelect={(item) => { setSelectedGift({ type: 1, item }); setCatalogOpen(false); }}
           />
-          <WishlistPickerDialog
+          <WishlistPickerDialog 
             open={wishlistOpen}
             onClose={() => setWishlistOpen(false)}
             onSelect={(wish) => { setSelectedGift({ type: 2, wish }); setWishlistOpen(false); }}
@@ -490,7 +499,7 @@ export default function CreateProposalPage() {
           />
 
           {!selectedGift && (
-            <Button variant="ghost" className="w-full mt-3 text-muted-foreground" onClick={() => setStep(1)}>
+            <Button variant="ghost" className="w-full mt-3 text-muted-foreground" onClick={() => preselectedRecipient ? navigate(-1) : setStep(1)}>
               ← Назад
             </Button>
           )}
@@ -620,7 +629,7 @@ export default function CreateProposalPage() {
           </Card>
 
           <Button onClick={handleSubmit} disabled={submitting} className="w-full">
-            {submitting ? 'Отправляем...' : 'Отправить анонимно'}
+            {submitting ? 'Отправляем...' : 'Отправить'}
           </Button>
           <Button variant="ghost" className="w-full mt-2 text-muted-foreground" onClick={() => setStep(3)}>← Назад</Button>
         </div>

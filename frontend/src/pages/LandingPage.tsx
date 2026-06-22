@@ -255,7 +255,7 @@ export default function LandingPage() {
         <section className="rounded-2xl bg-primary/5 border border-primary/20 p-10 text-center space-y-5">
           <h2 className="text-2xl font-bold">Готовы попробовать?</h2>
           <p className="text-muted-foreground max-w-md mx-auto">
-            Зарегистрируйтесь за 30 секунд через Google или по email — никакого пароля.
+            Зарегистрируйтесь за 30 секунд через Google или по email без пароля.
           </p>
           <Link to="/login" className={buttonVariants({ size: 'lg', className: 'text-base px-10' })}>
             Войти / Зарегистрироваться

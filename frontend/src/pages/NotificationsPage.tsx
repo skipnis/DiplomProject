@@ -43,8 +43,8 @@ function NotificationItem({
 
   const getDescription = (): string => {
     switch (n.type) {
-      case 1: return `Кто-то забронировал твоё желание в вишлисте «${p.wishlistName ?? '...'}»`;
-      case 2: return `Кто-то отменил бронирование твоего желания в «${p.wishlistName ?? '...'}»`;
+      case 1: return `${p.reservedByDisplayName ?? 'Кто-то'} забронировал «${p.wishName ?? '...'}» в вишлисте «${p.wishlistName ?? '...'}»`;
+      case 2: return `${p.cancelledByDisplayName ?? 'Кто-то'} отменил бронирование «${p.wishName ?? '...'}» в «${p.wishlistName ?? '...'}»`;
       case 3: return `«${p.wishName ?? '...'}» отмечено как подаренное в «${p.wishlistName ?? '...'}»`;
       case 10: return `${p.requesterDisplayName ?? 'Пользователь'} отправил вам заявку в друзья`;
       case 11: return `${p.acceptedByDisplayName ?? 'Пользователь'} принял вашу заявку в друзья`;
@@ -115,16 +115,7 @@ export default function NotificationsPage() {
   };
 
   useEffect(() => { load(page, from, to, isReadParam); }, [page]);
-
-  useEffect(() => {
-    markAllAsRead()
-      .then(() => {
-        setData((prev) =>
-          prev ? { ...prev, items: prev.items.map((n) => ({ ...n, isRead: true })) } : prev,
-        );
-      })
-      .catch(() => {});
-  }, []);
+  
 
   useEffect(() => {
     const handler = (e: Event) => {
