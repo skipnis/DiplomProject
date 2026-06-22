@@ -14,7 +14,12 @@ RUN dotnet publish Wishapp.Web/Wishapp.Web.csproj -c Release -o /app/publish
 FROM build AS migrator-build
 RUN dotnet tool install --global dotnet-ef
 ENV PATH="$PATH:/root/.dotnet/tools"
-RUN dotnet ef migrations bundle --project Wishapp.Web/Wishapp.Web.csproj --no-build -o /app/efbundle
+RUN dotnet build Wishapp.Web/Wishapp.Web.csproj -c Release
+RUN dotnet ef migrations bundle \
+    --project Wishapp.Web/Wishapp.Web.csproj \
+    --configuration Release \
+    --no-build \
+    -o /app/efbundle
 
 FROM mcr.microsoft.com/dotnet/aspnet:10.0 AS migrator
 RUN apt-get update && apt-get install -y --no-install-recommends libgssapi-krb5-2 && rm -rf /var/lib/apt/lists/*

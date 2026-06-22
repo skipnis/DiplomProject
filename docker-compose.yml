@@ -66,9 +66,23 @@ services:
         VITE_GOOGLE_CLIENT_ID: ${VITE_GOOGLE_CLIENT_ID}
     restart: unless-stopped
     ports:
-      - "80:80"
+      - "127.0.0.1:80:80"
+    healthcheck:
+      test: [ "CMD", "curl", "-f", "http://localhost:80/health" ]
+      interval: 5s
+      timeout: 3s
+      retries: 5
     depends_on:
       - backend
+
+  cloudflared:
+    container_name: wishapp-prod-cloudflared
+    image: cloudflare/cloudflared:latest
+    restart: unless-stopped
+    command: tunnel --no-autoupdate run --token ${CLOUDFLARE_TUNNEL_TOKEN}
+    depends_on:
+      nginx:
+        condition: service_healthy
 
 volumes:
   diplom_postgres_data:
