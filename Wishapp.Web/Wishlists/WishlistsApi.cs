@@ -144,11 +144,11 @@ public sealed class WishlistsApi(ApplicationDbContext db) : IWishlistsApi
             .AsNoTracking()
             .Where(wl => wl.Wishes.Any(w => w.Id == wishId))
             .Select(wl => new WishNotificationData(
+                wl.Wishes.First(w => w.Id == wishId).Name,
                 wl.Id,
                 wl.Name,
                 wl.OwnerId,
-                wl.IsSurpriseModeEnabled,
-                wl.Wishes.Where(w => w.Id == wishId).Select(w => w.CreatedByUserId).FirstOrDefault()))
+                wl.IsSurpriseModeEnabled))
             .FirstOrDefaultAsync(ct);
     }
 

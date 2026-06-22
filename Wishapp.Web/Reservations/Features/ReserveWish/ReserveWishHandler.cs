@@ -6,6 +6,7 @@ using Wishapp.Web.Infrastructure.Database;
 using Wishapp.Web.Notifications;
 using Wishapp.Web.Notifications.Entities;
 using Wishapp.Web.Reservations.Entities;
+using Wishapp.Web.Users;
 using Wishapp.Web.Wishlists;
 using Wishapp.Web.Wishlists.Dtos;
 using Wishapp.Web.Wishlists.Entities;
@@ -16,7 +17,8 @@ public sealed class ReserveWishHandler(
     ApplicationDbContext db,
     IWishlistsApi wishlistsApi,
     IFriendshipsApi friendshipsApi,
-    INotificationsApi notificationsApi)
+    INotificationsApi notificationsApi,
+    IUsersApi usersApi)
     : ICommandHandler<ReserveWishCommand>
 {
     public async Task<Result> HandleAsync(
@@ -75,18 +77,21 @@ public sealed class ReserveWishHandler(
 
         await db.SaveChangesAsync(ct);
 
-        if (!accessData.IsSurpriseModeEnabled)
-        {
-            var notificationData = await wishlistsApi.GetWishNotificationDataAsync(command.WishId, ct);
-            var recipientId = notificationData?.CreatedByUserId ?? accessData.OwnerId;
+        if (accessData.IsSurpriseModeEnabled) return Result.Success();
+        
+        var notificationData = await wishlistsApi.GetWishNotificationDataAsync(command.WishId, ct);
+        var reserverUsernames = await usersApi.GetUsernamesAsync([command.UserId], ct);
+        var reserverName = reserverUsernames.GetValueOrDefault(command.UserId);
 
-            await notificationsApi.EnqueueAsync(recipientId, NotificationType.WishReserved, new
-            {
-                wishId = command.WishId,
-                wishlistId = command.WishlistId,
-                wishlistName = notificationData?.WishlistName,
-            }, ct);
-        }
+        await notificationsApi.EnqueueAsync(accessData.OwnerId, NotificationType.WishReserved, new
+        {
+            wishId = command.WishId,
+            wishName = notificationData?.WishName,
+            reservedByUserId = command.UserId,
+            reservedByDisplayName = reserverName,
+            wishlistId = command.WishlistId,
+            wishlistName = notificationData?.WishlistName,
+        }, ct);
 
         return Result.Success();
     }

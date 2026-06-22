@@ -4,6 +4,7 @@ using Wishapp.Web.Wishlists.Dtos;
 namespace Wishapp.Web.Wishlists;
 
 public record WishNotificationData(
+    string WishName,
     Guid WishlistId,
     string WishlistName,
     Guid OwnerId,
